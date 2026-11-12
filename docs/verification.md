@@ -4,7 +4,7 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**117 automated tests pass for version 1.8.1.**
+**134 automated tests pass for version 1.9.0.**
 
 The [1.8 verification notes](contact-and-vehicle-update.md#validation-and-limits) record the wall/landing reproductions, camera/input checks, new model imports, private-match appearance exchange and offline previews. Actual browser/GPU testing remains unavailable.
 
@@ -13,6 +13,14 @@ The [1.8 verification notes](contact-and-vehicle-update.md#validation-and-limits
 Coverage includes arena/pad dimensions, acceleration/reverse/braking, speed caps, fuel consumption, variable-height jumping, double jump/dodge, aerial pitch, floor/wall/corner/ceiling bounces, real oriented car-ball contact, boost refill/recharge, full-ball goal crossing, wide/high misses, kickoff clock, zero-time live ball, overtime/results, training progression, bounded replays, finite long-running bot matches, wall driving, demolition/respawn, own-goal routing regression, practice reset restrictions, both vehicle geometries, original ball and calibrated pitch geometry, local asset resolution, keyboard/mouse clearing and standard gamepad button mappings.
 
 Three.js math/geometry can run without a GPU; these tests do not render WebGL pixels. The input test uses synthetic events and a simulated standard gamepad, not a physical controller.
+
+## Automatic matchmaking — 1.9
+
+Seventeen new tests cover the 60-second absolute search deadline, exactly one bot fallback, queue cleanup, cancel/Escape handling, retry without resetting the deadline, late callbacks, reversed host assignment, both vehicles loading before readiness, automatic start, bounded setup after a late peer connection, asset failure, rematches, disconnects, build-specific queue isolation, early start rejection and transport role/channel lifecycle. UI tests check countdown/progress and search/preparation/retry states; online opponents have distinct labels from bots and private guests. The existing Spacebar recovery and private-room tests still pass.
+
+The optional [live matchmaking check](../scripts/check-live-matchmaking.mjs) connected two real WebRTC peers through the public NetplayJS service in an isolated queue. Production matchmaking assigned host/guest roles and automatically readied/started a five-minute match with the selected appearances and no bots. It acknowledged **197 guest input frames**, with 11 control and 139 realtime packets. A separate empty queue ran for the full real-time search window and started exactly one bot match at **60.002 seconds**, closing the queue socket.
+
+The check uses optional scratch-only `werift`, `ws` and `https-proxy-agent` dependencies and same-container host ICE candidates. It verifies live signaling and game data exchange; browser UI/input, GPU rendering and connections across independent home networks or TURN relays remain unverified. No browser or system packages were installed and no Site sharing settings were changed by this update.
 
 ## Jump recovery — 1.8.1
 

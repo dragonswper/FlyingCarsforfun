@@ -8,6 +8,8 @@ An original browser-native 3D car-soccer recreation inspired by Rocket League, w
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.9:** Choose **Online Match** to search for a real opponent for up to **60 seconds**. A connected opponent starts a five-minute casual 1v1 automatically after both vehicles load; an empty search starts a clearly labeled local bot match using your selected bot difficulty. Cancel or Escape leaves the queue. Keep the tab visible while searching. Both players must reload for the matching game build. Private room codes remain available.
+
 **1.8.1:** Press **Jump (default Spacebar / controller A)** while resting upside down to hop and flip back onto your wheels. One press is enough. Normal jumps and aerial dodges keep their existing controls. Both players should reload before joining a room.
 
 **1.8:** Wall contacts remain attached through the ramp, and roof/bumper scrapes absorb spin instead of forcing a sudden upright landing. Ball cam tracks the ball with a level horizon; turn it off to orbit using middle-mouse drag or the controller right stick. **Garage** now also offers **Octane, cHe, Cyberpunk Bike and C-17 Globemaster**. The supplied 3D Rocket League ball replaces the procedural ball. Optional vehicle models load on selection or private-opponent preparation; Ready/Start waits for both appearances. **Reload both players' pages** after this update so physics builds match. All **114 automated tests pass**; browser rendering and device FPS remain unverified.
@@ -16,6 +18,7 @@ Use **Share** to control who can open the hosted game. For private access, invit
 
 ## Playable modes
 
+- **Online match:** automatic two-player casual 1v1, with a local bot fallback after a 60-second search.
 - **Duel:** you against one local bot.
 - **Doubles:** you and a bot teammate against two bots.
 - **Free play:** no match clock, unlimited boost, ball reset and session summary.
@@ -75,7 +78,7 @@ npm test
 
 No npm install or build is needed. `dist/` includes its rendering library, font and illustrations and makes no CDN requests. Serve over HTTP/HTTPS rather than opening a file:// URL. The optional development server binds only to 127.0.0.1. On a static host, publish the contents of dist/.
 
-Local modes make no multiplayer requests. Selecting Host or Join uses the public NetplayJS WebSocket service for introductions, its advertised ICE servers for connectivity, and WebRTC data channels for gameplay. See [multiplayer architecture, hosting and verification](docs/multiplayer.md).
+Local modes make no multiplayer requests. Selecting Online Match, Host or Join uses the public NetplayJS WebSocket service for introductions, its advertised ICE servers for connectivity, and WebRTC data channels for gameplay. See [multiplayer architecture, hosting and verification](docs/multiplayer.md).
 
 The tests cover simulation, geometry, input mappings, static assets and HTTP serving. They do not verify WebGL output, browser layout, physical controller behavior, audio output or GPU performance. See [verification](docs/verification.md).
 

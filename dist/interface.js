@@ -1,6 +1,6 @@
 import {Vector3} from './vendor/three.module.js';
 
-export const driverName=(car,localId=0)=>car?.id===localId?'YOU':car?.networkRole==='host'?'HOST':car?.networkRole==='guest'?'GUEST':car?.team?([1,2].includes(car.id)?'ACE':'FLUX'):'NOVA';
+export const driverName=(car,localId=0)=>car?.id===localId?'YOU':car?.matchmade?'OPPONENT':car?.networkRole==='host'?'HOST':car?.networkRole==='guest'?'GUEST':car?.team?([1,2].includes(car.id)?'ACE':'FLUX'):'NOVA';
 
 // Keep the two local mode families separate while retaining the last selection.
 export function setupLobby(settings,{save,sync},root=document){
@@ -9,6 +9,7 @@ export function setupLobby(settings,{save,sync},root=document){
  let lastPractice=['free','training'].includes(settings.mode)?settings.mode:'free';
  const rows=[...root.querySelectorAll('.main-menu .menu-row')];
  const help={
+  'open-online':'Find a real opponent. After 60 seconds without a connection, play against a bot.',
   'open-play':'Play an exhibition match against bots.',
   'open-multiplayer':'Host a private match or join a friend with a room code.',
   'open-training':'Practice freely or work on shooting, aerials and saves.',
