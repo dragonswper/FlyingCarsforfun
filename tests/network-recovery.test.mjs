@@ -91,3 +91,13 @@ test('a failed ping admission retries without resetting the 60-second search dea
 test('realtime wire counters advance only after successful sends and ignore reliable state packets',()=>{
  const transport=new RoomTransport(),sent=[],channel={readyState:'open',bufferedAmount:0,send:data=>sent.push(JSON.parse(data)),close(){}};transport.channels={realtime:channel,control:{...channel}};transport.send({t:'probe'},true);transport.send({t:'state'});channel.bufferedAmount=40000;assert.equal(transport.send({t:'probe'},true),false);channel.bufferedAmount=0;transport.send({t:'probe'},true);assert.deepEqual(sent.map(packet=>packet.w),[1,undefined,2]);transport.close();
 });
+
+
+test('legacy room chat restores its five-message history on reconnect and clears for both peers',async t=>{
+ const h=await game(t),hostStates=[],guestStates=[];h.host.onChatState=state=>hostStates.push(state);h.guest.onChatState=state=>guestStates.push(state);
+ h.host.updateProfile('Host Driver');h.guest.updateProfile('Guest Driver');await settle();
+ for(let n=1;n<=6;n++){assert.equal((n%2?h.host:h.guest).sendChat('Message '+n),true);await settle();await h.clock.advance(900);}
+ const expected=[2,3,4,5,6].map(n=>'Message '+n);assert.deepEqual(hostStates.at(-1).messages.map(message=>message.text),expected);assert.deepEqual(guestStates.at(-1).messages,hostStates.at(-1).messages);
+ h.guest.chat.clear();h.guest.transport.crash();await settle();assert.equal(h.guest.recovering,false);assert.deepEqual(guestStates.at(-1).messages,hostStates.at(-1).messages);
+ h.host.chat.clear();await settle();assert.deepEqual(hostStates.at(-1).messages,[]);assert.deepEqual(guestStates.at(-1).messages,[]);
+});

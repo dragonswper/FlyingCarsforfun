@@ -8,6 +8,8 @@ An original browser-native 3D car-soccer recreation inspired by Rocket League, w
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.12:** Use **Edit Name** on your profile bar or pause menu to save a custom username on this browser/device. **Chat** is visible in the match HUD, pause menu, lobbies and results; **Enter / Y** opens text chat during play (**Enter** still skips goal replays). Everyone in the current room, including spectators, shares the newest **five messages**. A sixth removes the oldest; the entire feed clears **five minutes after the first message**, without extending the deadline for new messages. Late joiners and reconnecting players receive the current feed. [Details and verification](docs/chat-and-profile.md). All **203 automated tests pass**, plus a real four-client WebRTC check. Reload every player's page for the new network build.
+
 **1.11:** **Private Match → Custom Lobby** supports 2–8 people, selectable teams/spectators (including the host) and 1–30 minute matches. Controller menus, an on-screen keyboard and saved button/axis bindings are included. Names save locally; text/quick chat is editable. Garage adds seven supplied novelty vehicles, and the supplied stadium’s inner field/goals replace the generated geometry while keeping boost pads. [Release details, controls and limits](docs/community-update.md). All **193 automated tests pass**, plus an actual four-client WebRTC session.
 
 **1.10:** Guest controls recover after long input gaps and predict ball/vehicle contacts immediately. Brief drops hold the same match for a **20-second reconnect window**. Either player can request a rematch or choose **Find Next Match**. Online Match and **Options → Network** save region/ping preferences; the HUD warns about high ping, update loss and stalled connections. Mouse chord release, controller steering/look return and pitch flip cancellation are fixed. [Details and verification](docs/network-recovery.md). Both players must reload for this build.
@@ -67,7 +69,7 @@ The supplied Fennec/Octane, Champions Field and C-17 artwork is adapted under CC
 | R / T | Practice reset / next drill |
 | Escape | Pause / open match menu (guest's online menu does not pause the host) |
 | Enter | Skip goal replay |
-| Y / G | Text chat / quick chat (editable bindings) |
+| Enter or Y / G | Text chat / quick chat (Y and G are editable bindings; Enter skips goal replays) |
 
 Standard controller: RT/LT drive, left stick steer/pitch, A jump, B boost, X powerslide, Y camera, LB/RB air roll, Start pause, View scoreboard, D-pad up reset, D-pad down next shot. PlayStation uses the corresponding Cross/Circle/Square/Triangle and L1/R1/L2/R2 buttons under standard browser mapping. Options → Controls rebinds buttons/axes. D-pad left/right opens quick/text chat. Menus use A/Cross to select, B/Circle to return and D-pad/left stick to navigate; text fields offer an on-screen keyboard. Physical hardware/browser mapping remains unverified interactively.
 

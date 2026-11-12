@@ -81,3 +81,10 @@ test('the real transport requests a shared queue and assigns the server-selected
 test('cancelled transports cannot be reopened by late data-channel events',()=>{
  let opened=0;const transport=new RoomTransport({onOpen:()=>opened++}),channel=name=>({label:name,readyState:'open',close(){this.closed=true;}}),a=channel('control'),b=channel('realtime');transport.attachChannel(a);transport.attachChannel(b);const late=a.onopen;transport.close();late();assert.equal(opened,0);assert.equal(transport.open,false);const extra=channel('control');transport.attachChannel(extra);assert.equal(extra.closed,true);
 });
+
+
+test('automatic matches forward shared chat state only from the winning room',async t=>{
+ const h=harness(t),aStates=[],bStates=[],a=h.create({onChatState:state=>aStates.push(state)}),b=h.create({onChatState:state=>bStates.push(state)});a.controller.start({name:'Alpha'});b.controller.start({name:'Beta'});await settle();await settle();assert.equal(h.matches.length,2);
+ const room=a.controller.matchedRoom;assert.equal(room.sendChat('Hello opponent'),true);await settle();assert.equal(aStates.at(-1).messages[0].text,'Hello opponent');assert.deepEqual(aStates.at(-1).messages,bStates.at(-1).messages);
+ room.role==='host'?room.chat.clear():b.controller.matchedRoom.chat.clear();await settle();assert.deepEqual(aStates.at(-1).messages,[]);assert.deepEqual(bStates.at(-1).messages,[]);
+});

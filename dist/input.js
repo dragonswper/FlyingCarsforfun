@@ -1,4 +1,4 @@
-/* Rebindable browser controls; Escape and Enter remain pause/replay shortcuts. */
+/* Rebindable browser controls; Escape pauses; Enter opens chat or skips a replay. */
 import {normalizeBindings,normalizeControls,bindingCodes} from './preferences.js';
 import {gamepadPreferences} from './gamepad-preferences.js';
 const clamp=n=>Math.max(-1,Math.min(1,n));

@@ -7,8 +7,8 @@ export const SEARCH_MS=60_000,SETUP_MS=20_000;
 // replaces searching with a bounded setup phase; failed setup uses the original
 // remaining search time. Only one terminal result can own the game afterwards.
 export class Matchmaker{
- constructor({Room=NetworkRoom,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),prepare=async()=>{},queue=MATCH_QUEUE,onChange=()=>{},onRoomChange=()=>{},onMatch=()=>{},onBots=()=>{},onDisconnect=()=>{},onEvents=()=>{},onChat=()=>{}}={}){
-  Object.assign(this,{Room,clock,setTimer,clearTimer,prepare,queue,onChange,onRoomChange,onMatch,onBots,onDisconnect,onEvents,onChat});this.phase='idle';this.finished=false;this.started=false;this.attempt=null;this.attempts=0;this.timers=new Set();this.reason='';this.matchedRoom=null;
+ constructor({Room=NetworkRoom,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),prepare=async()=>{},queue=MATCH_QUEUE,onChange=()=>{},onRoomChange=()=>{},onMatch=()=>{},onBots=()=>{},onDisconnect=()=>{},onEvents=()=>{},onChat=()=>{},onChatState=()=>{}}={}){
+  Object.assign(this,{Room,clock,setTimer,clearTimer,prepare,queue,onChange,onRoomChange,onMatch,onBots,onDisconnect,onEvents,onChat,onChatState});this.phase='idle';this.finished=false;this.started=false;this.attempt=null;this.attempts=0;this.timers=new Set();this.reason='';this.matchedRoom=null;
  }
  state(){return {phase:this.phase,remaining:this.started?Math.max(0,Math.ceil((this.deadline-this.clock())/1000)):60,elapsed:this.started?Math.min(60,Math.max(0,(this.clock()-this.startedAt)/1000)):0,prepared:!!this.attempt?.prepared,reason:this.reason,attempts:this.attempts};}
  emit(){this.onChange(this.state());}
@@ -27,7 +27,7 @@ export class Matchmaker{
  connect(){
   if(this.finished)return;if(this.clock()>=this.deadline){this.bots('No opponent connected in 60 seconds.');return;}
   const attempt={id:++this.attempts,found:false,preparing:false,prepared:false,startRequested:false,room:null};this.attempt=attempt;this.phase='searching';
-  attempt.room=new this.Room({clock:this.clock,onChange:()=>this.changed(attempt),onMatch:sim=>this.won(attempt,sim),onChat:message=>{if(this.matchedRoom===attempt.room)this.onChat(message);},onEvents:events=>{if(this.matchedRoom===attempt.room)this.onEvents(events,attempt.room);},onDisconnect:reason=>{if(this.matchedRoom===attempt.room)this.onDisconnect(reason,attempt.room);else this.retry(attempt,'The connection was interrupted. Still searching…');}});
+  attempt.room=new this.Room({clock:this.clock,onChange:()=>this.changed(attempt),onMatch:sim=>this.won(attempt,sim),onChat:message=>{if(this.matchedRoom===attempt.room)this.onChat(message);},onChatState:state=>{if(this.matchedRoom===attempt.room)this.onChatState(state);},onEvents:events=>{if(this.matchedRoom===attempt.room)this.onEvents(events,attempt.room);},onDisconnect:reason=>{if(this.matchedRoom===attempt.room)this.onDisconnect(reason,attempt.room);else this.retry(attempt,'The connection was interrupted. Still searching…');}});
   this.emit();if(!this.owns(attempt))return;
   try{attempt.room.matchmake(this.look,this.options,this.selectedQueue,this.preferences);}catch{this.retry(attempt,'The match service is unavailable. Still searching…');}
  }

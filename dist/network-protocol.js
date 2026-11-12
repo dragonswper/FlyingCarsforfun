@@ -1,7 +1,7 @@
 /* Original game protocol, using NetplayJS's documented signaling wire format. */
 import {BODY_TYPES} from './bodies.js';
 import {playerName} from './social.js';
-export const NET_PROTOCOL=1,NET_BUILD='boost-circuit-1.11.0',SIGNAL_URL='wss://netplayjs.varunramesh.net/';
+export const NET_PROTOCOL=1,NET_BUILD='boost-circuit-1.12.0',SIGNAL_URL='wss://netplayjs.varunramesh.net/';
 export const MATCH_QUEUE='flyingcarsforfun-casual-duel-300-'+NET_BUILD;
 export const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const MAX_PACKET=32768,INPUT_TIMEOUT=300,STATE_INTERVAL=1000/30;
