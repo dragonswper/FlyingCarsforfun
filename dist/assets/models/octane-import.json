@@ -1,0 +1,77 @@
+{
+  "id": "octane",
+  "name": "Octane",
+  "file": "octane.glb",
+  "sourceFile": "Octane.fbx",
+  "sourceBytes": 1944572,
+  "sourceSha256": "83274efbc4f326eae828a849a8369b328244f25dd0df20c408c89feda4270d94",
+  "bytes": 1999336,
+  "sha256": "9fdde4d686d2f77d2b43e6567a0d64d4c03f48f3f735c7685e8ac2e2724bf434",
+  "sourceTriangles": 43646,
+  "triangles": 43646,
+  "drawBatches": 12,
+  "credit": {
+    "title": "Octane - Rocket League Car",
+    "author": "Jako (https://sketchfab.com/fairlight51)",
+    "license": "CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/octane-rocket-league-car-9910f0a5d158425bbc7deb60c7a81f69"
+  },
+  "visualLength": 1.8,
+  "wheels": [
+    {
+      "name": "FL",
+      "position": [
+        -0.3371448516845703,
+        0.1635292023420334,
+        0.5354233980178833
+      ],
+      "radius": 0.16042770306278772,
+      "triangles": 3792
+    },
+    {
+      "name": "FR",
+      "position": [
+        0.3381805419921875,
+        0.1635292023420334,
+        0.5354233980178833
+      ],
+      "radius": 0.16042769686785444,
+      "triangles": 3792
+    },
+    {
+      "name": "RL",
+      "position": [
+        -0.3648703098297119,
+        0.18411631882190704,
+        -0.5725840330123901
+      ],
+      "radius": 0.18411680794094978,
+      "triangles": 3792
+    },
+    {
+      "name": "RR",
+      "position": [
+        0.36820822954177856,
+        0.18411631882190704,
+        -0.5725840330123901
+      ],
+      "radius": 0.1841168240194088,
+      "triangles": 3792
+    }
+  ],
+  "paintMaterial": "Custom_Paint",
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "modifications": [
+    "Converted supplied FBX to a self-contained GLB",
+    "Relinked three supplied textures and omitted an absent optional normal map",
+    "Normalized +Y up / +Z forward, 1.8 metre length and floor0",
+    "Added separate rolling and front steering pivots with measured wheel radii",
+    "Preserved all source triangles and supplied materials; paint is independently tintable",
+    "Re-encoded textures as embedded WebP quality90 at at most1024 pixels"
+  ],
+  "missingOptionalTextures": [
+    "NormalMap.png"
+  ]
+}

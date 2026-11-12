@@ -1,0 +1,54 @@
+{
+  "file": "rocket-ball.glb",
+  "sourceFile": "rocket ball.fbx",
+  "sourceBytes": 2362000,
+  "sourceSha256": "fdbf54fb4896eaaa7fae21a82fbe192e804ba9308af17195e6a91167347699cf",
+  "bytes": 403716,
+  "sha256": "24aca0dbee640b7679681c0512ce829d592753ccf3aab6c2324675a0acb6e0a8",
+  "credit": {
+    "title": "Ball - Rocket League",
+    "author": "Unspecified in supplied archive",
+    "license": "Unspecified in supplied archive",
+    "source": "User supplied ball-rocket-league.zip"
+  },
+  "sourceBoundsBlender": {
+    "min": [
+      -0.9274312257766724,
+      -0.9242581129074097,
+      -0.9789605736732483
+    ],
+    "max": [
+      0.9892686605453491,
+      0.9892680644989014,
+      0.9802901148796082
+    ]
+  },
+  "sphereFitCenterBlender": [
+    4.958429267901e-05,
+    3.6246632808212276e-05,
+    0.00035801660395149565
+  ],
+  "sourceOuterRadius": 1.0149749901261707,
+  "radius": 1.0,
+  "radialRange": [
+    0.9000441905039077,
+    1.0
+  ],
+  "radialMedian": 0.9375954081969925,
+  "triangles": 4416,
+  "drawBatches": 2,
+  "images": 1,
+  "textureEncoding": "WebP quality 90 at 1024 pixels",
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "sourceAnimations": 0,
+  "animations": 0,
+  "modifications": [
+    "Baked source orientation and centered on fitted sphere center",
+    "Normalized the outermost vertex to unit collision radius; retained panel grooves",
+    "Relinked the supplied diffuse atlas and removed disconnected normal nodes and missing local image paths",
+    "Retained both panel and green light material groups; added subtle light emission",
+    "Reduced diffuse atlas to 1024 pixels and embedded as WebP quality 90"
+  ]
+}

@@ -1,0 +1,96 @@
+{
+  "id": "che",
+  "name": "cHe",
+  "sourceFile": "che.glb",
+  "sourceBytes": 20500984,
+  "sourceSha256": "7c10ed5e97d84213e87e96ee5b5df3e216527d57e6255495bdef4b44564d4f71",
+  "sourceTriangles": 144988,
+  "vehicleSourceTriangles": 137418,
+  "triangles": 89509,
+  "drawBatches": 8,
+  "visualLength": 2,
+  "sourceBounds": {
+    "min": [
+      -4.549638397841587,
+      -1.2727456232983723,
+      -3.2638188890770268
+    ],
+    "max": [
+      3.89987234413971,
+      3.2251571949841056,
+      2.5316130623160777
+    ]
+  },
+  "normalization": {
+    "scale": 0.23670009555263635,
+    "centerX": -0.3248830268509386,
+    "centerZ": -0.3661029133804745,
+    "floor": -1.2727456232983723
+  },
+  "wheels": [
+    {
+      "name": "FL",
+      "position": [
+        -0.4609476021808998,
+        0.2961784732555557,
+        0.4735879303856345
+      ],
+      "radius": 0.24127297887651497,
+      "triangles": 28813
+    },
+    {
+      "name": "FR",
+      "position": [
+        0.4696927847194021,
+        0.23661444827549533,
+        0.469623588830492
+      ],
+      "radius": 0.238428787849408,
+      "triangles": 28654
+    },
+    {
+      "name": "RL",
+      "position": [
+        -0.5540310551842513,
+        0.3246031063355557,
+        -0.5198446366673661
+      ],
+      "radius": 0.2678739060392655,
+      "triangles": 13910
+    },
+    {
+      "name": "RR",
+      "position": [
+        0.57162633878026,
+        0.24614614925256434,
+        -0.5206583113627706
+      ],
+      "radius": 0.2567177510360433,
+      "triangles": 13838
+    }
+  ],
+  "credit": {
+    "author": "luyssport (https://sketchfab.com/luyssport)",
+    "license": "CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)",
+    "source": "https://sketchfab.com/3d-models/che-1e529f4b8efc4f20925957a9a4208dcd",
+    "title": "cHe"
+  },
+  "paintMaterial": null,
+  "modifications": [
+    "Removed only static presentation clouds and drop-shadow planes",
+    "Preserved supplied hand-painted vehicle artwork and unlit material style",
+    "Normalized to +Y up / +Z forward, 2 metre length and floor0",
+    "Split the joined wheel mesh into four spatial tire groups, preserving UV and normal seams",
+    "Added independent front-steering and rolling pivots with measured radii",
+    "Re-encoded embedded textures as WebP quality 90 at at most 1024 pixels; simplified large surface meshes with Blender Decimate at ratio 0.65"
+  ],
+  "file": "che.glb",
+  "bytes": 3199540,
+  "sha256": "89d2bfe8653ad7a6c144636cad959de1d62c0d79a01c5f00ecba37566e3eaddf",
+  "images": 4,
+  "textureEncoding": "WebP quality 90, at most 1024 pixels",
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "animations": 0
+}

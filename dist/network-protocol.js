@@ -1,6 +1,6 @@
 /* Original game protocol, using NetplayJS's documented signaling wire format. */
 import {BODY_TYPES} from './bodies.js';
-export const NET_PROTOCOL=1,NET_BUILD='boost-circuit-1.7.0',SIGNAL_URL='wss://netplayjs.varunramesh.net/';
+export const NET_PROTOCOL=1,NET_BUILD='boost-circuit-1.8.0',SIGNAL_URL='wss://netplayjs.varunramesh.net/';
 export const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const MAX_PACKET=32768,INPUT_TIMEOUT=300,STATE_INTERVAL=1000/30;
 export function roomCode(random=crypto){const bytes=new Uint8Array(8);random.getRandomValues(bytes);return Array.from(bytes,n=>CODE_ALPHABET[n&31]).join('');}

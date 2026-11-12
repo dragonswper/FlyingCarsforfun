@@ -1,5 +1,9 @@
 # User-supplied model replacements
 
+## Octane, cHe, bike, C-17 and supplied ball — 1.8
+
+See [contact, camera and supplied-model release notes](contact-and-vehicle-update.md) for source credits, licenses, modifications, exact asset budgets, wheel preparation and reproduction commands. These new models are separate third-party artwork with their own licenses; their rendered garage thumbnails retain those artwork licenses.
+
 ## Bottled Car — 1.7
 
 **Bottled car**, by [Urizel](https://sketchfab.com/urizel). [Original model](https://sketchfab.com/3d-models/bottled-car-cd38a415db8a4607ab9dd3cc67d27462). The supplied GLB embeds the artist's attribution and [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) license. The adapted model and its rendered garage thumbnail retain that noncommercial license, separate from the game's MIT code license.

@@ -72,3 +72,8 @@ Important source differences are explicit. RLGym's older ceiling helper lists 20
 This is an analytic JavaScript solver, not Bullet/Unreal. The wall profile is faithful to the imported horizontal section, but floor/ceiling transitions, suspension, friction constraints, collision ordering and some flip/recovery behavior remain approximations. Wheel-down contact damping, lateral-grip tuning and the bot profiles are design parameters, not extracted official values. The original optional car bodies share the same collider for fair local play.
 
 Automated checks verify numeric conversions, jump/boost timing, box offsets, rounded boundaries, trajectory consistency, scores, four bot levels, shared prediction, stable long matches, FOV conversion, rebinding and settings structure. They do not establish bit-level parity or competitive bot rank. Managed browser tooling is unavailable, so interactive settings, real controllers/audio, rendered pixels and device FPS remain unverified. No native program or PC setting is required or changed.
+
+
+## Contact stability update — 1.8
+
+The published numeric constants are retained. The original analytic contact solver now uses persistent wheel-aligned contacts, multiple constraint passes, bounded orientation alignment and damped roof/bumper scrapes. [The implementation and verification notes](contact-and-vehicle-update.md#contact-changes) distinguish these solver choices from native source values. The ball model changes its artwork while retaining separate visual/physics radii and the prior rest height.

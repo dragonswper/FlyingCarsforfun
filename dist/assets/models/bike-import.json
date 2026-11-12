@@ -1,0 +1,55 @@
+{
+  "id": "bike",
+  "file": "bike.glb",
+  "sourceFile": "neo tokyo.obj",
+  "sourceBytes": 8163516,
+  "sourceSha256": "d86ecc56130bfb8ed6567a79b516e9f3ff08af287889b5f734bb81f6e94b5a4f",
+  "bytes": 2167168,
+  "sha256": "208c0953e8e388d36b4e7447f857d42bc94363c1690fe1cc37c2d1e04fbe86f5",
+  "sourceTriangles": 63024,
+  "triangles": 31512,
+  "drawBatches": 3,
+  "credit": {
+    "title": "Cyberpunk bike",
+    "author": "daCruz (https://sketchfab.com/daCruz)",
+    "license": "CC-BY-NC-4.0 (https://creativecommons.org/licenses/by-nc/4.0/)",
+    "source": "https://sketchfab.com/3d-models/cyberpunk-bike-efcf679a115c487face1adc2ce7e8b8c",
+    "concept": "Fernando Correa (https://www.artstation.com/artwork/8lWYdE)"
+  },
+  "visualLength": 2,
+  "wheels": [
+    {
+      "name": "F",
+      "position": [
+        0.003327552229166031,
+        0.30925628542900085,
+        0.6914243102073669
+      ],
+      "radius": 0.3099398532534838,
+      "front": true
+    },
+    {
+      "name": "R",
+      "position": [
+        -0.0020772761199623346,
+        0.309256374835968,
+        -0.6907435655593872
+      ],
+      "radius": 0.3093071443377858,
+      "front": false
+    }
+  ],
+  "paintMaterial": null,
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "modifications": [
+    "Normalized +Y up / +Z forward, two metre length and floor0",
+    "Retained the supplied vehicle design and named texture artwork",
+    "Reconstructed missing OBJ material links from supplied texture filenames; material mapping is a best-effort adaptation",
+    "Added separate rolling axles and independent front steering",
+    "Embedded WebP textures at at most1024 pixels; no runtime geometry decoder",
+    "Removed the duplicated flat-color outline shell that occluded the painted model",
+    "Retained the hand-painted atlas as an unlit material, including its colored lights"
+  ]
+}

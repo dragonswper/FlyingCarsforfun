@@ -1,0 +1,85 @@
+{
+  "id": "c17",
+  "file": "c17.glb",
+  "sourceFile": "Boeing C-17B Globemaster III.obj",
+  "sourceBytes": 18712591,
+  "sourceSha256": "435669489793b52e75e495e13561bf50bab929e9f7059caca8fd96ae58d4d495",
+  "bytes": 6745628,
+  "sha256": "c8bfafebc8f190e912900dd8d669b754cba5d624b8b94c73b52be9520067112a",
+  "sourceTriangles": 98590,
+  "triangles": 76570,
+  "drawBatches": 38,
+  "credit": {
+    "title": "Boeing C-17B Globemaster III",
+    "author": "Muhamad Mirza Arrafi (https://sketchfab.com/MirzaArrafiERV_45)",
+    "license": "CC-BY-4.0 (https://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/boeing-c-17b-globemaster-iii-2f58a20aa82f404889ff8870f14ddd67"
+  },
+  "visualLength": 2,
+  "wheels": [
+    {
+      "name": "F",
+      "position": [
+        1.0026127483797609e-08,
+        0.036401957273483276,
+        0.8855779767036438
+      ],
+      "radius": 0.03711790437058831,
+      "front": true
+    },
+    {
+      "name": "R1",
+      "position": [
+        0.13811559975147247,
+        0.031940657645463943,
+        0.22508053481578827
+      ],
+      "radius": 0.03276763950170405,
+      "front": false
+    },
+    {
+      "name": "L1",
+      "position": [
+        -0.13616736233234406,
+        0.03079940378665924,
+        0.22434395551681519
+      ],
+      "radius": 0.03157218741070483,
+      "front": false
+    },
+    {
+      "name": "R2",
+      "position": [
+        0.13773487508296967,
+        0.030306853353977203,
+        0.12456165254116058
+      ],
+      "radius": 0.03210399757689711,
+      "front": false
+    },
+    {
+      "name": "L2",
+      "position": [
+        -0.13449200987815857,
+        0.031038720160722733,
+        0.12478956580162048
+      ],
+      "radius": 0.03181282605057853,
+      "front": false
+    }
+  ],
+  "paintMaterial": null,
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "modifications": [
+    "Normalized +Y up / +Z forward, two metre length and floor0",
+    "Retained the supplied vehicle design and named texture artwork",
+    "Reconstructed missing OBJ material links from supplied texture filenames; material mapping is a best-effort adaptation",
+    "Added separate rolling axles and independent front steering",
+    "Embedded WebP textures at at most1024 pixels; no runtime geometry decoder",
+    "Simplified only meshes over5000 source faces at ratio0.65; removed empty OBJ placeholders",
+    "Batched body by material and welded repeated positions while retaining per-loop UVs; rebuilt smooth hull normals with45 degree sharp edges",
+    "Separated the rolling tire/hub regions from the fixed upper gear struts and measured actual axle radii"
+  ]
+}

@@ -31,7 +31,8 @@ export function stepCar(c,input,dt,unlimited=false){
   else if(speed*throttle<-.25&&!i.drift)acceleration=-Math.sign(speed)*C.brakeAccel;
   else acceleration=throttle*curve(THROTTLE_CURVE,Math.abs(speed));
   c.v.addScaledVector(forward,acceleration*dt);c.v.addScaledVector(right,-lateral*(1-Math.exp(-(18-16*c.handbrake)*dt)));
-  const yaw=i.steer*speed*curve(CURVATURE_CURVE,Math.abs(speed))*(1+c.handbrake*.55);c.q.premultiply(new Q().setFromAxisAngle(c.normal,yaw*dt));const correction=new Q().setFromUnitVectors(u,c.normal).multiply(c.q);c.q.slerp(correction,1-Math.exp(-18*dt));c.omega.multiplyScalar(.1);
+  const yaw=i.steer*speed*curve(CURVATURE_CURVE,Math.abs(speed))*(1+c.handbrake*.55);c.q.premultiply(new Q().setFromAxisAngle(c.normal,yaw*dt));const correction=new Q().setFromUnitVectors(UP.clone().applyQuaternion(c.q),c.normal).multiply(c.q),angle=c.q.angleTo(correction);c.q.rotateTowards(correction,Math.min(angle*(1-Math.exp(-18*dt)),C.maxAngularSpeed*dt));c.omega.multiplyScalar(.1);
+  if(c.normal.y<.99&&c.normal.y>=0)c.v.addScaledVector(c.normal,-3*dt);
  }else{
   c.airTime+=dt;
   if(c.flipTime>0){c.flipTime=Math.max(0,c.flipTime-dt);c.omega.x+=c.flipAxis.x*224*dt;c.omega.z+=c.flipAxis.z*260*dt;const elapsed=C.flipDuration-c.flipTime;if(elapsed>=.15&&(c.v.y<0||elapsed<.21))c.v.y*=Math.pow(.65,dt/C.step);}
@@ -52,9 +53,20 @@ export function stepCar(c,input,dt,unlimited=false){
  if(c.hasJumped&&!c.jumpActive){c.jumpEndTime+=dt;if(c.jumpEndTime>=C.doubleJumpWindow)c.canDouble=false;}
  if(c.boosting){c.v.addScaledVector(f,(c.grounded?C.boostAccel:C.boostAirAccel)*dt);if(!unlimited){c.boost=Math.max(0,c.boost-C.boostBurn*dt);if(c.boost<1e-9)c.boost=0;}}
  c.jumpHeld=i.jump;c.v.y-=C.gravity*dt;lengthClamp(c.v,C.maxSpeed);c.p.addScaledVector(c.v,dt);
- const {contact}=collideArena(c,C.carHeight,.05,true);
- if(contact&&c.noContact===0){const aligned=UP.clone().applyQuaternion(c.q).dot(contact);if(aligned>.2){c.grounded=true;c.normal.copy(contact);c.canDouble=false;c.hasJumped=false;c.jumpActive=false;c.airTime=0;c.recoverTime=0;c.flipTime=0;}else{c.grounded=false;c.recoverTime+=dt;if(c.recoverTime>.55){const correction=new Q().setFromUnitVectors(UP.clone().applyQuaternion(c.q),contact).multiply(c.q);c.q.slerp(correction,.08);}}}else c.grounded=false;
+ const {contact,contacts}=collideArena(c,C.carHeight,0,true);
+ if(contact&&c.noContact===0){const aligned=UP.clone().applyQuaternion(c.q).dot(contact);if(aligned>.55){c.grounded=true;c.normal.copy(contact);c.canDouble=false;c.hasJumped=false;c.jumpActive=false;c.airTime=0;c.recoverTime=0;c.flipTime=0;}else{
+  c.grounded=false;c.recoverTime+=dt;c.flipTime=0;c.omega.multiplyScalar(Math.exp(-18*dt));
+  // A roof/bumper scrape absorbs spin; it does not turn into a wheel landing or
+  // forcibly rotate the chassis upright and inject a new positional impulse.
+  const inverse=c.q.clone().invert(),inertia=new V(3/(C.hitboxHalfHeight**2+C.hitboxHalfLength**2),3/(C.hitboxHalfWidth**2+C.hitboxHalfLength**2),3/(C.hitboxHalfWidth**2+C.hitboxHalfHeight**2));
+  for(const {normal}of contacts){const normalSpeed=c.v.dot(normal),tangent=c.v.clone().addScaledVector(normal,-normalSpeed);c.v.addScaledVector(tangent,-(1-Math.exp(-3*dt)));
+   const local=normal.clone().applyQuaternion(inverse),point=new V(Math.abs(local.x)>1e-4?-Math.sign(local.x)*C.hitboxHalfWidth:0,Math.abs(local.y)>1e-4?C.hitboxOffsetUp-Math.sign(local.y)*C.hitboxHalfHeight:0,Math.abs(local.z)>1e-4?C.hitboxOffsetForward-Math.sign(local.z)*C.hitboxHalfLength:0);
+   c.omega.addScaledVector(point.cross(local).multiply(inertia),C.gravity*Math.max(0,normal.y)*dt/contacts.length);
+  }
+  if(aligned<-.9998&&!i.pitch&&!i.roll&&!i.steer&&c.v.lengthSq()<.04&&c.omega.lengthSq()<.16){const support=carSupport(c,contact),correction=new Q().setFromUnitVectors(UP.clone().applyQuaternion(c.q),contact.clone().negate()).multiply(c.q);c.q.rotateTowards(correction,C.maxAngularSpeed*dt);c.p.addScaledVector(contact,carSupport(c,contact)-support);c.omega.set(0,0,0);}
+ }}else{c.grounded=false;c.recoverTime=0;}
  if(wasGrounded&&!c.grounded&&!c.hasJumped)c.canDouble=true;
+ lengthClamp(c.omega,C.maxAngularSpeed);
  const speed=c.v.length();if(speed>=C.supersonicStart){c.supersonic=true;c.supersonicTime=0;}else if(c.supersonic){c.supersonicTime+=dt;if(speed<C.supersonicMaintain||c.supersonicTime>=C.supersonicGrace)c.supersonic=false;}
  if(!Number.isFinite(c.p.lengthSq()))spawnCar(c,0,c.team?46.08:-46.08,c.team?Math.PI:0);
 }

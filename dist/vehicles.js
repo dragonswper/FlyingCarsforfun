@@ -2,8 +2,19 @@
 import * as T from './vendor/three.module.js';
 import {C,curve,STEERING_CURVE} from './constants.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
+import {CUSTOM_BODY_FILES} from './bodies.js';
 let fennecTemplate=null,fennecPromise;
 let bottledTemplate=null,bottledPromise;
+const customTemplates=new Map(),customPromises=new Map();
+export function validateCustomRig(root){
+ if(!root.getObjectByName('Custom_Body'))throw new Error('The custom vehicle body is missing.');
+ let wheels=0;root.traverse(node=>{if(!node.name.startsWith('Steer_'))return;const spin=root.getObjectByName('Spin_'+node.name.slice(6));if(!spin||spin.parent!==node||!Number.isFinite(node.userData.rollingRadius)||node.userData.rollingRadius<=0)throw new Error('The custom vehicle wheel rig is invalid.');wheels++;});
+ if(wheels<2)throw new Error('The custom vehicle wheels are missing.');return true;
+}
+export function loadCustomBody(id,onProgress){
+ if(!Object.hasOwn(CUSTOM_BODY_FILES,id))return Promise.reject(new Error('Unknown vehicle.'));
+ if(!customPromises.has(id))customPromises.set(id,new GLTFLoader().loadAsync('./assets/models/'+CUSTOM_BODY_FILES[id],onProgress).then(gltf=>{validateCustomRig(gltf.scene);customTemplates.set(id,gltf.scene);return gltf.scene;}).catch(error=>{customPromises.delete(id);throw error;}));return customPromises.get(id);
+}
 export async function loadFennec(onProgress){
  if(!fennecPromise)fennecPromise=new GLTFLoader().loadAsync('./assets/models/fennec.glb',onProgress).then(gltf=>{validateFennecRig(gltf.scene);fennecTemplate=gltf.scene;return gltf.scene;});
  return fennecPromise;
@@ -59,6 +70,19 @@ export function makeBottledModel(color='#299bff',template=bottledTemplate){
  const wheelBase=wheels[0].pivot.position.z-wheels[2].pivot.position.z;
  return {kind:'bottled',root,visual,paint,chassis,wheels,wheelBase,flame,travel:0,lastSpeed:0,setColor(value){paint.color.set(value);}};
 }
+export function makeCustomModel(id,color='#299bff',template=customTemplates.get(id)){
+ if(!template)throw new Error('The selected vehicle has not loaded.');validateCustomRig(template);
+ const root=new T.Group();root.name=id+'_Vehicle';const visual=template.clone(true),materials=new Map();root.add(visual);visual.position.y=-C.carHeight;
+ visual.traverse(mesh=>{if(!mesh.isMesh)return;mesh.userData.sharedGeometry=true;mesh.castShadow=true;mesh.receiveShadow=true;
+  const copy=material=>{if(!materials.has(material)){const value=material.clone();for(const texture of Object.values(value))if(texture?.isTexture)texture.anisotropy=4;if(value.transparent){value.forceSinglePass=true;value.depthWrite=false;}materials.set(material,value);}return materials.get(material);};mesh.material=Array.isArray(mesh.material)?mesh.material.map(copy):copy(mesh.material);if((Array.isArray(mesh.material)?mesh.material:[mesh.material]).every(material=>material.transparent))mesh.castShadow=false;
+ });
+ const paint=[...materials.values()].find(material=>material.name==='Custom_Paint')||null;if(paint)paint.color.set(color);
+ const chassis=new T.Group();chassis.name='Custom_Suspension';const body=visual.getObjectByName('Custom_Body');body.parent.add(chassis);chassis.add(body);
+ const wheels=[];visual.traverse(node=>{if(node.name.startsWith('Steer_')){const name=node.name.slice(6);wheels.push({name,pivot:node,rolling:visual.getObjectByName('Spin_'+name),radius:node.userData.rollingRadius,front:node.userData.front===true||name[0]==='F',restY:node.position.y});}});
+ const front=wheels.filter(w=>w.front),rear=wheels.filter(w=>!w.front),mean=list=>list.reduce((sum,w)=>sum+w.pivot.position.z,0)/list.length,wheelBase=front.length&&rear.length?Math.abs(mean(front)-mean(rear)):1;
+ const flame=boostFlame(root);flame.name=id+'_Boost';if(id==='c17')flame.position.y=.15;
+ return {kind:id,root,visual,paint,chassis,wheels,wheelBase,flame,travel:0,lastSpeed:0,setColor(value){paint?.color.set(value);}};
+}
 export function animateVehicle(model,{speed=0,steer=0,dt=0,grounded=true,throttle=0}={}){
  if(dt<=0)return;dt=Math.min(dt,.1);speed=Number.isFinite(speed)?speed:0;steer=T.MathUtils.clamp(steer,-1,1);
  const response=1-Math.exp(-12*dt),baseAngle=steer*curve(STEERING_CURVE,Math.abs(speed))*Math.PI/180,wheelBase=model.wheelBase||1.095;
@@ -85,4 +109,7 @@ export function disposeFennecTemplate(){
 }
 export function disposeBottledTemplate(){
  if(!bottledTemplate)return;const geometries=new Set(),materials=new Set(),textures=new Set();bottledTemplate.traverse(object=>{if(object.geometry)geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material])if(material){materials.add(material);for(const value of Object.values(material))if(value?.isTexture)textures.add(value);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());bottledTemplate=null;bottledPromise=null;
+}
+export function disposeCustomTemplates(){
+ const geometries=new Set(),materials=new Set(),textures=new Set();for(const root of customTemplates.values())root.traverse(object=>{if(object.geometry)geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material])if(material){materials.add(material);for(const value of Object.values(material))if(value?.isTexture)textures.add(value);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());customTemplates.clear();customPromises.clear();
 }

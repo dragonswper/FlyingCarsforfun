@@ -90,6 +90,113 @@
         "Preserved the glass bottle, cork, tag, display feet and original texture artwork",
         "Re-encoded embedded textures as WebP quality 90 at their original dimensions and removed unused transmission texture"
       ]
+    },
+    {
+      "id": "octane",
+      "name": "Octane - Rocket League Car",
+      "file": "octane.glb",
+      "creator": "Jako",
+      "creatorUrl": "https://sketchfab.com/fairlight51",
+      "sourceUrl": "https://sketchfab.com/3d-models/octane-rocket-league-car-9910f0a5d158425bbc7deb60c7a81f69",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "providedBy": "User upload",
+      "sha256": "9fdde4d686d2f77d2b43e6567a0d64d4c03f48f3f735c7685e8ac2e2724bf434",
+      "bytes": 1999336,
+      "modifications": [
+        "Converted supplied FBX to a self-contained GLB",
+        "Relinked three supplied textures and omitted an absent optional normal map",
+        "Normalized +Y up / +Z forward, 1.8 metre length and floor0",
+        "Added separate rolling and front steering pivots with measured wheel radii",
+        "Preserved all source triangles and supplied materials; paint is independently tintable",
+        "Re-encoded textures as embedded WebP quality90 at at most1024 pixels"
+      ]
+    },
+    {
+      "id": "che",
+      "name": "cHe",
+      "file": "che.glb",
+      "creator": "luyssport",
+      "creatorUrl": "https://sketchfab.com/luyssport",
+      "sourceUrl": "https://sketchfab.com/3d-models/che-1e529f4b8efc4f20925957a9a4208dcd",
+      "license": "CC-BY-NC-SA-4.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-nc-sa/4.0/",
+      "providedBy": "User upload",
+      "sha256": "89d2bfe8653ad7a6c144636cad959de1d62c0d79a01c5f00ecba37566e3eaddf",
+      "bytes": 3199540,
+      "modifications": [
+        "Removed only static presentation clouds and drop-shadow planes",
+        "Preserved supplied hand-painted vehicle artwork and unlit material style",
+        "Normalized to +Y up / +Z forward, 2 metre length and floor0",
+        "Split the joined wheel mesh into four spatial tire groups, preserving UV and normal seams",
+        "Added independent front-steering and rolling pivots with measured radii",
+        "Re-encoded embedded textures as WebP quality 90 at at most 1024 pixels; simplified large surface meshes with Blender Decimate at ratio 0.65"
+      ]
+    },
+    {
+      "id": "bike",
+      "name": "Cyberpunk bike",
+      "file": "bike.glb",
+      "creator": "daCruz",
+      "creatorUrl": "https://sketchfab.com/daCruz",
+      "sourceUrl": "https://sketchfab.com/3d-models/cyberpunk-bike-efcf679a115c487face1adc2ce7e8b8c",
+      "license": "CC-BY-NC-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "providedBy": "User upload",
+      "sha256": "208c0953e8e388d36b4e7447f857d42bc94363c1690fe1cc37c2d1e04fbe86f5",
+      "bytes": 2167168,
+      "modifications": [
+        "Normalized +Y up / +Z forward, two metre length and floor0",
+        "Retained the supplied vehicle design and named texture artwork",
+        "Reconstructed missing OBJ material links from supplied texture filenames; material mapping is a best-effort adaptation",
+        "Added separate rolling axles and independent front steering",
+        "Embedded WebP textures at at most1024 pixels; no runtime geometry decoder",
+        "Removed the duplicated flat-color outline shell that occluded the painted model",
+        "Retained the hand-painted atlas as an unlit material, including its colored lights"
+      ]
+    },
+    {
+      "id": "c17",
+      "name": "Boeing C-17B Globemaster III",
+      "file": "c17.glb",
+      "creator": "Muhamad Mirza Arrafi",
+      "creatorUrl": "https://sketchfab.com/MirzaArrafiERV_45",
+      "sourceUrl": "https://sketchfab.com/3d-models/boeing-c-17b-globemaster-iii-2f58a20aa82f404889ff8870f14ddd67",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "providedBy": "User upload",
+      "sha256": "c8bfafebc8f190e912900dd8d669b754cba5d624b8b94c73b52be9520067112a",
+      "bytes": 6745628,
+      "modifications": [
+        "Normalized +Y up / +Z forward, two metre length and floor0",
+        "Retained the supplied vehicle design and named texture artwork",
+        "Reconstructed missing OBJ material links from supplied texture filenames; material mapping is a best-effort adaptation",
+        "Added separate rolling axles and independent front steering",
+        "Embedded WebP textures at at most1024 pixels; no runtime geometry decoder",
+        "Simplified only meshes over5000 source faces at ratio0.65; removed empty OBJ placeholders",
+        "Batched body by material and welded repeated positions while retaining per-loop UVs; rebuilt smooth hull normals with45 degree sharp edges",
+        "Separated the rolling tire/hub regions from the fixed upper gear struts and measured actual axle radii"
+      ]
+    },
+    {
+      "id": "rocket-ball",
+      "name": "Ball - Rocket League",
+      "file": "rocket-ball.glb",
+      "creator": "Unspecified in supplied archive",
+      "creatorUrl": null,
+      "sourceUrl": null,
+      "license": "Unspecified in supplied archive",
+      "licenseUrl": null,
+      "providedBy": "User upload",
+      "sha256": "24aca0dbee640b7679681c0512ce829d592753ccf3aab6c2324675a0acb6e0a8",
+      "bytes": 403716,
+      "modifications": [
+        "Baked source orientation and centered on fitted sphere center",
+        "Normalized the outermost vertex to unit collision radius; retained panel grooves",
+        "Relinked the supplied diffuse atlas and removed disconnected normal nodes and missing local image paths",
+        "Retained both panel and green light material groups; added subtle light emission",
+        "Reduced diffuse atlas to 1024 pixels and embedded as WebP quality 90"
+      ]
     }
   ]
 }

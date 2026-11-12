@@ -44,6 +44,9 @@ test('custom Bottled Car appearance survives the room handshake, both player per
  for(const peer of [p.host,p.guest]){assert.equal(peer.sim.cars[0].appearance.body,'bottled');assert.equal(peer.sim.cars[1].appearance.body,'bottled');assert.equal(peer.sim.cars[0].appearance.color,'#a985fc');assert.equal(peer.sim.cars[1].appearance.color,'#53dbbd');}
  const match=p.host.matchId;assert.equal(p.host.startMatch(),true);await settle();assert.notEqual(p.host.matchId,match);assert.equal(p.guest.matchId,p.host.matchId);assert.equal(p.guest.sim.cars[p.guest.sim.localPlayerId].appearance.body,'bottled');assert.deepEqual(p.errors,[]);
 });
+test('the new car, bike and plane choices survive private-match start and preserve host/guest ownership',async t=>{
+ for(const [hostBody,guestBody]of [['octane','che'],['bike','c17']]){const p=await pair(t,{mode:'doubles'},undefined,{host:{body:hostBody,paint:'violet'},guest:{body:guestBody,paint:'mint'}});await start(p);for(const peer of [p.host,p.guest]){assert.equal(peer.sim.cars[0].appearance.body,hostBody);assert.equal(peer.sim.cars[2].appearance.body,guestBody);assert.equal(peer.sim.cars[0].appearance.color,'#a985fc');assert.equal(peer.sim.cars[2].appearance.color,'#53dbbd');assert.equal(peer.sim.cars.filter(c=>c.bot).length,2);}assert.equal(p.guest.sim.localPlayerId,2);assert.deepEqual(p.errors,[]);p.host.close();p.guest.close();}
+});
 test('older game builds are rejected before any simulation starts',async t=>{
  const p=await pair(t,{},(packet,role)=>packet.t==='hello'&&role==='guest'?{...packet,build:'old-build'}:packet);assert.equal(p.host.closed,true);assert.equal(p.guest.closed,true);assert.ok(p.errors.some(e=>/versions differ/.test(e)));assert.equal(p.host.sim,undefined);
 });

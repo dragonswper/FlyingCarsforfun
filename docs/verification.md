@@ -4,7 +4,9 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**93 automated tests pass for version 1.7.0.**
+**114 automated tests pass for version 1.8.0.**
+
+The [1.8 verification notes](contact-and-vehicle-update.md#validation-and-limits) record the wall/landing reproductions, camera/input checks, new model imports, private-match appearance exchange and offline previews. Actual browser/GPU testing remains unavailable.
 
 `npm run check` parses every authored runtime module and JavaScript preparation script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
 
