@@ -96,3 +96,11 @@ Graphics now defaults to **Auto**, which adjusts resolution and seat detail when
 The pitch uses 35 draw submissions instead of 238. All boost pads render in three instanced submissions, and collision/goal particles share one bounded reusable mesh. Fixed-step pose interpolation smooths car, ball and replay motion across display refresh rates. Cars, wheels, physics, gameplay dimensions and saved career records are retained. Shader preparation happens before the lobby opens. Hidden tabs pause matches rather than building up catch-up work.
 
 These are measured reductions in rendering work, not a guaranteed frame-rate increase. All 43 automated checks pass; interactive browser performance remains unverified in this workspace. See [verification](docs/verification.md). Turn on **Settings → Performance display** to see approximate FPS on your device.
+
+## Core mechanics and settings
+
+The 1.4 update cross-checks the supplied RocketSim, RLBot-Beast, rl_ball_sym and RocketGPU repositories against rl.source.gs. It adds a collision-mesh-derived corner outline, offset Octane/Fennec contacts, source jump/boost timing, spin-aware ball friction, shared bounce prediction, proper goal/assist scoring and four bot behavior levels: Rookie, Pro, All-Star and Expert. The boost pickups are now spheres and still use three instanced draws.
+
+Settings is organized into Display, Camera, Controls and Audio. Camera includes **horizontal FOV**, distance/height in centimetres, angle and stiffness. Controls supports keyboard/mouse rebinding with conflict checks, steering/aerial sensitivity, deadzones and pitch inversion. Audio adds master volume. Preferences persist locally, and restoring camera/controls leaves career data intact.
+
+The physics remains an original browser implementation with documented approximations, rather than a claim of bit-identical native simulation. [Read the core source/value audit](docs/core-research.md). Native CUDA, Rust and RLBot installations are not required. All **65 automated tests** pass; interactive browser verification remains unavailable in the managed workspace.

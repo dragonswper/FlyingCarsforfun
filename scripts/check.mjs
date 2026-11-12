@@ -1,0 +1,2 @@
+import {readdirSync} from 'node:fs';import {spawnSync} from 'node:child_process';
+for(const dir of ['dist','scripts'])for(const name of readdirSync(new URL('../'+dir+'/',import.meta.url)))if(/\.(mjs|js)$/.test(name)){const file=new URL('../'+dir+'/'+name,import.meta.url),result=spawnSync(process.execPath,['--check',file.pathname],{stdio:'inherit'});if(result.status!==0)process.exit(result.status||1);}

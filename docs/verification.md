@@ -4,9 +4,9 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**43 automated tests pass.**
+**65 automated tests pass.**
 
-`npm run check` parses the nine authored runtime modules and the stadium import script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
+`npm run check` parses every authored runtime module and JavaScript preparation script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
 
 Coverage includes arena/pad dimensions, acceleration/reverse/braking, speed caps, fuel consumption, variable-height jumping, double jump/dodge, aerial pitch, floor/wall/corner/ceiling bounces, real oriented car-ball contact, boost refill/recharge, full-ball goal crossing, wide/high misses, kickoff clock, zero-time live ball, overtime/results, training progression, bounded replays, finite long-running bot matches, wall driving, demolition/respawn, own-goal routing regression, practice reset restrictions, both vehicle geometries, original ball and calibrated pitch geometry, local asset resolution, keyboard/mouse clearing and standard gamepad button mappings.
 
@@ -50,3 +50,9 @@ Measured structural changes, using the same Node/Three.js scene construction bef
 These are geometry/submission counts, not GPU timing or FPS measurements. Stadium simplification was inspected in an offline Blender render. Browser tools (`cua_repl.js` and `open_in_codex`) remain absent from the managed workspace, so no alternative browser controller or preview server was started. Actual frame rate, first-use shader behavior and interactive controls must still be checked on a player's browser.
 
 Auto starts with the simplified stadium, no multisample antialiasing, no realtime shadows and full CSS-size resolution. It steps resolution/detail down after sustained overload and recovers slowly; hidden-tab gaps are ignored. Balanced fixes that starting profile. Low fixes a 0.75 pixel ratio and hides seats. High loads the original detailed stadium, caps pixel ratio at 1.5 and uses a 1024-pixel realtime shadow map. Car/ball contact shadows remain available in the lower modes. The game exposes read-only `boostCircuit.getPerformance()` diagnostics for mode, render calls, triangles, pixel ratio and approximate FPS.
+
+## Core mechanics and settings checks — 12 November 2026
+
+Twenty-two new checks independently exercise source unit conversions, exact boost timing, jump hold/second-jump deadlines, Octane offsets, mesh-derived corner boundaries, live/predicted trajectory agreement, rolling/spin behavior, pickup cylinder heights, goal/assist scoring, supersonic hysteresis, four bot profiles, defensive priority, teammate rotations, cached predictions, finite matches, FOV across aspect ratios, preference bounds, keyboard/mouse rebinding, controller sensitivity/deadzones and settings accessibility links. Existing tests were updated where they asserted old rounded constants or throttle-based dodging.
+
+All 65 tests pass. With the more accurate outline and spherical pickups, the pitch now uses 15 pre-cull draw submissions (including all 34 pickups), with zero pitch shadow casters. An imported corner profile replaces a guessed boundary; both stadium variants were recalibrated to the selected 20.48 m ceiling. Native source notices and the numeric/source audit are included. The automated checks remain headless; browser interaction, controller hardware, audio, GPU rendering and FPS have not been measured.

@@ -30,8 +30,8 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "providedBy": "User upload",
-      "sha256": "00b0255572e6e413110e260a26fcabffc3a6a1ddc75e712582b67a669841c3a0",
-      "bytes": 21002128,
+      "sha256": "6e21b6b96663d30f0d16292cbbb92b831c6c7ecced40af4bf186de63beae2621",
+      "bytes": 21003868,
       "modifications": [
         "Baked scene transforms and adapted orientation and proportions to the game arena",
         "Retained stadium architecture, trophy displays and eight embedded banner textures",
@@ -39,7 +39,8 @@
         "Reassigned placeholder colors to steel, concrete, gold and blue/orange stadium materials",
         "Removed coincident duplicate and underground stray parts",
         "Merged static meshes by material and spatial sector; quantized geometry without external decoders",
-        "Added reduced seat detail in low graphics mode"
+        "Added reduced seat detail in low graphics mode",
+        "Updated ceiling calibration to the verified 20.48 metre arena height"
       ]
     },
     {
@@ -52,8 +53,8 @@
       "license": "CC-BY-4.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
       "providedBy": "User upload",
-      "sha256": "34adf3991e90405db7743e0129d2b16458ce3e1612ad91c365bf14472beae5e1",
-      "bytes": 12473572,
+      "sha256": "27274529973bd927c47ad626533e999765152acd24114ef819488313df46ddd1",
+      "bytes": 12472508,
       "modifications": [
         "Baked scene transforms and adapted orientation and proportions to the game arena",
         "Retained stadium architecture, trophy displays and eight embedded banner textures",
@@ -65,7 +66,8 @@
         "Retained all stadium batches, materials, eight banner textures and calibration nodes",
         "Applied per-part transforms and offline mesh simplification for browser play",
         "Seats simplified more aggressively than architecture; banner surfaces retained",
-        "Original full-detail model remains available in High graphics"
+        "Original full-detail model remains available in High graphics",
+        "Updated ceiling calibration to the verified 20.48 metre arena height"
       ]
     }
   ]

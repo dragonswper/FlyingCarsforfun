@@ -1,5 +1,6 @@
 /* Runtime adapters for the supplied Fennec. Wheel motion is procedural, not an authored clip. */
 import * as T from './vendor/three.module.js';
+import {C,curve,STEERING_CURVE} from './constants.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 let fennecTemplate=null,fennecPromise;
 export async function loadFennec(onProgress){
@@ -20,7 +21,7 @@ function boostFlame(root){
 }
 export function makeFennecModel(color='#299bff',template=fennecTemplate){
  if(!template)throw new Error('The Fennec model has not loaded.');validateFennecRig(template);
- const root=new T.Group();root.name='Fennec_Vehicle';const visual=template.clone(true),materials=new Map();root.add(visual);
+ const root=new T.Group();root.name='Fennec_Vehicle';const visual=template.clone(true),materials=new Map();root.add(visual);visual.position.y=.24-C.carHeight;
  visual.traverse(mesh=>{
   if(!mesh.isMesh)return;
   mesh.userData.sharedGeometry=true;mesh.castShadow=true;mesh.receiveShadow=true;
@@ -34,7 +35,7 @@ export function makeFennecModel(color='#299bff',template=fennecTemplate){
 }
 export function animateVehicle(model,{speed=0,steer=0,dt=0,grounded=true,throttle=0}={}){
  if(dt<=0)return;dt=Math.min(dt,.1);speed=Number.isFinite(speed)?speed:0;steer=T.MathUtils.clamp(steer,-1,1);
- const response=1-Math.exp(-12*dt),baseAngle=steer*.43/(1+Math.abs(speed)*.025),wheelBase=1.095;
+ const response=1-Math.exp(-12*dt),baseAngle=steer*curve(STEERING_CURVE,Math.abs(speed))*Math.PI/180,wheelBase=1.095;
  for(const wheel of model.wheels){
   const spinSpeed=grounded?speed:Math.abs(throttle)>.05?throttle*Math.max(6,Math.abs(speed)):speed;
   wheel.rolling.rotation.x=(wheel.rolling.rotation.x+spinSpeed*dt/(wheel.radius||.235))%(Math.PI*2);

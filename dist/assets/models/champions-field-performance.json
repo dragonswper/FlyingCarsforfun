@@ -2,9 +2,9 @@
   "source": "champions-field.glb",
   "file": "champions-field-performance.glb",
   "sourceTriangles": 769755,
-  "triangles": 268278,
-  "bytes": 12473572,
-  "sha256": "34adf3991e90405db7743e0129d2b16458ce3e1612ad91c365bf14472beae5e1",
+  "triangles": 268285,
+  "bytes": 12472508,
+  "sha256": "27274529973bd927c47ad626533e999765152acd24114ef819488313df46ddd1",
   "modifications": [
     "Retained all stadium batches, materials, eight banner textures and calibration nodes",
     "Applied per-part transforms and offline mesh simplification for browser play",
