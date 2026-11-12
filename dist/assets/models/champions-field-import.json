@@ -1,0 +1,83 @@
+{
+  "sourceMeshes": 2751,
+  "sourceTriangles": 826720,
+  "removedPitchMeshes": 11,
+  "removedDuplicates": 4,
+  "removedStrays": 6,
+  "retainedSourceMeshes": 2730,
+  "drawBatches": 105,
+  "triangles": 773516,
+  "vertices": 637685,
+  "bytes": 21002128,
+  "sourceBytes": 38689632,
+  "sha256": "00b0255572e6e413110e260a26fcabffc3a6a1ddc75e712582b67a669841c3a0",
+  "sourceSha256": "67f26342f465170743cbb0e091cc289d8fda112ccb66d2c26455f2e38a8f04d4",
+  "scale": [
+    22.29042861185485,
+    20.86398950814822,
+    18.439074704182502
+  ],
+  "sourceFloor": 0.03372559324,
+  "landmarks": {
+    "Pitch_Center": [
+      0,
+      0,
+      0
+    ],
+    "Pitch_Side_Left": [
+      -40.96,
+      0,
+      0
+    ],
+    "Pitch_Side_Right": [
+      40.96,
+      0,
+      0
+    ],
+    "Pitch_Ceiling": [
+      0,
+      20.44,
+      0
+    ],
+    "Goal_Blue_Left": [
+      -8.92755,
+      0,
+      -51.2
+    ],
+    "Goal_Blue_Left_Top": [
+      -8.92755,
+      6.42775,
+      -51.2
+    ],
+    "Goal_Blue_Right": [
+      8.92755,
+      0,
+      -51.2
+    ],
+    "Goal_Blue_Right_Top": [
+      8.92755,
+      6.42775,
+      -51.2
+    ],
+    "Goal_Orange_Left": [
+      -8.92755,
+      0,
+      51.2
+    ],
+    "Goal_Orange_Left_Top": [
+      -8.92755,
+      6.42775,
+      51.2
+    ],
+    "Goal_Orange_Right": [
+      8.92755,
+      0,
+      51.2
+    ],
+    "Goal_Orange_Right_Top": [
+      8.92755,
+      6.42775,
+      51.2
+    ]
+  }
+}

@@ -19,6 +19,28 @@
         "Created independent steering and rolling pivots for four wheels",
         "Added procedural rolling, front steering and chassis suspension; no animation clips were supplied"
       ]
+    },
+    {
+      "id": "champions-field",
+      "name": "Champions Field - Rocket League Stadium",
+      "file": "champions-field.glb",
+      "creator": "Prabhu Ram / virtualmakes",
+      "creatorUrl": "https://sketchfab.com/virtualmakes",
+      "sourceUrl": "https://sketchfab.com/3d-models/champions-field-rocket-league-stadium-6ea5ee0502ae432fbac3a4f8aaab61a5",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "providedBy": "User upload",
+      "sha256": "00b0255572e6e413110e260a26fcabffc3a6a1ddc75e712582b67a669841c3a0",
+      "bytes": 21002128,
+      "modifications": [
+        "Baked scene transforms and adapted orientation and proportions to the game arena",
+        "Retained stadium architecture, trophy displays and eight embedded banner textures",
+        "Replaced cinematic inner pitch and its outer shell with collision-aligned turf, ramps, walls, goals and boost pads",
+        "Reassigned placeholder colors to steel, concrete, gold and blue/orange stadium materials",
+        "Removed coincident duplicate and underground stray parts",
+        "Merged static meshes by material and spatial sector; quantized geometry without external decoders",
+        "Added reduced seat detail in low graphics mode"
+      ]
     }
   ]
 }

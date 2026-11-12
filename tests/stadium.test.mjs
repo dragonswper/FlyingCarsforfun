@@ -1,0 +1,18 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import crypto from 'node:crypto';
+import * as T from '../dist/vendor/three.module.js';import {GLTFLoader} from '../dist/vendor/GLTFLoader.js';
+import {C} from '../dist/physics.js';import {validateStadium,setStadiumQuality} from '../dist/stadium.js';import {buildArena} from '../dist/scene.js';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url)),bytes=read('dist/assets/models/champions-field.glb'),json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12))),report=JSON.parse(read('dist/assets/models/champions-field-import.json'));
+const loader=new GLTFLoader();loader.register(()=>({name:'HEADLESS_TEXTURES',loadTexture(){return Promise.resolve(new T.Texture());}}));const gltf=await new Promise((r,j)=>loader.parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'',r,j));gltf.scene.updateMatrixWorld(true);
+test('Champions Field is a self-contained, size-bounded GLB with embedded banners and retained architecture',()=>{
+ assert.equal(bytes.toString('ascii',0,4),'glTF');assert.equal(bytes.readUInt32LE(8),bytes.length);assert.ok(bytes.length<25*1024*1024);assert.equal(json.images.length,8);for(const image of json.images)assert.ok(image.bufferView!==undefined&&!image.uri);for(const b of json.buffers)assert.ok(!b.uri);assert.deepEqual(json.extensionsRequired,['KHR_mesh_quantization']);assert.ok(report.retainedSourceMeshes>2700);assert.ok(report.triangles>750000);assert.ok(json.meshes.length<128);assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'),report.sha256);
+});
+test('Three.js loads quantized stadium geometry with valid indices, normals and a clear playing volume',()=>{
+ let triangles=0,obstructions=0;const point=new T.Vector3(),normal=new T.Vector3();gltf.scene.traverse(o=>{if(!o.isMesh)return;const g=o.geometry,p=g.attributes.position,n=g.attributes.normal;assert.ok(p.count<65536);for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);assert.ok(point.toArray().every(Number.isFinite));normal.fromBufferAttribute(n,i);assert.ok(normal.toArray().every(Number.isFinite));if(Math.abs(point.x)<C.halfWidth-C.ramp&&Math.abs(point.z)<C.halfLength-C.ramp&&point.y>.1&&point.y<C.height+.5)obstructions++;}for(const index of g.index.array)assert.ok(index<p.count);triangles+=g.index.count/3;});assert.equal(triangles,report.triangles);assert.equal(obstructions,0,'Architecture must not cover or intrude into the playable pitch');
+});
+test('stadium calibration and the rendered turf/boost pads share the existing physics dimensions',()=>{
+ assert.equal(validateStadium(gltf.scene),true);const marker=gltf.scene.getObjectByName('Goal_Blue_Left');marker.position.x+=1;assert.throws(()=>validateStadium(gltf.scene),/calibration/);marker.position.x-=1;
+ const context=new Proxy({},{get:()=>()=>{}});globalThis.document={createElement:()=>({getContext:()=>context})};try{const pitch=buildArena(new T.Scene()),box=new T.Box3().setFromObject(pitch.field);assert.ok(Math.abs(box.max.x-C.halfWidth)<.001);assert.ok(Math.abs(box.max.z-C.halfLength)<.001);assert.ok(Math.abs(box.min.y)<.001);assert.equal(pitch.pads.length,34);}finally{delete globalThis.document;}
+});
+test('low graphics hides stadium seats and high graphics restores them',()=>{
+ const seats=[];gltf.scene.traverse(o=>{if(o.isMesh&&o.userData.detail==='seats')seats.push(o);});assert.ok(seats.length>0);setStadiumQuality(gltf.scene,'low');assert.ok(seats.every(o=>!o.visible));setStadiumQuality(gltf.scene,'high');assert.ok(seats.every(o=>o.visible));
+});

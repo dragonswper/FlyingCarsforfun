@@ -1,6 +1,7 @@
-/* Procedural scene plus adapters for user-supplied vehicle/stadium models. */
+/* Champions Field architecture with a collision-aligned pitch and animated Fennec vehicles. */
 import * as T from './vendor/three.module.js';
 import { C, createPads, clamp } from './physics.js';
+import { loadChampionsField, setStadiumQuality } from './stadium.js';
 import { loadFennec, makeFennecModel, animateVehicle, disposeVehicle, disposeFennecTemplate } from './vehicles.js';
 const v=(x,y,z)=>new T.Vector3(x,y,z);
 const material=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.55,metalness:.18,...extra});
@@ -63,10 +64,11 @@ function roundedRamp(scene,a,b,mat){
  for(let i=0;i<=12;i++){const t=i/12*Math.PI/2,d=C.ramp*(1-Math.sin(t)),height=C.ramp*(1-Math.cos(t));for(const p of [a,b])vertices.push(p.x+normal.x*d,height,p.z+normal.z*d);if(i<12){const n=i*2;indices.push(n,n+2,n+1,n+1,n+2,n+3);}}
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setIndex(indices);g.computeVertexNormals();const o=mesh(scene,g,mat);o.castShadow=false;return o;
 }
-export function buildArena(scene){
+export function buildArena(parent){
+ const scene=new T.Group();scene.name='Calibrated_Pitch';parent.add(scene);
  const floorMat=material('#ffffff',{map:fieldTexture(),roughness:.95,metalness:0}),shape=new T.Shape();polygon.forEach(([x,z],i)=>i?shape.lineTo(x,z):shape.moveTo(x,z));shape.closePath();const g=new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);const pos=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<pos.count;i++)uv.setXY(i,(pos.getX(i)+C.halfWidth)/(2*C.halfWidth),(C.halfLength-pos.getZ(i))/(2*C.halfLength));uv.needsUpdate=true;
  const floor=mesh(scene,g,floorMat);floor.castShadow=false;
- const dark=material('#101d2c',{roughness:.7}),concrete=material('#263748',{roughness:.8}),glass=new T.MeshPhysicalMaterial({color:'#b5d9ee',transparent:true,opacity:.065,roughness:.12,metalness:.1,side:T.DoubleSide,depthWrite:false}),rampMat=material('#37585e',{roughness:.6,side:T.DoubleSide});
+ const dark=material('#101d2c',{roughness:.7}),glass=new T.MeshPhysicalMaterial({color:'#b5d9ee',transparent:true,opacity:.065,roughness:.12,metalness:.1,side:T.DoubleSide,depthWrite:false}),rampMat=material('#37585e',{roughness:.6,side:T.DoubleSide});
  box(scene,142,1,157,[0,-.65,0],dark);
  const wallSegments=[];
  for(let i=0;i<polygon.length;i++){
@@ -91,34 +93,18 @@ export function buildArena(scene){
   scene.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(points),netMat));
   box(scene,16,.14,.35,[0,C.goalHeight+.25,z],dark);
  }
- // Stadium bowl: stepped decks, luminous fascia, and instanced crowd seats.
- const seatGeo=new T.BoxGeometry(.38,.45,.36),seatMat=material('#c4d6e7',{roughness:1}),crowd=new T.InstancedMesh(seatGeo,seatMat,8000);let seat=0;const matrix=new T.Matrix4(),color=new T.Color();
- for(let side=0;side<8;side++){
-  const a=v(...[polygon[side][0],0,polygon[side][1]]),b=v(polygon[(side+1)%8][0],0,polygon[(side+1)%8][1]),dir=b.clone().sub(a).normalize(),out=v(dir.z,0,-dir.x);if(out.dot(a)<0)out.negate();const len=a.distanceTo(b);
-  for(let tier=0;tier<5;tier++){
-   const center=a.clone().add(b).multiplyScalar(.5).addScaledVector(out,4+tier*2.2);const step=box(scene,len+3,1.3,2.4,[center.x,4+tier*2.1,center.z],tier%2?dark:concrete);step.rotation.y=-Math.atan2(dir.z,dir.x);
-   for(let row=0;row<2;row++)for(let n=0;n<Math.floor(len/.65);n++){
-    if(seat>=8000)break;const p=a.clone().addScaledVector(dir,.4+n*.65).addScaledVector(out,3.5+tier*2.2+row*.65);p.y=4.9+tier*2.1;matrix.makeTranslation(p.x,p.y,p.z);crowd.setMatrixAt(seat,matrix);color.setHSL((n*17+tier*41+side*27)%360/360,.35,.25+(n%3)*.1);crowd.setColorAt(seat,color);seat++;
-   }
-  }
-  const aTop=a.clone().addScaledVector(out,15).setY(18),bTop=b.clone().addScaledVector(out,15).setY(18);tube(scene,aTop,bTop,.2,dark);tube(scene,aTop.clone().setY(17),bTop.clone().setY(17),.065,material('#9cdfff',{emissive:'#5eb7e9',emissiveIntensity:1.3}));
- }
- crowd.count=seat;crowd.instanceMatrix.needsUpdate=true;scene.add(crowd);
- // Original city silhouettes beyond the stadium.
- let seed=22;for(let i=0;i<65;i++){seed=(seed*1664525+1013904223)>>>0;const angle=i/65*Math.PI*2,height=12+seed%40,dist=115+(seed%25);const m=box(scene,5+seed%7,height,5+seed%8,[Math.sin(angle)*dist,height/2-1,Math.cos(angle)*dist],material(i%2?'#1f3349':'#293e55',{roughness:1}));m.castShadow=false;}
- for(const x of [-49,49]){box(scene,.4,.4,104,[x,24,0],dark);for(let z=-40;z<=40;z+=16){const lamp=box(scene,1.4,.2,4,[x,23.8,z],new T.MeshBasicMaterial({color:'#d1ecff'}));lamp.rotation.z=x>0?.4:-.4;}}
  const pads=createPads().map(p=>{
   const root=new T.Group();root.position.copy(p.p);scene.add(root);const radius=p.big?.78:.36;
   const base=mesh(root,new T.CylinderGeometry(radius*1.25,radius*1.3,.08,12),dark,[0,-.02,0]);base.castShadow=false;
   const ring=mesh(root,new T.TorusGeometry(radius,.045,5,24),material('#ffd17a',{emissive:'#ffb444',emissiveIntensity:1.8}),[0,.06,0],[Math.PI/2,0,0]);
   const orb=mesh(root,new T.OctahedronGeometry(p.big?.35:.14),material('#ffe4a7',{emissive:'#ffbb4b',emissiveIntensity:2}),[0,p.big?.55:.22,0]);orb.castShadow=false;return{root,ring,orb};
  });
- return {pads,crowdCount:seat};
+ return {pads,root:scene,field:floor};
 }
 export class GameView{
  constructor(canvas){
   this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
-  this.scene=new T.Scene();this.scene.background=new T.Color('#192e49');this.scene.fog=new T.Fog('#293e56',100,225);
+  this.scene=new T.Scene();this.scene.background=new T.Color('#192e49');this.scene.fog=new T.Fog('#293e56',140,310);
   this.camera=new T.PerspectiveCamera(85,1,.08,360);this.camera.position.set(4,4,-12);this.scene.add(new T.HemisphereLight('#c2e9ff','#192c35',2.0));
   const sun=new T.DirectionalLight('#dcecff',2.1);sun.position.set(-35,65,-20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-64,right:64,top:70,bottom:-70,near:1,far:155});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;this.scene.add(sun);this.sun=sun;
   const warm=new T.DirectionalLight('#ffb778',.65);warm.position.set(30,18,65);this.scene.add(warm);
@@ -127,8 +113,11 @@ export class GameView{
   this.cars=new Map();this.particles=[];this.cameraMode=true;this.look=new T.Vector3();this.menuTime=0;this.spin=0;this.resize();
  }
  resize(){const w=window.innerWidth,h=window.innerHeight;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
- quality(level){this.renderer.setPixelRatio(level==='low'?1:Math.min(window.devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=level!=='low';this.resize();}
- async loadAssets(onProgress){await loadFennec(onProgress);}
+ quality(level){this.qualityLevel=level;setStadiumQuality(this.stadium,level);this.renderer.setPixelRatio(level==='low'?1:Math.min(window.devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=level!=='low';this.resize();}
+ async loadAssets(onProgress){
+  const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total});
+  const [,stadium]=await Promise.all([loadFennec(progress('vehicle')),loadChampionsField(progress('stadium'))]);this.stadium=stadium;this.scene.add(stadium);setStadiumQuality(stadium,this.qualityLevel||'high');
+ }
  sync(sim,paint='#299bff',body='fennec'){
   for(const c of this.cars.values()){this.scene.remove(c.root);disposeVehicle(c);}this.cars.clear();
   for(const car of sim.cars){const chosen=car.id===0?body:'fennec',color=car.id===0?paint:teamColors[car.team];const model=chosen==='fennec'?makeFennecModel(color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
