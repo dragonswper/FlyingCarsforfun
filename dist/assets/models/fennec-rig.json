@@ -1,0 +1,71 @@
+{
+  "name": "Fennec",
+  "source": "fennec-rocket-league-car.zip (user supplied)",
+  "format": "glTF 2.0 binary",
+  "unit": "metres",
+  "forward": "+Z",
+  "up": "+Y",
+  "bodyNode": "Fennec_Body",
+  "paintMaterial": "Fennec_Paint",
+  "wheels": [
+    {
+      "name": "RL",
+      "steeringNode": "Steer_RL",
+      "rollingNode": "Spin_RL",
+      "meshNode": "Wheel_RL",
+      "front": false,
+      "radius": 0.17219999198900932,
+      "position": [
+        -0.38787490129470825,
+        -0.06612778455018997,
+        -0.5476621389389038
+      ]
+    },
+    {
+      "name": "RR",
+      "steeringNode": "Steer_RR",
+      "rollingNode": "Spin_RR",
+      "meshNode": "Wheel_RR",
+      "front": false,
+      "radius": 0.17219999198900932,
+      "position": [
+        0.38921430706977844,
+        -0.06612778455018997,
+        -0.5465794801712036
+      ]
+    },
+    {
+      "name": "FL",
+      "steeringNode": "Steer_FL",
+      "rollingNode": "Spin_FL",
+      "meshNode": "Wheel_FL",
+      "front": true,
+      "radius": 0.15980912002859227,
+      "position": [
+        -0.3729214668273926,
+        -0.08019085973501205,
+        0.5483466386795044
+      ]
+    },
+    {
+      "name": "FR",
+      "steeringNode": "Steer_FR",
+      "rollingNode": "Spin_FR",
+      "meshNode": "Wheel_FR",
+      "front": true,
+      "radius": 0.15980912002859227,
+      "position": [
+        0.3840793967247009,
+        -0.08019085973501205,
+        0.545894980430603
+      ]
+    }
+  ],
+  "modifications": [
+    "Baked FBX transforms and normalized to 1.8 m body length",
+    "Relinked supplied textures and reduced them to at most 1024 px",
+    "Added steering and rolling pivots for all four wheels",
+    "Embedded all textures in GLB; no external asset requests"
+  ],
+  "animationClips": []
+}
