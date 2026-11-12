@@ -4,7 +4,7 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**70 automated tests pass.**
+**86 automated tests pass.**
 
 `npm run check` parses every authored runtime module and JavaScript preparation script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
 
@@ -64,3 +64,15 @@ Five additional behavior tests exercise separate Exhibition/Training selections,
 The reviewed screenshots and actual recreated components are listed in [UI reference notes](ui-references.md). The requested Game UI Database page returned HTTP 403 and the web tool reported a robots exclusion, so those specific tabs were not inspected. Eight accessible public Rocket League screenshots from Interface In Game were downloaded to scratch and visually inspected; none are included as runtime screenshots/backgrounds.
 
 The managed `cua_repl.js`/browser-control tool is still absent. No substitute controller, browser installation or preview server was used. Interactive CSS layout, visual equivalence, real WebGL frame rate and hardware behavior remain **unverified**. Three.js projection calculations were checked at 1920×1080, 1280×720 and 390×844 to keep the showroom car in view; these calculations are not rendered UI screenshots.
+
+## Multiplayer checks — 12 November 2026
+
+Sixteen additional tests cover code generation/normalization, input validation, duplicate/stale input handling, queue bounds, room readiness, explicit host authority, human-slot ownership in all three room modes, game-build rejection, guest driving, corrupt/stale snapshots, prediction/reconciliation, remote-pose interpolation, kickoff teleports, scores/results, pause/resume, rematches, disconnect cleanup and guest-specific HUD data. A deterministic ten-second test adds one-way delay, jitter, datagram loss and reordered snapshots and checks finite output, bounded queues and prediction error. Transport tests cover early ICE candidates, channel delivery rules, malformed/oversized packets, backpressure and resource release.
+
+The optional [live network check](../scripts/check-live-multiplayer.mjs) uses `werift 0.27.0`, `ws 8.22.2` and `https-proxy-agent 7.0.6` installed only under a scratch directory in the cloud workspace. No browser or system package was installed. It connects two actual WebRTC peers through the public NetplayJS signaling service, using same-container host ICE candidates for the data route. It checks room-code matching, the version handshake, readiness, host starts, guest input ownership, synchronized state, prediction, host pause/resume, final scores, rematches and disconnect cleanup. The test dependencies are optional and are not shipped with the game or required by `npm test`.
+
+One repeated live run exposed the reliable control channel delivering a hello before the realtime channel finished opening. The transport now queues early packets until both channels are open and its own hello has been sent; a regression test covers the ordering. Subsequent real-peer checks are recorded in the multiplayer release notes. This is a tested WebRTC data connection, not a browser-rendering test or a test between independent home networks. Real browser input, GPU rendering, NAT/firewall behavior and the external relay service remain outside the verified coverage.
+
+The hosted page returned HTTP 200 under the owner's existing access token, with no Content-Security-Policy or Permissions-Policy header observed. At that verification, Site access was owner-private: a multiplayer room code does not grant website access to a friend. Sharing changes require the owner's choice. All 86 automated checks pass with no production dependency installation.
+
+Three live checks after the startup fix passed. The last two completed 715 and 717 simulation ticks, acknowledged 712 and 714 guest input frames before rematch, and exchanged 464 and 462 realtime packets respectively. These are packet/behavior checks, not GPU FPS measurements.

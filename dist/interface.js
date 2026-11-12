@@ -1,6 +1,6 @@
 import {Vector3} from './vendor/three.module.js';
 
-export const driverName=car=>car?.id===0?'YOU':car?.team?(car.id===1?'ACE':'FLUX'):'NOVA';
+export const driverName=(car,localId=0)=>car?.id===localId?'YOU':car?.networkRole==='host'?'HOST':car?.networkRole==='guest'?'GUEST':car?.team?([1,2].includes(car.id)?'ACE':'FLUX'):'NOVA';
 
 // Keep the two local mode families separate while retaining the last selection.
 export function setupLobby(settings,{save,sync},root=document){
@@ -10,6 +10,7 @@ export function setupLobby(settings,{save,sync},root=document){
  const rows=[...root.querySelectorAll('.main-menu .menu-row')];
  const help={
   'open-play':'Play an exhibition match against bots.',
+  'open-multiplayer':'Host a private match or join a friend with a room code.',
   'open-training':'Practice freely or work on shooting, aerials and saves.',
   'garage-button':'Customize your vehicle.',
   'career-button':'View your local stats and recent matches.',
@@ -44,10 +45,10 @@ export class NameplateLayer{
   const {width,height}=view.viewport;
   for(let i=0;i<this.labels.length;i++){
    const label=this.labels[i],car=sim.cars[i],model=car&&view.cars.get(car.id);
-   if(!enabled||!model?.root.visible||(!replay&&car.id===0)){if(!label.hidden)label.hidden=true;continue;}
+   if(!enabled||!model?.root.visible||(!replay&&car.id===(view.localPlayerId||0))){if(!label.hidden)label.hidden=true;continue;}
    this.point.copy(model.root.position);this.point.y+=.95;this.point.project(view.camera);
    if(this.point.z< -1||this.point.z>1||Math.abs(this.point.x)>1||Math.abs(this.point.y)>1){if(!label.hidden)label.hidden=true;continue;}
-   const name=driverName(car);if(label.textContent!==name)label.textContent=name;
+   const name=driverName(car,view.localPlayerId||0);if(label.textContent!==name)label.textContent=name;
    label.classList.toggle('orange-name',car.team===1);if(label.hidden)label.hidden=false;
    label.style.transform=`translate3d(${(this.point.x*.5+.5)*width}px,${(-this.point.y*.5+.5)*height}px,0) translate(-50%,-100%)`;
   }

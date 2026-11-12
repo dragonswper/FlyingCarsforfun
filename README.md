@@ -8,7 +8,7 @@ An original browser-native 3D car-soccer recreation inspired by Rocket League, w
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
-The Sites link is owner-private. All rendering and physics run on the player's device. No game installation, cloud GPU, account or executable is required. Desktop keyboard/mouse or a standard gamepad is required; touch driving is not included.
+The hosted game's Share settings control who can open it. Allow your friend to visit a private Site or choose public access before using that link together; a room code does not grant website access. Both players can also use another static deployment of this source. All rendering runs on each player's GPU; the room host runs the authoritative physics. No game installation or cloud GPU is required. The game has no separate game accounts. Desktop keyboard/mouse or a standard gamepad is required; touch driving is not included.
 
 ## Playable modes
 
@@ -16,6 +16,7 @@ The Sites link is owner-private. All rendering and physics run on the player's d
 - **Doubles:** you and a bot teammate against two bots.
 - **Free play:** no match clock, unlimited boost, ball reset and session summary.
 - **Training:** five 15-second drills: a straight shot, left/right approaches, an aerial and a save.
+- **Private match:** two humans connected by room code; play 1v1, opposing 2v2 teams with a bot each, or two teammates against two bots.
 
 Matches can last two or five minutes. Kickoffs have a three-second countdown; the match clock starts on the first ball touch. At zero, a live ball remains playable until it touches down. A tied match goes to sudden-death overtime. Goals show a short recorded-position replay that can be skipped.
 
@@ -35,7 +36,7 @@ Arena scale, some constants and jump behavior follow public community measuremen
 
 The supplied Fennec model (default, including all bot cars), optional procedural Striker GT and Rally RS cars, four paint finishes, the supplied Champions Field stadium architecture, detailed stands, goal nets/frames, boost flames, impact particles, a patterned ball, ground locator, ball/car cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser.
 
-The Fennec model by Jako and Champions Field model by Prabhu Ram / virtualmakes were supplied by the user and adapted under CC BY 4.0. Their artwork is separate from the MIT-licensed game code. No original Rocket League audio or accounts are bundled. Online multiplayer, ranked matchmaking, original accounts, cosmetics and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
+The Fennec model by Jako and Champions Field model by Prabhu Ram / virtualmakes were supplied by the user and adapted under CC BY 4.0. Their artwork is separate from the game code. No original Rocket League audio or accounts are bundled. Ranked matchmaking, original accounts, cosmetic inventories and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
 
 ## Controls
 
@@ -51,7 +52,7 @@ The Fennec model by Jako and Champions Field model by Prabhu Ram / virtualmakes 
 | C | Ball/car camera |
 | Tab | Match stats |
 | R / T | Practice reset / next drill |
-| Escape | Pause |
+| Escape | Pause / open match menu (guest's online menu does not pause the host) |
 | Enter | Skip goal replay |
 
 Standard controller: RT/LT drive, left stick steer/pitch, A jump, B boost, X powerslide, Y camera, LB/RB air roll, Start pause, View scoreboard, D-pad up reset, D-pad down next shot. Controller layouts can vary by browser/hardware and remain unverified interactively.
@@ -68,6 +69,8 @@ npm test
 ```
 
 No npm install or build is needed. `dist/` includes its rendering library, font and illustrations and makes no CDN requests. Serve over HTTP/HTTPS rather than opening a file:// URL. The optional development server binds only to 127.0.0.1. On a static host, publish the contents of dist/.
+
+Local modes make no multiplayer requests. Selecting Host or Join uses the public NetplayJS WebSocket service for introductions, its advertised ICE servers for connectivity, and WebRTC data channels for gameplay. See [multiplayer architecture, hosting and verification](docs/multiplayer.md).
 
 The tests cover simulation, geometry, input mappings, static assets and HTTP serving. They do not verify WebGL output, browser layout, physical controller behavior, audio output or GPU performance. See [verification](docs/verification.md).
 
@@ -114,3 +117,17 @@ The interface now follows the classic Rocket League field-front menus: left-side
 The requested Game UI Database page was blocked by robots/HTTP 403 in the workspace. Public Rocket League screenshots from Interface In Game were inspected instead; [the reference notes](docs/ui-references.md) identify the exact images and visual limits. This is a close visual recreation with the game's own branding and implemented local features, not verified pixel parity. Pass, shop, online/social and unrelated screens are omitted.
 
 The UI uses local HTML/CSS/SVG and 57 KB of subset Rajdhani fonts, with no screenshot backgrounds, remote font requests or added WebGL draw calls for the HUD. Nameplate elements are pooled and follow interpolated car positions. The simulation and optimized stadium assets are retained. **70 automated tests pass**; actual browser layout, GPU performance, audio and hardware-controller testing remain unverified in this managed workspace.
+
+## Private multiplayer — 1.6
+
+1. Choose **Private Match → Host Match**, select the mode/length and send the eight-character code to your friend.
+2. Your friend opens the game, chooses **Private Match**, enters the code and selects **Join Match → Ready**.
+3. The host selects **Start Match**. The host also controls restarts and rematches.
+
+Both players use their own GPU, camera settings, controls, car selection and paint. The guest sees its own boost, speed, stats and camera. Doubles supports opposing human teams or a human team against bots. A room supports **two humans**. The host can pause both players; a guest's menu only releases that guest's controls. Keep the host tab visible while playing. Leaving or losing the host ends the room; create a new code to reconnect.
+
+The implementation adapts [NetplayJS](https://github.com/rameshvarun/netplayjs)'s signaling protocol and authoritative-state ideas. [Multicore](https://github.com/trevorhoner/Multicore) currently provides planning documents rather than working networking code; its version-compatibility guidance informed the handshake. This does not import Multicore's AGPL code. NetplayJS's ISC notice is included. The original network implementation keeps the game buildless.
+
+The host simulates both humans and all bots at 120 Hz. Guests send bounded control frames and receive authoritative snapshots at up to 30 Hz. Guest-car prediction replays unacknowledged inputs; remote poses interpolate through a short buffer. Controls and match events use different WebRTC channel delivery rules so stale motion updates can be dropped. Held controls reset after a 300 ms input gap. Room codes use 40 random bits, expire after ten unused minutes, and connect one guest. Game builds must match.
+
+**86 automated tests pass.** A separate real WebRTC check with two Node peers also exercises the public signaling service, readiness, guest driving, snapshots, pause/resume, final stats, rematches and disconnect cleanup. A repeated live run found an early-channel handshake race, which is fixed and covered by a regression test. Browser interaction and separate-home-network/NAT traversal remain unverified. The shared service and its ICE/TURN availability are external dependencies; self-hosting instructions and exact limits are in [the multiplayer notes](docs/multiplayer.md).

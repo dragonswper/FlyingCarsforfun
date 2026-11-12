@@ -129,7 +129,7 @@ export class GameView{
  diagnostics(){return {mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail};}
  sync(sim,paint='#299bff',body='fennec'){
   for(const c of this.cars.values()){this.scene.remove(c.root);disposeVehicle(c);}this.cars.clear();
-  for(const car of sim.cars){const chosen=car.id===0?body:'fennec',color=car.id===0?paint:teamColors[car.team];const model=chosen==='fennec'?makeFennecModel(color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
+  this.localPlayerId=sim.localPlayerId||0;for(const car of sim.cars){const chosen=car.appearance?.body||(car.id===this.localPlayerId?body:'fennec'),color=car.appearance?.color||(car.id===this.localPlayerId?paint:teamColors[car.team]);const model=chosen==='fennec'?makeFennecModel(color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
    model.simCar=car;this.cars.set(car.id,model);this.scene.add(model.root);}this.carShadows.count=sim.cars.length;this.update(sim,0,true);
  }
  burst(position,color='#ffc478',count=25){this.particles.spawn(position,color,count);}
@@ -145,7 +145,7 @@ export class GameView{
   if(snapshot){this.ball.position.fromArray(snapshot.ball.p);this.ball.quaternion.fromArray(snapshot.ball.q);}else{this.ball.position.copy(sim.ball.p);this.ball.quaternion.copy(sim.ball.q);}
   this.ballShadow.position.set(this.ball.position.x,.022,this.ball.position.z);this.ballIndicator.position.set(this.ball.position.x,.028,this.ball.position.z);this.ballIndicator.visible=!menu;const shadowScale=1+this.ball.position.y*.13;this.ballShadow.scale.setScalar(shadowScale);this.ballShadow.material.opacity=.35/(1+this.ball.position.y*.35);
   this.arena.padView.update(sim.pads,this.spin);this.particles.update(dt);
-  const player=this.cars.get(0),p=player.root.position,desired=this.desired,target=this.target;this.forward.set(0,0,1).applyQuaternion(player.root.quaternion);
+  const player=this.cars.get(this.localPlayerId||0),p=player.root.position,desired=this.desired,target=this.target;this.forward.set(0,0,1).applyQuaternion(player.root.quaternion);
   if(menu){const angle=this.menuTime*.07,wide=Math.min(1,this.camera.aspect/(16/9));desired.set(2.35+Math.sin(angle)*.12,1.18,-7.8);target.set(.8*wide,.86,-5+.5*wide);player.root.position.set(0,C.carHeight,-5);player.root.quaternion.setFromAxisAngle(T.Object3D.DEFAULT_UP,Math.PI*.68);this.ball.position.set(3.8,C.ballRestHeight,-1.5);}
   else if(replay){desired.copy(this.ball.position).add(this.toward.set(7,5,-10));target.copy(this.ball.position);}
   else{

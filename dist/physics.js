@@ -81,6 +81,7 @@ export class Simulation{
   this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options};this.prediction=new BallPrediction();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
   if(this.options.mode==='duel')this.cars.push(makeCar(1,1,true));
   if(this.options.mode==='doubles')this.cars.push(makeCar(1,0,true),makeCar(2,1,true),makeCar(3,1,true));
+  if(Array.isArray(this.options.humanIds))for(const car of this.cars)if(this.options.humanIds.includes(car.id))car.bot=false;
   this.ball={p:new V(0,C.ballRestHeight,0),v:new V(),spin:new V(),q:new Q()};this.pads=createPads();this.score=[0,0];this.remaining=this.options.duration;this.overtime=false;this.elapsed=0;this.phase='kickoff';this.phaseTime=3;this.clockStarted=false;this.lastTouch=-1;this.lastTouchTime=-99;this.replay=[];this.recordTime=0;this.trainingIndex=0;this.trainingHits=0;this.shotTime=15;
   if(this.options.mode==='training')this.loadDrill();else this.kickoff();
   if(this.options.mode==='free'){this.phase='playing';this.cars[0].boost=100;}
@@ -111,12 +112,12 @@ export class Simulation{
   if(this.options.mode==='training'&&team===0)this.trainingHits++;
   this.phase='goal';this.phaseTime=4;this.emit('goal',{team,scorer:scorer?.team===team?scorer.id:null,speed:this.ball.v.length()*3.6});
  }
- step(input={},dt=C.step){
+ step(input={},dt=C.step,playerInputs=null){
   if(this.phase==='ended')return;this.elapsed+=dt;
   if(this.phase==='kickoff'){this.phaseTime-=dt;if(this.phaseTime<=0){this.phase='playing';this.goAt=this.elapsed;this.emit('go');}return;}
   if(this.phase==='goal'){this.phaseTime-=dt;if(this.phaseTime<=0)this.afterGoal();return;}
   for(const p of this.pads)p.timer=Math.max(0,p.timer-dt);
-  for(const car of this.cars){stepCar(car,car.bot?botInput(car,this):input,dt,this.options.mode==='free'||this.options.mode==='training'||this.options.unlimited);
+  for(const car of this.cars){const external=playerInputs?.get(car.id);stepCar(car,external??(car.bot?botInput(car,this):car.id===0?input:{}),dt,this.options.mode==='free'||this.options.mode==='training'||this.options.unlimited);
    if(car.demoTime===0)for(const pad of this.pads)if(pad.timer===0&&car.boost<99.95&&Math.abs(car.p.y-pad.p.y)<C.padHalfHeight&&Math.hypot(car.p.x-pad.p.x,car.p.z-pad.p.z)<(pad.big?C.bigPadRadius:C.smallPadRadius)){car.boost=pad.big?100:Math.min(100,car.boost+C.smallPadAmount);pad.timer=pad.big?C.bigPadCooldown:C.smallPadCooldown;this.emit('pad',{id:pad.id,car:car.id,big:pad.big});}
   }
   const hit=stepBall(this.ball,dt);if(hit.impact>3)this.emit('bounce',{speed:hit.impact,p:this.ball.p.toArray()});
@@ -140,5 +141,5 @@ export class Simulation{
   this.recordTime+=dt;if(this.recordTime>=.05){this.recordTime=0;this.replay.push(this.snapshot());if(this.replay.length>100)this.replay.shift();}
  }
  snapshot(){return {ball:{p:this.ball.p.toArray(),q:this.ball.q.toArray()},cars:this.cars.map(c=>({id:c.id,team:c.team,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting,speed:c.v.dot(FWD.clone().applyQuaternion(c.q)),steer:c.renderSteer||0,grounded:c.grounded})),time:this.elapsed};}
- state(){return {phase:this.phase,mode:this.options.mode,score:[...this.score],remaining:this.remaining,overtime:this.overtime,phaseTime:this.phaseTime,elapsed:this.elapsed,boost:this.cars[0].boost,speed:this.cars[0].v.length()*3.6,grounded:this.cars[0].grounded,supersonic:this.cars[0].supersonic,trainingIndex:this.trainingIndex,trainingHits:this.trainingHits,drillName:this.drillName,shotTime:this.shotTime,players:this.cars.map(c=>({id:c.id,team:c.team,goals:c.goals,assists:c.assists,touches:c.touches,demos:c.demos,score:c.score}))};}
+ state(localId=0){const player=this.cars.find(car=>car.id===localId)||this.cars[0];return {phase:this.phase,mode:this.options.mode,score:[...this.score],remaining:this.remaining,overtime:this.overtime,phaseTime:this.phaseTime,elapsed:this.elapsed,boost:player.boost,speed:player.v.length()*3.6,grounded:player.grounded,supersonic:player.supersonic,trainingIndex:this.trainingIndex,trainingHits:this.trainingHits,drillName:this.drillName,shotTime:this.shotTime,players:this.cars.map(c=>({id:c.id,team:c.team,goals:c.goals,assists:c.assists,touches:c.touches,demos:c.demos,score:c.score}))};}
 }
