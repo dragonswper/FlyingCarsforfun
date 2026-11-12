@@ -66,6 +66,13 @@ test('guest prediction preserves an unacknowledged jump and reconciles it once a
  const input={throttle:1,jump:true};replica.step(input);replica.step(input);const predicted=replica.predicted.p.clone();assert.ok(replica.predicted.v.y>0);replica.receive(makeState(host,2,0,'match'),5);near(replica.predicted.p.y,predicted.y);assert.equal(replica.pending.length,2);
  for(let i=0;i<2;i++)host.step({},C.step,new Map([[1,input]]));replica.receive(makeState(host,3,2,'match'),16.7);assert.equal(replica.pending.length,0);near(replica.predicted.p.y,host.cars[1].p.y);near(replica.predicted.p.z,host.cars[1].p.z);
 });
+test('a guest can self-right with one jump press and keep its recovery target through authoritative updates',async t=>{
+ const p=await pair(t);await start(p);p.host.sim.phase='playing';const car=p.host.sim.cars[1];car.p.set(12,.5,0);car.v.set(0,0,0);car.q.set(0,0,1,0);car.grounded=false;car.canDouble=false;car.jumpHeld=false;
+ for(let i=0;i<90;i++)p.host.sim.step({},C.step,p.host.inputs());p.host.publish(true);await settle();let recovering=false;
+ for(let tick=0;tick<180;tick++){p.advance(C.step*1000);p.guest.guestStep({jump:tick===0});p.guest.sendInputs(true);await settle();p.host.sim.step({},C.step,p.host.inputs());recovering||=car.selfRightTime>0;if(tick%4===0){p.host.publish(true);await settle();assert.ok(p.guest.replica.predicted.selfRightTarget.angleTo(car.selfRightTarget)<1e-6);}}
+ p.host.publish(true);await settle();assert.equal(recovering,true);assert.equal(car.grounded,true);assert.equal(car.selfRightTime,0);near(car.p.y,C.carHeight);assert.ok(car.q.angleTo(p.guest.replica.predicted.q)<1e-6);assert.equal(p.guest.replica.predicted.grounded,true);assert.deepEqual(p.errors,[]);
+ const packet=makeState(p.host.sim,999,p.host.remote.ack,p.host.matchId);packet.cars[1].selfRightTarget=[0,0,0,0];assert.equal(validState(packet,p.guest.sim),false);packet.cars[1].selfRightTarget=[0,0,0,1];packet.cars[1].selfRightTime=10;assert.equal(validState(packet,p.guest.sim),false);
+});
 test('remote poses interpolate between authoritative snapshots and snap through kickoff teleports',()=>{
  const host=new Simulation(),guest=new Simulation(),replica=new GuestReplica(guest,1);host.phase=guest.phase='playing';host.elapsed=0;replica.receive(makeState(host,1,0,'match'),0);host.ball.p.x=2;host.elapsed=.1;replica.receive(makeState(host,2,0,'match'),100);near(replica.sample(100,1/60).ball.p[0],.3);
  host.kickoff();host.ball.p.x=20;host.elapsed=.2;replica.receive(makeState(host,3,0,'match'),200);near(replica.sample(200,1/60).ball.p[0],20);assert.equal(replica.sim.replay.length,0);

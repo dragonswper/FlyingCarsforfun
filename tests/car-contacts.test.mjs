@@ -35,3 +35,17 @@ test('an upside-down car can still recover with the player air-roll control',()=
  for(let i=0;i<600;i++){stepCar(car,{roll:1},C.step);if(car.grounded){recovered=true;break;}}
  assert.equal(recovered,true);assert.ok(new V(0,1,0).applyQuaternion(car.q).y>.55);
 });
+
+test('one jump press rights a car resting on its roof at any heading, with a small hop and bounded rotation',()=>{
+ for(const yaw of [0,.8,Math.PI/2,Math.PI])for(const held of [false,true]){
+  const car=makeCar(0,0);car.q.setFromAxisAngle(new V(0,1,0),yaw).multiply(new Q().setFromAxisAngle(new V(0,0,1),Math.PI));car.p.y=.5;car.grounded=false;for(let i=0;i<120;i++)stepCar(car,{},C.step);
+  const forward=new V(0,0,1).applyQuaternion(car.q);stepCar(car,{jump:true},C.step);assert.ok(car.selfRightTime>0);assert.equal(car.canDouble,false);let peak=car.p.y;
+  for(let i=0;i<180;i++){const q=car.q.clone();stepCar(car,{jump:held},C.step);peak=Math.max(peak,car.p.y);assert.ok(q.angleTo(car.q)<=C.maxAngularSpeed*C.step+1e-6);assert.ok(Number.isFinite(car.p.lengthSq()));assert.ok(car.p.y>=carSupport(car,new V(0,1,0))-1e-6);}
+  assert.equal(car.grounded,true);assert.equal(car.selfRightTime,0);assert.ok(new V(0,1,0).applyQuaternion(car.q).y>.999);assert.ok(new V(0,0,1).applyQuaternion(car.q).dot(forward)>.999);assert.ok(peak<.8);assert.ok(Math.abs(car.p.y-C.carHeight)<1e-6);
+ }
+});
+
+test('roof recovery requires surface contact and leaves the normal jump and airborne double jump available',()=>{
+ const car=makeCar(0,0);stepCar(car,{jump:true},C.step);assert.equal(car.selfRightTime,0);assert.ok(car.jumpActive&&car.canDouble);
+ const inverted=makeCar(0,0);inverted.p.y=5;inverted.q.setFromAxisAngle(new V(0,0,1),Math.PI);inverted.grounded=false;inverted.canDouble=true;stepCar(inverted,{jump:true},C.step);assert.equal(inverted.selfRightTime,0);assert.equal(inverted.canDouble,false);assert.ok(inverted.v.y<-2.8);assert.ok(new V(0,1,0).applyQuaternion(inverted.q).y<-.999);
+});

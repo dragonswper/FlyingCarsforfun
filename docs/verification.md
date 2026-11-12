@@ -4,7 +4,7 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**114 automated tests pass for version 1.8.0.**
+**117 automated tests pass for version 1.8.1.**
 
 The [1.8 verification notes](contact-and-vehicle-update.md#validation-and-limits) record the wall/landing reproductions, camera/input checks, new model imports, private-match appearance exchange and offline previews. Actual browser/GPU testing remains unavailable.
 
@@ -13,6 +13,12 @@ The [1.8 verification notes](contact-and-vehicle-update.md#validation-and-limits
 Coverage includes arena/pad dimensions, acceleration/reverse/braking, speed caps, fuel consumption, variable-height jumping, double jump/dodge, aerial pitch, floor/wall/corner/ceiling bounces, real oriented car-ball contact, boost refill/recharge, full-ball goal crossing, wide/high misses, kickoff clock, zero-time live ball, overtime/results, training progression, bounded replays, finite long-running bot matches, wall driving, demolition/respawn, own-goal routing regression, practice reset restrictions, both vehicle geometries, original ball and calibrated pitch geometry, local asset resolution, keyboard/mouse clearing and standard gamepad button mappings.
 
 Three.js math/geometry can run without a GPU; these tests do not render WebGL pixels. The input test uses synthetic events and a simulated standard gamepad, not a physical controller.
+
+## Jump recovery — 1.8.1
+
+Pressing Jump while the roof touches an upward-facing surface starts a small hop and a controlled turn onto the wheels. The assist uses a 2 m/s outward hop, a maximum 0.75 s recovery window and the existing 5.5 rad/s angular cap. These are original recovery-assist choices. It follows the configured Jump binding, including default Spacebar, right mouse and controller A. Holding Jump does not restart recovery or automatically jump again on landing. Inverted airborne double jumps retain their prior behavior.
+
+Three added tests cover four initial headings with a single press or held button, finite poses, clearance, bounded rotation, stable landing, roof-contact requirements, normal jumps and an inverted airborne double jump. A room test sends a guest's single press through NetworkRoom input packets and retains its target through 30 Hz host snapshots and prediction; it also rejects invalid recovery targets/timers. The target quaternion and timer are synchronized, reset with spawning and included in the 1.8.1 build handshake. Browser play remains unverified under the limit below.
 
 ## Browser test limit
 

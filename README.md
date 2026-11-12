@@ -8,9 +8,11 @@ An original browser-native 3D car-soccer recreation inspired by Rocket League, w
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.8.1:** Press **Jump (default Spacebar / controller A)** while resting upside down to hop and flip back onto your wheels. One press is enough. Normal jumps and aerial dodges keep their existing controls. Both players should reload before joining a room.
+
 **1.8:** Wall contacts remain attached through the ramp, and roof/bumper scrapes absorb spin instead of forcing a sudden upright landing. Ball cam tracks the ball with a level horizon; turn it off to orbit using middle-mouse drag or the controller right stick. **Garage** now also offers **Octane, cHe, Cyberpunk Bike and C-17 Globemaster**. The supplied 3D Rocket League ball replaces the procedural ball. Optional vehicle models load on selection or private-opponent preparation; Ready/Start waits for both appearances. **Reload both players' pages** after this update so physics builds match. All **114 automated tests pass**; browser rendering and device FPS remain unverified.
 
-The hosted game remains private. Invite friends through **Share** before using that link together; a room code does not grant website access. Both players can also use another static deployment of this source. All rendering runs on each player's GPU; the room host runs the authoritative physics. No game installation or cloud GPU is required. The game has no separate game accounts. Desktop keyboard/mouse or a standard gamepad is required; touch driving is not included.
+Use **Share** to control who can open the hosted game. For private access, invite friends before using the link together; a room code does not grant website access. Both players can also use another static deployment of this source. All rendering runs on each player's GPU; the room host runs the authoritative physics. No game installation or cloud GPU is required. The game has no separate game accounts. Desktop keyboard/mouse or a standard gamepad is required; touch driving is not included.
 
 ## Playable modes
 

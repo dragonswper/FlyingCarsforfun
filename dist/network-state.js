@@ -2,20 +2,20 @@ import {Vector3,Quaternion} from './vendor/three.module.js';
 import {C,makeCar,stepCar} from './physics.js';
 import {cleanInput,validCounter} from './network-protocol.js';
 
-const NUMBERS=['boost','boostTime','handbrake','jumpTime','jumpEndTime','airTime','noContact','flipTime','demoTime','supersonicTime','hitCooldown','extraHitCooldown','recoverTime','score','goals','assists','saves','touches','demos','renderSteer','renderThrottle'];
+const NUMBERS=['boost','boostTime','handbrake','jumpTime','jumpEndTime','airTime','noContact','flipTime','selfRightTime','demoTime','supersonicTime','hitCooldown','extraHitCooldown','recoverTime','score','goals','assists','saves','touches','demos','renderSteer','renderThrottle'];
 const FLAGS=['grounded','boosting','drifting','jumpHeld','jumpActive','hasJumped','canDouble','supersonic'];
 const VECTORS=['p','v','omega','normal','flipAxis'];
 const finite=(n,max=1e6)=>typeof n==='number'&&Number.isFinite(n)&&Math.abs(n)<=max;
 const array=(v,length,max=1000)=>Array.isArray(v)&&v.length===length&&v.every(n=>finite(n,max));
 const rotation=q=>array(q,4,1.01)&&q.reduce((sum,n)=>sum+n*n,0)>.5;
-export function encodeCar(car){const value={id:car.id,team:car.team,q:car.q.toArray()};for(const key of VECTORS)value[key]=car[key].toArray();for(const key of NUMBERS)value[key]=Number(car[key])||0;for(const key of FLAGS)value[key]=!!car[key];return value;}
-export function applyCar(car,value){car.q.fromArray(value.q).normalize();for(const key of VECTORS)car[key].fromArray(value[key]);for(const key of NUMBERS)car[key]=value[key];for(const key of FLAGS)car[key]=value[key];}
+export function encodeCar(car){const value={id:car.id,team:car.team,q:car.q.toArray(),selfRightTarget:car.selfRightTarget.toArray()};for(const key of VECTORS)value[key]=car[key].toArray();for(const key of NUMBERS)value[key]=Number(car[key])||0;for(const key of FLAGS)value[key]=!!car[key];return value;}
+export function applyCar(car,value){car.q.fromArray(value.q).normalize();car.selfRightTarget.fromArray(value.selfRightTarget).normalize();for(const key of VECTORS)car[key].fromArray(value[key]);for(const key of NUMBERS)car[key]=value[key];for(const key of FLAGS)car[key]=value[key];}
 export function makeState(sim,n,ack,matchId){return {t:'state',matchId,n,ack,phase:sim.phase,phaseTime:sim.phaseTime,elapsed:sim.elapsed,remaining:sim.remaining,overtime:sim.overtime,score:[...sim.score],ball:{p:sim.ball.p.toArray(),q:sim.ball.q.toArray(),v:sim.ball.v.toArray(),spin:sim.ball.spin.toArray()},cars:sim.cars.map(encodeCar),pads:sim.pads.map(p=>p.timer)};}
 export function validState(value,sim){
  if(!value||!validCounter(value.n)||!validCounter(value.ack)||!['kickoff','playing','goal','ended'].includes(value.phase)||!finite(value.elapsed,86400)||value.elapsed<0||!finite(value.remaining,86400)||value.remaining<0||!finite(value.phaseTime,10)||typeof value.overtime!=='boolean'||!array(value.score,2,1e6)||value.score.some(n=>n<0||!Number.isInteger(n)))return false;
  if(!value.ball||!array(value.ball.p,3)||!rotation(value.ball.q)||!array(value.ball.v,3)||!array(value.ball.spin,3)||!array(value.pads,34,11)||value.pads.some(n=>n<0))return false;
  if(!Array.isArray(value.cars)||value.cars.length!==sim.cars.length)return false;
- return value.cars.every((car,index)=>car&&car.id===sim.cars[index].id&&car.team===sim.cars[index].team&&rotation(car.q)&&VECTORS.every(key=>array(car[key],3))&&NUMBERS.every(key=>finite(car[key]))&&FLAGS.every(key=>typeof car[key]==='boolean')&&car.boost>=0&&car.boost<=100.001);
+ return value.cars.every((car,index)=>car&&car.id===sim.cars[index].id&&car.team===sim.cars[index].team&&rotation(car.q)&&rotation(car.selfRightTarget)&&VECTORS.every(key=>array(car[key],3))&&NUMBERS.every(key=>finite(car[key]))&&FLAGS.every(key=>typeof car[key]==='boolean')&&car.boost>=0&&car.boost<=100.001&&car.selfRightTime>=0&&car.selfRightTime<=.750001);
 }
 export function applyState(sim,value){
  sim.phase=value.phase;sim.phaseTime=value.phaseTime;sim.elapsed=value.elapsed;sim.remaining=value.remaining;sim.overtime=value.overtime;sim.score[0]=value.score[0];sim.score[1]=value.score[1];
