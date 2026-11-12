@@ -88,3 +88,11 @@ The source FBX had no animation clips; movement is implemented procedurally. See
 The default stadium now uses the uploaded Champions Field architecture, adapted to the game's coordinate system and materials. Its stands, trophies and eight banner textures are retained. The cinematic source's inner pitch and outer shell are replaced with collision-aligned turf, ramps, walls, goals and interactive boost pads. This is an adaptation of the supplied recreation, not an exact port of the official map.
 
 The model uses 105 draw batches instead of 2,751 source parts and occupies 20.0 MiB instead of 36.9 MiB. Quantization is decoded by the bundled Three.js loader without downloading a separate codec. Low graphics hides seat batches. The Fennec steering, rolling wheels and suspension continue to work. See [model preparation and credits](docs/model-replacements.md).
+
+## Smoothness and graphics
+
+Graphics now defaults to **Auto**, which adjusts resolution and seat detail when frame times stay high. It uses an offline simplified Champions Field with about 268,000 triangles, retaining all 105 architecture batches, the banners and stadium silhouette. **Balanced** fixes the normal Auto starting profile; **Low** lowers resolution further; **High** loads the original full-detail stadium and realtime shadows. Existing Low preferences are retained; the previous default High preference migrates to Auto once.
+
+The pitch uses 35 draw submissions instead of 238. All boost pads render in three instanced submissions, and collision/goal particles share one bounded reusable mesh. Fixed-step pose interpolation smooths car, ball and replay motion across display refresh rates. Cars, wheels, physics, gameplay dimensions and saved career records are retained. Shader preparation happens before the lobby opens. Hidden tabs pause matches rather than building up catch-up work.
+
+These are measured reductions in rendering work, not a guaranteed frame-rate increase. All 43 automated checks pass; interactive browser performance remains unverified in this workspace. See [verification](docs/verification.md). Turn on **Settings → Performance display** to see approximate FPS on your device.

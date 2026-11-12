@@ -4,9 +4,9 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**33 automated tests pass.**
+**43 automated tests pass.**
 
-`npm run check` parses the six authored runtime modules and the stadium import script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
+`npm run check` parses the nine authored runtime modules and the stadium import script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
 
 Coverage includes arena/pad dimensions, acceleration/reverse/braking, speed caps, fuel consumption, variable-height jumping, double jump/dodge, aerial pitch, floor/wall/corner/ceiling bounces, real oriented car-ball contact, boost refill/recharge, full-ball goal crossing, wide/high misses, kickoff clock, zero-time live ball, overtime/results, training progression, bounded replays, finite long-running bot matches, wall driving, demolition/respawn, own-goal routing regression, practice reset restrictions, both vehicle geometries, original ball and calibrated pitch geometry, local asset resolution, keyboard/mouse clearing and standard gamepad button mappings.
 
@@ -31,3 +31,22 @@ Five additional checks import the actual converted GLB using Three.js GLTFLoader
 Four stadium tests use the actual Three.js GLTFLoader with the same headless texture stub. They verify the embedded banner assets and file size, source/output hash, retained architecture, batch budget, quantized positions/normals and index ranges, absence of architecture vertices inside the playable volume, goal/field calibration, actual rendered turf dimensions, 34 pads, and low/high seat visibility. All existing Fennec and simulation tests still pass. Source and adapted models were inspected through offline Blender renders. The original cinematic shell obstructed the pitch in the first offline render; it was removed before final checks.
 
 No browser rendering or GPU frame-rate verification was possible. The stadium is approximately 20 MiB and retains about 774,000 triangles, so loading time and performance depend on the player's device and connection.
+
+## Smoothness update — 12 November 2026
+
+Nine additional performance tests cover render interpolation at 72 Hz and 144 Hz over the unchanged 120 Hz simulation, quaternion blending, pose-buffer reuse, teleport/reset snapping, replay interpolation without modifying recorded frames, adaptive graphics hysteresis, fixed manual graphics levels, instanced pad pickup/respawn behavior, bounded particle reuse and the pitch draw budget. A tenth test imports the actual simplified stadium and checks its bounds, calibration, banner embedding, hash, seat visibility and clear playing volume.
+
+Measured structural changes, using the same Node/Three.js scene construction before and after:
+
+| Work | Before | After |
+| --- | ---: | ---: |
+| Pitch draw submissions, before frustum culling | 238 | 35 |
+| Pitch shadow-casting submissions | 135 | 0 |
+| Boost pad submissions | 102 | 3 |
+| Stadium triangles in Auto/Balanced/Low | 773,516 | 268,278 |
+| Particle meshes for a 70-particle goal burst | 70 | 1 shared mesh |
+| Maximum default device pixel ratio | 1.7 | 1.0, adapting down to 0.6 |
+
+These are geometry/submission counts, not GPU timing or FPS measurements. Stadium simplification was inspected in an offline Blender render. Browser tools (`cua_repl.js` and `open_in_codex`) remain absent from the managed workspace, so no alternative browser controller or preview server was started. Actual frame rate, first-use shader behavior and interactive controls must still be checked on a player's browser.
+
+Auto starts with the simplified stadium, no multisample antialiasing, no realtime shadows and full CSS-size resolution. It steps resolution/detail down after sustained overload and recovers slowly; hidden-tab gaps are ignored. Balanced fixes that starting profile. Low fixes a 0.75 pixel ratio and hides seats. High loads the original detailed stadium, caps pixel ratio at 1.5 and uses a 1024-pixel realtime shadow map. Car/ball contact shadows remain available in the lower modes. The game exposes read-only `boostCircuit.getPerformance()` diagnostics for mode, render calls, triangles, pixel ratio and approximate FPS.

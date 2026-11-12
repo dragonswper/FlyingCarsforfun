@@ -1,0 +1,14 @@
+{
+  "source": "champions-field.glb",
+  "file": "champions-field-performance.glb",
+  "sourceTriangles": 769755,
+  "triangles": 268278,
+  "bytes": 12473572,
+  "sha256": "34adf3991e90405db7743e0129d2b16458ce3e1612ad91c365bf14472beae5e1",
+  "modifications": [
+    "Retained all stadium batches, materials, eight banner textures and calibration nodes",
+    "Applied per-part transforms and offline mesh simplification for browser play",
+    "Seats simplified more aggressively than architecture; banner surfaces retained",
+    "Original full-detail model remains available in High graphics"
+  ]
+}

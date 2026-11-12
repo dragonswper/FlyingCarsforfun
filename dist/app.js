@@ -1,18 +1,20 @@
 import {Simulation,C,clamp} from './physics.js';
 import {GameView} from './scene.js';
+import {MotionBuffer} from './motion.js';
 import {Input} from './input.js';
 const $=id=>document.getElementById(id),show=(id,on)=>{$(id).hidden=!on;},text=(id,value)=>{$(id).textContent=String(value);};
 const paints={blue:{hex:'#299bff',name:'ELECTRIC BLUE'},ivory:{hex:'#e8efec',name:'ARCTIC WHITE'},violet:{hex:'#a985fc',name:'ULTRAVIOLET'},mint:{hex:'#53dbbd',name:'MINT VELOCITY'}};
 const names={duel:'DUEL · 1v1',doubles:'DOUBLES · 2v2',free:'FREE PLAY',training:'TRAINING'};
 const key='boost-circuit.v1';
-const defaults={mode:'duel',duration:300,difficulty:'pro',quality:'high',sound:true,ballcam:true,fps:false,paint:'blue',body:'fennec',xp:0,matches:0,wins:0,goals:0,touches:0,history:[]};
+const defaults={mode:'duel',duration:300,difficulty:'pro',quality:'auto',sound:true,ballcam:true,fps:false,paint:'blue',body:'fennec',xp:0,matches:0,wins:0,goals:0,touches:0,history:[]};
 let settings={...defaults};try{const data=JSON.parse(localStorage.getItem(key)||'{}');if(data&&typeof data==='object')settings={...settings,...data};}catch{}
-for(const [name,valid]of Object.entries({mode:['duel','doubles','free','training'],duration:[120,300],difficulty:['rookie','pro'],quality:['low','high'],paint:Object.keys(paints),body:['fennec','striker','rally']}))if(!valid.includes(settings[name]))settings[name]=defaults[name];
+for(const [name,valid]of Object.entries({mode:['duel','doubles','free','training'],duration:[120,300],difficulty:['rookie','pro'],quality:['auto','low','balanced','high'],paint:Object.keys(paints),body:['fennec','striker','rally']}))if(!valid.includes(settings[name]))settings[name]=defaults[name];
 for(const field of ['xp','matches','wins','goals','touches'])settings[field]=clamp(Number(settings[field])||0,0,1e9);
 if(settings.vehicleRevision!==2){settings.body='fennec';settings.vehicleRevision=2;}
+if(settings.performanceRevision!==1){if(settings.quality==='high')settings.quality='auto';settings.performanceRevision=1;}
 settings.history=Array.isArray(settings.history)?settings.history.filter(x=>x&&typeof x==='object').slice(0,8):[];
 const save=()=>{try{localStorage.setItem(key,JSON.stringify(settings));}catch{}};
-let view,sim,input,started=false,paused=false,resultSaved=false,accumulator=0,last=performance.now(),lastUI=0,frames=0,fpsTime=0,renderFPS=60,replayFrames=[],lastCount='',feedTimer;
+let view,sim,input,motion,started=false,paused=false,resultSaved=false,accumulator=0,last=performance.now(),lastUI=0,frames=0,fpsTime=0,renderFPS=60,replayFrames=[],lastCount='',feedTimer;
 const dialog=id=>{if(!$(id).open)$(id).showModal();},close=id=>{if($(id).open)$(id).close();},closeAll=()=>document.querySelectorAll('dialog[open]').forEach(d=>d.close());
 function syncSettings(){
  document.querySelectorAll('[data-mode]').forEach(b=>{const selected=b.dataset.mode===settings.mode;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
@@ -41,19 +43,19 @@ function action(name){
  if(name==='pause'){if(paused)resume();else pause();return;}
  if(!started||paused)return;
  if(name==='camera')toggleCamera();
- if(name==='reset'&&sim.resetPractice()){feed('BALL RESET');input.clear();}
- if(name==='next'&&settings.mode==='training'){sim.nextDrill();input.clear();}
+ if(name==='reset'&&sim.resetPractice()){motion.reset(sim);feed('BALL RESET');input.clear();}
+ if(name==='next'&&settings.mode==='training'){sim.nextDrill();motion.reset(sim);input.clear();}
  if(name==='scoreboard'){renderScore();show('score-panel',$('score-panel').hidden);}
  if(name==='hide-scoreboard')show('score-panel',false);
 }
 function start(){
  sound.start();closeAll();settings.duration=Number($('duration').value);settings.difficulty=$('difficulty').value;save();
- sim=new Simulation({mode:settings.mode,duration:settings.duration,difficulty:settings.difficulty});started=true;paused=false;resultSaved=false;accumulator=0;lastCount='';replayFrames=[];input.clear();view.sync(sim,paints[settings.paint].hex,settings.body);view.cameraMode=!!settings.ballcam;
+ sim=new Simulation({mode:settings.mode,duration:settings.duration,difficulty:settings.difficulty});motion=new MotionBuffer(sim);view.graphics.resetTiming();started=true;paused=false;resultSaved=false;accumulator=0;lastCount='';replayFrames=[];input.clear();view.sync(sim,paints[settings.paint].hex,settings.body);view.cameraMode=!!settings.ballcam;
  show('lobby',false);show('hud',true);show('replay',false);show('score-panel',false);show('event-feed',false);show('practice-tools',['free','training'].includes(settings.mode));show('next-shot-button',settings.mode==='training');show('training-progress',settings.mode==='training');document.activeElement?.blur();$('arena').focus();updateHUD();
 }
 function pause(){if(!started||paused||sim.phase==='ended')return;paused=true;input.clear();show('score-panel',false);dialog('pause-dialog');sound.update();}
-function resume(){if(!started)return;closeAll();paused=false;accumulator=0;input.clear();$('arena').focus();}
-function menu(){started=false;paused=false;resultSaved=false;input.clear();closeAll();show('hud',false);show('replay',false);show('score-panel',false);show('lobby',true);sim=new Simulation({mode:'free'});view.sync(sim,paints[settings.paint].hex,settings.body);syncSettings();sound.update();}
+function resume(){if(!started)return;closeAll();paused=false;accumulator=0;motion.reset(sim);input.clear();$('arena').focus();}
+function menu(){started=false;paused=false;resultSaved=false;input.clear();closeAll();show('hud',false);show('replay',false);show('score-panel',false);show('lobby',true);sim=new Simulation({mode:'free'});motion=new MotionBuffer(sim);view.sync(sim,paints[settings.paint].hex,settings.body);syncSettings();sound.update();}
 function result(){if(resultSaved)return;resultSaved=true;input.clear();show('replay',false);show('score-panel',false);const p=sim.cars[0],practice=['free','training'].includes(settings.mode),won=sim.score[0]>sim.score[1];const xp=Math.round(p.score+(practice?50:won?250:75)+(settings.mode==='training'?sim.trainingHits*75:0));
  settings.xp+=xp;settings.touches+=p.touches;if(!practice){settings.matches++;if(won)settings.wins++;settings.goals+=p.goals;settings.history.unshift({mode:settings.mode,blue:sim.score[0],orange:sim.score[1],won});settings.history=settings.history.slice(0,8);}save();
  text('result-eyebrow',practice?'SESSION COMPLETE':'FULL TIME');text('result-title',settings.mode==='training'?'FINDING YOUR TOUCH.':settings.mode==='free'?'GOOD PRACTICE.':won?'BLUE TEAM WINS.':'NEXT TOUCH. NEXT CHANCE.');text('result-description',settings.mode==='training'?`${sim.trainingHits} / 5 drills completed successfully.`:settings.mode==='free'?'Every minute on the field is a better next match.':won?'That’s a finish worth coming back for.':'Keep the wheels down. The next match is yours.');
@@ -80,17 +82,21 @@ function handleEvents(){for(const e of sim.events.splice(0)){
  else if(e.type==='miss'){feed('NEXT SHOT · KEEP AT IT');show('replay',false);}
  else if(e.type==='end')result();
  }if(sim.phase!=='goal')show('replay',false);}
-function frame(now){requestAnimationFrame(frame);const dt=Math.min(.1,(now-last)/1000);last=now;frames++;fpsTime+=dt;if(fpsTime>=.5){renderFPS=Math.round(frames/fpsTime);frames=0;fpsTime=0;}
+function frame(now){
+ requestAnimationFrame(frame);if(document.hidden){last=now;accumulator=0;return;}
+ const rawDt=(now-last)/1000,dt=Math.min(.1,Math.max(0,rawDt));last=now;frames++;fpsTime+=dt;if(fpsTime>=.5){renderFPS=Math.round(frames/fpsTime);frames=0;fpsTime=0;}
  if(started){const controls=input.read();sim.cars[0].renderSteer=controls.steer;
-  if(!paused&&sim.phase!=='ended'){accumulator+=dt;let iterations=0;while(accumulator>=C.step&&iterations++<12){sim.step(controls);accumulator-=C.step;}handleEvents();}
-  let snapshot=null;if(sim.phase==='goal'&&!$('replay').hidden&&replayFrames.length){const t=clamp((4-sim.phaseTime)/4,0,.999);snapshot=replayFrames[Math.floor(t*replayFrames.length)];}
-  view.update(sim,paused?0:dt,false,snapshot);if(now-lastUI>70){updateHUD();lastUI=now;}
+  if(!paused&&sim.phase!=='ended'){accumulator+=dt;let iterations=0;while(accumulator>=C.step&&iterations++<12){sim.step(controls);motion.capture(sim);accumulator-=C.step;}handleEvents();view.monitorFrame(rawDt);}
+  const replay=sim.phase==='goal'&&!$('replay').hidden&&replayFrames.length>0;
+  const state=replay?motion.sampleReplay(replayFrames,clamp((4-sim.phaseTime)/4,0,1)):motion.sample(paused||sim.phase==='ended'?1:accumulator/C.step);
+  view.update(sim,paused?0:dt,false,state,replay);if(now-lastUI>70){updateHUD();lastUI=now;}
  }else view.update(sim,dt,true);
  sound.update();
 }
 function fail(error){console.error(error);show('loading',false);show('lobby',false);show('hud',false);show('error',true);text('error-detail','The 3D renderer needs WebGL and browser graphics acceleration. '+(error?.message||''));}
-$('play-button').addEventListener('click',start);$('rematch-button').addEventListener('click',start);$('restart-button').addEventListener('click',start);$('resume-button').addEventListener('click',resume);$('leave-button').addEventListener('click',menu);$('menu-button').addEventListener('click',menu);$('pause-button').addEventListener('click',pause);$('camera-button').addEventListener('click',toggleCamera);$('reset-button').addEventListener('click',()=>action('reset'));$('next-shot-button').addEventListener('click',()=>action('next'));$('end-practice-button').addEventListener('click',()=>{sim.end();handleEvents();});$('skip-replay').addEventListener('click',()=>{sim.skipReplay();handleEvents();});
-window.addEventListener('keydown',e=>{if(e.code==='Enter'&&started&&!paused&&sim.phase==='goal'){sim.skipReplay();handleEvents();}});
+$('play-button').addEventListener('click',start);$('rematch-button').addEventListener('click',start);$('restart-button').addEventListener('click',start);$('resume-button').addEventListener('click',resume);$('leave-button').addEventListener('click',menu);$('menu-button').addEventListener('click',menu);$('pause-button').addEventListener('click',pause);$('camera-button').addEventListener('click',toggleCamera);$('reset-button').addEventListener('click',()=>action('reset'));$('next-shot-button').addEventListener('click',()=>action('next'));$('end-practice-button').addEventListener('click',()=>{sim.end();handleEvents();});$('skip-replay').addEventListener('click',()=>{sim.skipReplay();motion.reset(sim);handleEvents();});
+document.addEventListener('visibilitychange',()=>{last=performance.now();accumulator=0;view?.graphics.resetTiming();if(document.hidden)pause();else motion?.reset(sim);});
+window.addEventListener('keydown',e=>{if(e.code==='Enter'&&started&&!paused&&sim.phase==='goal'){sim.skipReplay();motion.reset(sim);handleEvents();}});
 for(const [button,id]of [['garage-button','garage-dialog'],['customize-button','garage-dialog'],['controls-button','controls-dialog'],['settings-button','settings-dialog'],['about-button','about-dialog']])$(button).addEventListener('click',()=>dialog(id));
 $('pause-settings-button').addEventListener('click',()=>{close('pause-dialog');dialog('settings-dialog');});$('settings-dialog').addEventListener('close',()=>{if(started&&paused)dialog('pause-dialog');});
 $('pause-dialog').addEventListener('cancel',e=>{e.preventDefault();resume();});$('result-dialog').addEventListener('cancel',e=>{e.preventDefault();menu();});
@@ -98,7 +104,7 @@ document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{settings.mode=b.dataset.mode;save();syncSettings();}));
 for(const id of ['duration','difficulty'])$(id).addEventListener('change',()=>{settings[id]=id==='duration'?Number($(id).value):$(id).value;save();});
 for(const [data,field]of [['paint','paint'],['body','body']])document.querySelectorAll(`[data-${data}]`).forEach(b=>b.addEventListener('click',()=>{settings[field]=b.dataset[data];save();syncSettings();if(!started)view.sync(sim,paints[settings.paint].hex,settings.body);}));
-for(const id of ['quality','sound','ballcam','fps-toggle'])$(id).addEventListener('change',()=>{settings.quality=$('quality').value;settings.sound=$('sound').checked;settings.ballcam=$('ballcam').checked;settings.fps=$('fps-toggle').checked;save();view.quality(settings.quality);view.cameraMode=settings.ballcam;if(settings.sound)sound.start();});
+for(const id of ['quality','sound','ballcam','fps-toggle'])$(id).addEventListener('change',()=>{settings.quality=$('quality').value;settings.sound=$('sound').checked;settings.ballcam=$('ballcam').checked;settings.fps=$('fps-toggle').checked;save();if(id==='quality')view.quality(settings.quality);view.cameraMode=settings.ballcam;if(settings.sound)sound.start();});
 $('career-button').addEventListener('click',()=>{text('career-matches',settings.matches);text('career-wins',settings.wins);text('career-goals',settings.goals);text('career-touches',settings.touches);const list=$('history');list.replaceChildren();if(!settings.history.length)list.textContent='Your first match is the start of your story.';for(const h of settings.history){const row=document.createElement('div');row.className='history-row';const label=document.createElement('strong'),score=document.createElement('span');label.textContent=(names[h.mode]||'MATCH')+(h.won?' · WIN':' · LOSS');score.textContent=`${Math.max(0,Number(h.blue)||0)} — ${Math.max(0,Number(h.orange)||0)}`;row.append(label,score);list.append(row);}dialog('career-dialog');});
 $('fullscreen-button').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{feed('FULLSCREEN UNAVAILABLE IN THIS VIEW');}});$('retry-button').addEventListener('click',()=>location.reload());window.addEventListener('resize',()=>view?.resize());window.addEventListener('pagehide',event=>{if(event.persisted){pause();return;}input?.dispose();view?.dispose();sound.dispose();});
-try{view=new GameView($('arena'));view.quality(settings.quality);text('loading-label','OPENING CHAMPIONS FIELD');await view.loadAssets(event=>{const asset=event.asset==='stadium'?'Champions Field':'Fennec';text('loading-progress',event.total?`${asset} · ${Math.round(event.loaded/event.total*100)}%`:`Loading ${asset}…`);});sim=new Simulation({mode:'free'});view.sync(sim,paints[settings.paint].hex,settings.body);input=new Input($('arena'),{active:()=>started&&!paused&&sim.phase!=='ended',action});syncSettings();show('loading',false);show('lobby',true);Object.defineProperty(window,'boostCircuit',{value:Object.freeze({version:'1.2.0',getState:()=>structuredClone({...sim.state(),active:started,paused})})});requestAnimationFrame(frame);}catch(error){fail(error);}
+try{view=new GameView($('arena'));view.quality(settings.quality);text('loading-label','OPENING CHAMPIONS FIELD');await view.loadAssets(event=>{const asset=event.asset==='stadium'?'Champions Field':'Fennec';text('loading-progress',event.total?`${asset} · ${Math.round(event.loaded/event.total*100)}%`:`Loading ${asset}…`);});sim=new Simulation({mode:'free'});motion=new MotionBuffer(sim);view.sync(sim,paints[settings.paint].hex,settings.body);input=new Input($('arena'),{active:()=>started&&!paused&&sim.phase!=='ended',action});syncSettings();save();text('loading-label','WARMING UP THE ARENA');await view.prepare();last=performance.now();show('loading',false);show('lobby',true);Object.defineProperty(window,'boostCircuit',{value:Object.freeze({version:'1.3.0',getPerformance:()=>({...view.diagnostics(),fps:renderFPS}),getState:()=>structuredClone({...sim.state(),active:started,paused})})});requestAnimationFrame(frame);}catch(error){fail(error);}

@@ -1,7 +1,9 @@
 /* Champions Field architecture with a collision-aligned pitch and animated Fennec vehicles. */
 import * as T from './vendor/three.module.js';
 import { C, createPads, clamp } from './physics.js';
-import { loadChampionsField, setStadiumQuality } from './stadium.js';
+import { loadChampionsField, setStadiumQuality, disposeStadium } from './stadium.js';
+import { batchStaticPitch, freezeStaticTransforms, BoostPadView, ParticlePool } from './rendering.js';
+import { AdaptiveGraphics } from './performance.js';
 import { loadFennec, makeFennecModel, animateVehicle, disposeVehicle, disposeFennecTemplate } from './vehicles.js';
 const v=(x,y,z)=>new T.Vector3(x,y,z);
 const material=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.55,metalness:.18,...extra});
@@ -68,7 +70,7 @@ export function buildArena(parent){
  const scene=new T.Group();scene.name='Calibrated_Pitch';parent.add(scene);
  const floorMat=material('#ffffff',{map:fieldTexture(),roughness:.95,metalness:0}),shape=new T.Shape();polygon.forEach(([x,z],i)=>i?shape.lineTo(x,z):shape.moveTo(x,z));shape.closePath();const g=new T.ShapeGeometry(shape);g.rotateX(-Math.PI/2);const pos=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<pos.count;i++)uv.setXY(i,(pos.getX(i)+C.halfWidth)/(2*C.halfWidth),(C.halfLength-pos.getZ(i))/(2*C.halfLength));uv.needsUpdate=true;
  const floor=mesh(scene,g,floorMat);floor.castShadow=false;
- const dark=material('#101d2c',{roughness:.7}),glass=new T.MeshPhysicalMaterial({color:'#b5d9ee',transparent:true,opacity:.065,roughness:.12,metalness:.1,side:T.DoubleSide,depthWrite:false}),rampMat=material('#37585e',{roughness:.6,side:T.DoubleSide});
+ const dark=material('#101d2c',{roughness:.7}),glass=new T.MeshBasicMaterial({color:'#b5d9ee',transparent:true,opacity:.065,side:T.DoubleSide,depthWrite:false,forceSinglePass:true}),rampMat=material('#37585e',{roughness:.6,side:T.DoubleSide});
  box(scene,142,1,157,[0,-.65,0],dark);
  const wallSegments=[];
  for(let i=0;i<polygon.length;i++){
@@ -93,64 +95,62 @@ export function buildArena(parent){
   scene.add(new T.LineSegments(new T.BufferGeometry().setFromPoints(points),netMat));
   box(scene,16,.14,.35,[0,C.goalHeight+.25,z],dark);
  }
- const pads=createPads().map(p=>{
-  const root=new T.Group();root.position.copy(p.p);scene.add(root);const radius=p.big?.78:.36;
-  const base=mesh(root,new T.CylinderGeometry(radius*1.25,radius*1.3,.08,12),dark,[0,-.02,0]);base.castShadow=false;
-  const ring=mesh(root,new T.TorusGeometry(radius,.045,5,24),material('#ffd17a',{emissive:'#ffb444',emissiveIntensity:1.8}),[0,.06,0],[Math.PI/2,0,0]);
-  const orb=mesh(root,new T.OctahedronGeometry(p.big?.35:.14),material('#ffe4a7',{emissive:'#ffbb4b',emissiveIntensity:2}),[0,p.big?.55:.22,0]);orb.castShadow=false;return{root,ring,orb};
- });
- return {pads,root:scene,field:floor};
+ const pads=createPads(),padView=new BoostPadView(scene,pads);batchStaticPitch(scene,floor);freezeStaticTransforms(scene);
+ return {pads,root:scene,field:floor,padView};
 }
 export class GameView{
  constructor(canvas){
-  this.renderer=new T.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
+  this.renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});this.graphics=new AdaptiveGraphics();this.renderer.setPixelRatio(1);this.renderer.shadowMap.enabled=false;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
   this.scene=new T.Scene();this.scene.background=new T.Color('#192e49');this.scene.fog=new T.Fog('#293e56',140,310);
   this.camera=new T.PerspectiveCamera(85,1,.08,360);this.camera.position.set(4,4,-12);this.scene.add(new T.HemisphereLight('#c2e9ff','#192c35',2.0));
-  const sun=new T.DirectionalLight('#dcecff',2.1);sun.position.set(-35,65,-20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-64,right:64,top:70,bottom:-70,near:1,far:155});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;this.scene.add(sun);this.sun=sun;
+  const sun=new T.DirectionalLight('#dcecff',2.1);sun.position.set(-35,65,-20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-64,right:64,top:70,bottom:-70,near:1,far:155});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;this.scene.add(sun);this.sun=sun;
   const warm=new T.DirectionalLight('#ffb778',.65);warm.position.set(30,18,65);this.scene.add(warm);
   this.arena=buildArena(this.scene);this.ball=makeBall();this.scene.add(this.ball);this.ballShadow=mesh(this.scene,new T.CircleGeometry(C.ballRadius,24),new T.MeshBasicMaterial({color:'#07131c',transparent:true,opacity:.35,depthWrite:false}),[0,.02,0],[-Math.PI/2,0,0]);this.ballShadow.castShadow=false;
   this.ballIndicator=mesh(this.scene,new T.RingGeometry(1.25,1.3,40),new T.MeshBasicMaterial({color:'#cceeff',transparent:true,opacity:.45,depthWrite:false}),[0,.028,0],[-Math.PI/2,0,0]);this.ballIndicator.castShadow=false;
-  this.cars=new Map();this.particles=[];this.cameraMode=true;this.look=new T.Vector3();this.menuTime=0;this.spin=0;this.resize();
+  this.cars=new Map();this.particles=new ParticlePool(this.scene);this.carShadows=new T.InstancedMesh(new T.CircleGeometry(1,16),new T.MeshBasicMaterial({color:'#07131c',transparent:true,opacity:.23,depthWrite:false}),4);this.carShadows.instanceMatrix.setUsage(T.DynamicDrawUsage);this.carShadows.name='Car_Contact_Shadows';this.carShadows.count=0;this.carShadows.frustumCulled=false;this.scene.add(this.carShadows);this.shadowMatrix=new T.Matrix4();this.shadowRotation=new T.Quaternion().setFromAxisAngle(v(1,0,0),-Math.PI/2);this.shadowScale=v(.65,1.1,1);this.shadowPosition=v();this.forward=v();this.behind=v();this.toward=v();this.desired=v();this.target=v();this.stadiumRequest=0;this.cameraMode=true;this.look=new T.Vector3();this.menuTime=0;this.spin=0;this.resize();
  }
  resize(){const w=window.innerWidth,h=window.innerHeight;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
- quality(level){this.qualityLevel=level;setStadiumQuality(this.stadium,level);this.renderer.setPixelRatio(level==='low'?1:Math.min(window.devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=level!=='low';this.resize();}
+ quality(level){this.qualityLevel=level;this.graphics.setMode(level);this.applyGraphics();if(this.stadium)this.ensureStadiumDetail(level==='high'?'high':'balanced');}
+ applyGraphics(){const profile=this.graphics.profile;setStadiumQuality(this.stadium,profile.seats?'high':'low');const ratio=Math.min(window.devicePixelRatio||1,profile.scale);if(Math.abs(this.renderer.getPixelRatio()-ratio)>.001)this.renderer.setPixelRatio(ratio);this.renderer.shadowMap.enabled=profile.shadows;this.resize();}
+ monitorFrame(dt){if(this.graphics.observe(dt))this.applyGraphics();}
  async loadAssets(onProgress){
-  const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total});
-  const [,stadium]=await Promise.all([loadFennec(progress('vehicle')),loadChampionsField(progress('stadium'))]);this.stadium=stadium;this.scene.add(stadium);setStadiumQuality(stadium,this.qualityLevel||'high');
+  const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total}),detail=this.qualityLevel==='high'?'high':'balanced';
+  const [,stadium]=await Promise.all([loadFennec(progress('vehicle')),loadChampionsField(progress('stadium'),detail)]);this.stadium=stadium;this.stadiumDetail=detail;this.scene.add(stadium);this.applyGraphics();
  }
+ async ensureStadiumDetail(detail){
+  const request=++this.stadiumRequest;if(detail===this.stadiumDetail)return;
+  try{const next=await loadChampionsField(undefined,detail);if(request!==this.stadiumRequest){disposeStadium(next);return;}this.scene.remove(this.stadium);disposeStadium(this.stadium);this.stadium=next;this.stadiumDetail=detail;this.scene.add(next);setStadiumQuality(next,this.graphics.profile.seats?'high':'low');}catch(error){console.warn('Keeping the loaded stadium detail.',error);}
+ }
+ async prepare(){await this.renderer.compileAsync(this.scene,this.camera);}
+ diagnostics(){return {mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail};}
  sync(sim,paint='#299bff',body='fennec'){
   for(const c of this.cars.values()){this.scene.remove(c.root);disposeVehicle(c);}this.cars.clear();
   for(const car of sim.cars){const chosen=car.id===0?body:'fennec',color=car.id===0?paint:teamColors[car.team];const model=chosen==='fennec'?makeFennecModel(color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
-   this.cars.set(car.id,model);this.scene.add(model.root);}this.update(sim,0,true);
+   model.simCar=car;this.cars.set(car.id,model);this.scene.add(model.root);}this.carShadows.count=sim.cars.length;this.update(sim,0,true);
  }
- burst(position,color='#ffc478',count=25){
-  for(let i=0;i<count;i++){const m=mesh(this.scene,new T.SphereGeometry(.07,4,3),new T.MeshBasicMaterial({color,transparent:true}),position);m.castShadow=false;this.particles.push({mesh:m,v:v(Math.sin(i*2.4)*(2+i%5),1+i%6,Math.cos(i*2.4)*(2+i%5)),life:.7+i%5*.1,max:1.2});}
- }
- update(sim,dt,menu=false,snapshot=null){
+ burst(position,color='#ffc478',count=25){this.particles.spawn(position,color,count);}
+ update(sim,dt,menu=false,snapshot=null,replay=false){
   this.menuTime+=dt;this.spin+=dt;
-  const cars=snapshot?.cars||sim.cars.map(c=>({id:c.id,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting}));
-  for(const state of cars){
-   const model=this.cars.get(state.id);if(!model)continue;
-   model.root.position.fromArray(state.p);model.root.quaternion.fromArray(state.q);model.root.visible=!state.demo;
-   model.flame.visible=!!state.boosting&&!menu;model.flame.scale.z=1+Math.sin(this.spin*80)*.15;
-   const car=sim.cars.find(c=>c.id===state.id),speed=snapshot?(state.speed||0):(car?car.v.dot(new T.Vector3(0,0,1).applyQuaternion(car.q)):0);
-   animateVehicle(model,{speed:menu?0:speed,steer:menu?0:snapshot?(state.steer||0):(car?.renderSteer||0),dt,grounded:snapshot?state.grounded!==false:car?.grounded!==false,throttle:menu?0:car?.renderThrottle||0});
+  for(const state of snapshot?.cars||sim.cars){
+   const model=this.cars.get(state.id);if(!model)continue;const car=model.simCar;
+   if(snapshot){model.root.position.fromArray(state.p);model.root.quaternion.fromArray(state.q);}else{model.root.position.copy(state.p);model.root.quaternion.copy(state.q);}
+   model.root.visible=snapshot?!state.demo:car.demoTime<=0;model.flame.visible=!!state.boosting&&!menu;model.flame.scale.z=1+Math.sin(this.spin*80)*.15;
+   const speed=snapshot?(state.speed||0):car.v.dot(this.forward.set(0,0,1).applyQuaternion(car.q));
+   animateVehicle(model,{speed:menu?0:speed,steer:menu?0:snapshot?(state.steer||0):car.renderSteer||0,dt,grounded:snapshot?state.grounded!==false:car.grounded,throttle:menu?0:snapshot?state.throttle||0:car.renderThrottle||0});
   }
-  this.ball.position.fromArray(snapshot?.ball.p||sim.ball.p.toArray());this.ball.quaternion.fromArray(snapshot?.ball.q||sim.ball.q.toArray());this.ballShadow.position.set(this.ball.position.x,.022,this.ball.position.z);this.ballIndicator.position.set(this.ball.position.x,.028,this.ball.position.z);this.ballIndicator.visible=!menu;const shadowScale=1+this.ball.position.y*.13;this.ballShadow.scale.setScalar(shadowScale);this.ballShadow.material.opacity=.35/(1+this.ball.position.y*.35);
-  this.arena.pads.forEach((p,i)=>{const active=sim.pads[i].timer<=0;p.orb.visible=active;p.ring.material.emissiveIntensity=active?1.8:.1;p.orb.rotation.y=this.spin*1.6;p.orb.position.y=(sim.pads[i].big?.55:.22)+Math.sin(this.spin*2+i)*.045;});
-  for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life-=dt;p.mesh.position.addScaledVector(p.v,dt);p.v.y-=5*dt;p.mesh.material.opacity=Math.max(0,p.life/p.max);if(p.life<=0){this.scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();this.particles.splice(i,1);}}
-  let desired,target;
-  const player=this.cars.get(0),p=player.root.position,forward=v(0,0,1).applyQuaternion(player.root.quaternion);
-  if(menu){const angle=this.menuTime*.07;desired=v(2.35+Math.sin(angle)*.25,1.3,-7.8);target=v(0,.48,-5);player.root.position.set(0,.24,-5);player.root.quaternion.setFromAxisAngle(v(0,1,0),Math.PI*.68);this.ball.position.set(3.8,C.ballRadius,-1.5);}
-  else if(snapshot){desired=this.ball.position.clone().add(v(7,5,-10));target=this.ball.position.clone();}
+  if(snapshot){this.ball.position.fromArray(snapshot.ball.p);this.ball.quaternion.fromArray(snapshot.ball.q);}else{this.ball.position.copy(sim.ball.p);this.ball.quaternion.copy(sim.ball.q);}
+  this.ballShadow.position.set(this.ball.position.x,.022,this.ball.position.z);this.ballIndicator.position.set(this.ball.position.x,.028,this.ball.position.z);this.ballIndicator.visible=!menu;const shadowScale=1+this.ball.position.y*.13;this.ballShadow.scale.setScalar(shadowScale);this.ballShadow.material.opacity=.35/(1+this.ball.position.y*.35);
+  this.arena.padView.update(sim.pads,this.spin);this.particles.update(dt);
+  const player=this.cars.get(0),p=player.root.position,desired=this.desired,target=this.target;this.forward.set(0,0,1).applyQuaternion(player.root.quaternion);
+  if(menu){const angle=this.menuTime*.07;desired.set(2.35+Math.sin(angle)*.25,1.3,-7.8);target.set(0,.48,-5);player.root.position.set(0,.24,-5);player.root.quaternion.setFromAxisAngle(T.Object3D.DEFAULT_UP,Math.PI*.68);this.ball.position.set(3.8,C.ballRadius,-1.5);}
+  else if(replay){desired.copy(this.ball.position).add(this.toward.set(7,5,-10));target.copy(this.ball.position);}
   else{
-   let behind=forward.clone().setY(0).normalize();
-   if(this.cameraMode){const toward=this.ball.position.clone().sub(p).setY(0);if(toward.length()>2)behind=toward.normalize();}
-   const speed=sim.cars[0].v.length();desired=p.clone().addScaledVector(behind,-(5.2+speed*.045)).add(v(0,2.65,0));target=p.clone().addScaledVector(behind,4).add(v(0,.8,0));
-   if(this.cameraMode)target.lerp(this.ball.position,.55);
+   const behind=this.behind.copy(this.forward).setY(0).normalize();if(this.cameraMode){const toward=this.toward.copy(this.ball.position).sub(p).setY(0);if(toward.length()>2)behind.copy(toward).normalize();}
+   const speed=sim.cars[0].v.length();desired.copy(p).addScaledVector(behind,-(5.2+speed*.045));desired.y+=2.65;target.copy(p).addScaledVector(behind,4);target.y+=.8;if(this.cameraMode)target.lerp(this.ball.position,.55);
    desired.x=clamp(desired.x,-C.halfWidth+.9,C.halfWidth-.9);desired.z=clamp(desired.z,-C.halfLength-C.goalDepth+.8,C.halfLength+C.goalDepth-.8);desired.y=clamp(desired.y,1.1,C.height-.5);
   }
+  let shadow=0;for(const model of this.cars.values()){this.shadowPosition.set(model.root.position.x,.018,model.root.position.z);const visible=model.root.visible&&model.root.position.y<8;this.shadowScale.set(visible?.65:0,visible?1.1:0,1);this.shadowMatrix.compose(this.shadowPosition,this.shadowRotation,this.shadowScale);this.carShadows.setMatrixAt(shadow++,this.shadowMatrix);}this.carShadows.instanceMatrix.needsUpdate=true;
   const smooth=dt===0?1:1-Math.exp(-7*dt);this.camera.position.lerp(desired,smooth);this.look.lerp(target,smooth);this.camera.lookAt(this.look);this.camera.fov=T.MathUtils.lerp(this.camera.fov,menu?45:sim.cars[0].boosting?91:85,Math.min(1,dt*5));this.camera.updateProjectionMatrix();this.renderer.render(this.scene,this.camera);
  }
- dispose(){this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();this.renderer.dispose();}
+ dispose(){this.stadiumRequest++;this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();this.renderer.dispose();}
 }
