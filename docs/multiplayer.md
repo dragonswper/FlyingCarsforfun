@@ -1,6 +1,12 @@
 # Multiplayer
 
-Boost Circuit supports automatic casual matchmaking and two-human room-code matches while retaining static hosting and browser-native rendering.
+Boost Circuit supports automatic casual matchmaking, two-human room-code matches and custom lobbies for up to eight people while retaining static hosting and browser-native rendering.
+
+## Custom private lobbies — 1.11
+
+Choose **Private Match → Custom Lobby**, set 2–8 people and 1–30 minutes, and share the complete BC2 invite. Choose Blue, Orange or Spectate; the host can spectate. Team choices apply before start/after results, and late arrivals watch the active match until the next one. Playing members ready up before the host starts. See [custom lobby architecture, recovery, controller/chat controls and verification](community-update.md).
+
+The website is currently **Public**, as explicitly approved by the owner. Custom lobby admission still requires its invite; website sharing and game-room admission are separate.
 
 ## Online Match — 1.9
 
@@ -45,7 +51,7 @@ Relevant NetplayJS files: [client.ts](https://github.com/rameshvarun/netplayjs/b
 
 Codes contain eight independently generated symbols from a 32-symbol alphabet: 40 random bits generated with `crypto.getRandomValues`. Spaces/dashes and letter case are normalized; ambiguous 0/O and 1/I are rejected. The code becomes a game-specific private queue key, separate from automatic matchmaking. No public room directory is exposed. Unused host rooms expire after ten minutes. A guest times out after 25 seconds with a message covering an absent/full room or a blocked connection. A code connects only one guest, and is not available for joining once that pair is matched.
 
-The NetplayJS server chooses a random WebRTC signaling initiator. In private rooms this is independent of our explicit application host: the player who selects Host always owns the simulation. A `hello` checks protocol 1 and build `boost-circuit-1.10.0`, opposite host/guest roles and matching private/automatic match types. Incompatible builds close with a reload message. Both data channels must be open and the local hello sent before early packets are delivered; this prevents room configuration from arriving before peer identity is checked. ICE candidates arriving before the remote description are buffered.
+The NetplayJS server chooses a random WebRTC signaling initiator. In private rooms this is independent of our explicit application host: the player who selects Host always owns the simulation. A `hello` checks protocol 1 and build `boost-circuit-1.11.0`, opposite host/guest roles and matching private/automatic match types. Incompatible builds close with a reload message. Both data channels must be open and the local hello sent before early packets are delivered; this prevents room configuration from arriving before peer identity is checked. ICE candidates arriving before the remote description are buffered.
 
 The host runs the existing simulation at 120 Hz, consumes controls only for the guest's assigned car and owns ball/car collisions, boost collection, goals, clock, bots and results. Clients cannot submit positions or scores as inputs. Guest input frames have increasing sequence numbers; duplicate/old frames are rejected while large valid gaps resynchronize instead of permanently rejecting input. Controls are clamped, the newest held state is consumed, jump edges are retained, and a 300 ms gap releases held controls. Four compact redundant frames are sent at up to 60 messages per second.
 
@@ -65,7 +71,7 @@ The shared service and its relay connectivity are best-effort external dependenc
 
 ## Verification
 
-`npm run check` and `npm test` require no installed production dependencies. Version 1.10.0 has 163 passing tests, including guest-response, recovery, rematch, quality/UI and existing network checks. Delay/loss coverage uses a deterministic ten-second simulated link with jitter, reordered state and lost input/state datagrams. Matchmaking tests exercise the exact deadline, fresh-socket retries, cancellation, late callbacks, random host assignment, compatible queues, both-vehicle readiness, setup timeout, automatic start and rematches. These verify bounded state and recovery behavior, not an internet latency guarantee.
+`npm run check` and `npm test` require no installed production dependencies. Version 1.11.0 has 193 passing tests, including guest-response, recovery, rematch, quality/UI and existing network checks. Delay/loss coverage uses a deterministic ten-second simulated link with jitter, reordered state and lost input/state datagrams. Matchmaking tests exercise the exact deadline, fresh-socket retries, cancellation, late callbacks, random host assignment, compatible queues, both-vehicle readiness, setup timeout, automatic start and rematches. These verify bounded state and recovery behavior, not an internet latency guarantee.
 
 The optional live check uses two actual Node WebRTC peers with the production application transport and room code. It reaches the public NetplayJS service through the cloud workspace's inherited HTTPS proxy, then uses same-container host ICE candidates for the data route. It exercises the handshake, Ready/Start, hundreds of acknowledged guest controls, snapshots/prediction, host pause/resume, authoritative final scores, rematch and disconnect cleanup. Repeated testing found and fixed the early-channel startup race; the automated regression checks local-open-before-packet ordering.
 
@@ -76,6 +82,7 @@ npm install --prefix /tmp/boost-circuit-rtc --no-save --ignore-scripts werift@0.
 BOOST_CIRCUIT_RTC_TEST_DEPS=/tmp/boost-circuit-rtc node scripts/check-live-multiplayer.mjs
 BOOST_CIRCUIT_RTC_TEST_DEPS=/tmp/boost-circuit-rtc node scripts/check-live-matchmaking.mjs
 BOOST_CIRCUIT_RTC_TEST_DEPS=/tmp/boost-circuit-rtc node scripts/check-live-recovery.mjs
+BOOST_CIRCUIT_RTC_TEST_DEPS=/tmp/boost-circuit-rtc node scripts/check-live-party.mjs
 ```
 
 The matchmaking check uses isolated verification queues with real public signaling and two real WebRTC peers. The recorded run assigned host/guest roles, automatically readied/started the match, acknowledged 197 guest input frames and exchanged 139 realtime packets. A separate empty-queue run started exactly one bot match after **60.002 seconds** and closed its queue socket. Test ICE candidates route between peers in the same cloud container; these results do not verify browser rendering or traversal between independent home networks.

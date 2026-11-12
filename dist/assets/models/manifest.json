@@ -197,6 +197,164 @@
         "Retained both panel and green light material groups; added subtle light emission",
         "Reduced diffuse atlas to 1024 pixels and embedded as WebP quality 90"
       ]
+    },
+    {
+      "id": "randy",
+      "name": "randy",
+      "file": "../randy.glb",
+      "providedBy": "User upload",
+      "creator": null,
+      "sourceUrl": null,
+      "license": "Not supplied; undetermined",
+      "sha256": "ae5db60283eb0a4cda31f9cd5f4630aa9b0deecf145600ec5faaeec1e540324c",
+      "bytes": 2432612,
+      "modifications": [
+        "Converted the user-supplied source to a self-contained browser GLB",
+        "Normalized +Y up / +Z forward and floor zero; physics are not encoded in this visual asset",
+        "Embedded WebP textures at at most 1024 pixels; no external geometry decoder",
+        "Reduced the source mesh to 50% through Blender Decimate, retaining skin weights and UVs",
+        "Preserved the five embedded GLB texture atlases, face alpha and vertex colors; differently oriented external texture copies were not substituted",
+        "Lowered the source T-pose arms and authored a looping 1.37 second running gait; no source animation was present",
+        "Preserved the source skeleton for independent per-instance animation",
+        "Added vertical gait compensation to keep the lowest animated foot at the visual floor"
+      ]
+    },
+    {
+      "id": "ridiculous",
+      "name": "ridiculous",
+      "file": "../ridiculous.glb",
+      "providedBy": "User upload",
+      "creator": null,
+      "sourceUrl": null,
+      "license": "Not supplied; undetermined",
+      "sha256": "f0d280782e1914dbce59ba6d9a96b4e5fdc98165388729654e7fe0740f9d5cc2",
+      "bytes": 360156,
+      "modifications": [
+        "Converted the user-supplied source to a self-contained browser GLB",
+        "Normalized +Y up / +Z forward and floor zero; physics are not encoded in this visual asset",
+        "Embedded WebP textures at at most 1024 pixels; no external geometry decoder",
+        "Relinked the supplied palette to both FBX materials",
+        "Retained all source triangles, skin weights, and the source SnakeWalk animation"
+      ]
+    },
+    {
+      "id": "viking",
+      "name": "viking",
+      "file": "../viking.glb",
+      "providedBy": "User upload",
+      "creator": null,
+      "sourceUrl": null,
+      "license": "Not supplied; undetermined",
+      "sha256": "623de5dceff8362854d19afbfd8a7b1f79a434fb817b65ea01752454b20b14b9",
+      "bytes": 2721076,
+      "modifications": [
+        "Converted the user-supplied source to a self-contained browser GLB",
+        "Normalized +Y up / +Z forward and floor zero; physics are not encoded in this visual asset",
+        "Embedded WebP textures at at most 1024 pixels; no external geometry decoder",
+        "Reconstructed the missing OBJ MTL using supplied diffuse and normal atlases",
+        "Omitted the all-black emission atlas and the reflection map whose original shader mapping is absent",
+        "Separated four source wheel assemblies with real rolling axles and front steering",
+        "Reduced dense rope and catapult spike meshes to 65%; batched fixed body parts into one material draw"
+      ]
+    },
+    {
+      "id": "scifi",
+      "name": "scifi",
+      "file": "scifi.glb",
+      "providedBy": "User upload",
+      "creator": "3DHaupt (https://sketchfab.com/dennish2010)",
+      "sourceUrl": "https://sketchfab.com/3d-models/modular-sci-fi-vehicle-set-0115-test-5b095f8940c840b389522609cebf46d4",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "sha256": "5147e52a4b3b05905b0188eaf51e7f5acd7a3f5c8735ee70224f0a8845947aeb",
+      "bytes": 1790012,
+      "modifications": [
+        "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+        "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+        "Added measured independent wheel rolling pivots and front steering where appropriate",
+        "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+        "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+        "Selected the one coherent assembled three-wheeler already present in the supplied set",
+        "Baked the first imported animation pose; removed the display floor and importer-created hidden bone-shape helpers",
+        "Replaced source armatures and demonstration clip with procedural tire rolling/front steering; fixed leg geometry is retained"
+      ]
+    },
+    {
+      "id": "golfcart",
+      "name": "golfcart",
+      "file": "golfcart.glb",
+      "providedBy": "User upload",
+      "creator": "bcwilcox (https://sketchfab.com/bcwilcox)",
+      "sourceUrl": "https://sketchfab.com/3d-models/wooden-golf-cart-with-golf-club-bags-7a2f3d7f7b014481a1e71bf5faf2af57",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "sha256": "7b1a83fc37260c2911d93f432fc83a74fcb2734069d6530b2d8c1297999fad95",
+      "bytes": 3587096,
+      "modifications": [
+        "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+        "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+        "Added measured independent wheel rolling pivots and front steering where appropriate",
+        "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+        "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+        "Separated approximate outer wooden tire/hub regions from the single connected scanned cart using measured cylindrical regions; retained their UV artwork",
+        "Removed three unused source UV channels; every source image uses the retained TEXCOORD_0"
+      ]
+    },
+    {
+      "id": "rickshaw",
+      "name": "rickshaw",
+      "file": "rickshaw.glb",
+      "providedBy": "User upload",
+      "creator": "gourav.das3650 (https://sketchfab.com/gourav.das3650)",
+      "sourceUrl": "https://sketchfab.com/3d-models/stylized-vehicle-autorickshaw-b40307aeeafb42be928b4181551dcb61",
+      "license": "SKETCHFAB Standard (https://sketchfab.com/licenses)",
+      "sha256": "646ab305f49b02eba85ab048865217dc09339aaa5940395d3e1642caf95da65d",
+      "bytes": 2642336,
+      "modifications": [
+        "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+        "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+        "Added measured independent wheel rolling pivots and front steering where appropriate",
+        "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+        "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+        "Kept the rear axle fixed; grouped the source named wheel parts into one front and two rear rolling assemblies"
+      ]
+    },
+    {
+      "id": "ifv",
+      "name": "ifv",
+      "file": "ifv.glb",
+      "providedBy": "User upload",
+      "creator": "adilwork23 (https://sketchfab.com/adilwork23)",
+      "sourceUrl": "https://sketchfab.com/3d-models/infantry-fighting-vehicle-concept-49ff213ce1244856ba741373b6fcf1f0",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "sha256": "7eddf36ef8c1e84106edbae109296fc37c79141974bc95bd8f394c26c77901fe",
+      "bytes": 4809684,
+      "modifications": [
+        "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+        "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+        "Added measured independent wheel rolling pivots and front steering where appropriate",
+        "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+        "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+        "Kept track belts, track links, spare wheels, hull and turret fixed; grouped the actual running gear into 30 non-steering rolling pivots",
+        "Removed all unused source UV channels from the untextured material-only model"
+      ]
+    },
+    {
+      "id": "champions-inner",
+      "name": "Champions Field supplied inner pitch and goals",
+      "file": "champions-inner.glb",
+      "creator": "Prabhu Ram / virtualmakes",
+      "creatorUrl": "https://sketchfab.com/virtualmakes",
+      "sourceUrl": "https://sketchfab.com/3d-models/champions-field-rocket-league-stadium-6ea5ee0502ae432fbac3a4f8aaab61a5",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "providedBy": "User upload",
+      "bytes": 995600,
+      "sha256": "695dd5ae04bb556c52635241143d47c7d184c6bd0e63cd69e9540c50ea409dec",
+      "modifications": [
+        "Retained source turf, ramps and goals; removed obstructing cage/dome",
+        "Warped source surfaces to calibrated collision outline",
+        "Fitted native goal mouth to scoring plane",
+        "Retained game boost pads; generated pitch markings applied at runtime"
+      ]
     }
   ]
 }

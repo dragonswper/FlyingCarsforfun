@@ -1,0 +1,112 @@
+{
+  "id": "ridiculous",
+  "file": "ridiculous.glb",
+  "sourceFile": "Day1.fbx",
+  "sourceBytes": 452940,
+  "sourceSha256": "88d3ae8d4daacb4e7f85e4e1d7d8d995dc366cf70c27bd06183332332d6d1657",
+  "bytes": 360156,
+  "sha256": "f0d280782e1914dbce59ba6d9a96b4e5fdc98165388729654e7fe0740f9d5cc2",
+  "sourceTriangles": 4756,
+  "triangles": 4756,
+  "drawBatches": 2,
+  "credit": {
+    "title": "3December 2023 - Ridiculous Vehicle",
+    "author": null,
+    "license": "Not supplied; undetermined",
+    "source": null,
+    "provenance": "User-uploaded model archive; archive and embedded source contain no attribution or license notice"
+  },
+  "sourceBounds": {
+    "min": [
+      -1.882308840751648,
+      -2.821765661239624,
+      -0.14533792436122894
+    ],
+    "max": [
+      1.8491915464401245,
+      2.458892822265625,
+      1.6578088998794556
+    ]
+  },
+  "normalizedRestDimensions": [
+    1.413270863415064,
+    0.6829249912195698,
+    2.0
+  ],
+  "visualFloor": 0,
+  "wheels": [],
+  "paintMaterial": null,
+  "skinJoints": [
+    47
+  ],
+  "animations": [
+    {
+      "name": "Armature|SnakeWalk",
+      "seconds": 1.7083333333333333,
+      "channels": 144
+    }
+  ],
+  "nodeNames": [
+    "Leg3B.L_end",
+    "Leg3B.L",
+    "Leg2B.L",
+    "Leg1B.L",
+    "Leg3B.R_end",
+    "Leg3B.R",
+    "Leg2B.R",
+    "Leg1B.R",
+    "Leg3F.R_end",
+    "Leg3F.R",
+    "Leg2F.R",
+    "Leg1F.R",
+    "Leg3F.L_end",
+    "Leg3F.L",
+    "Leg2F.L",
+    "Leg1F.L",
+    "Tongue_end",
+    "Tongue",
+    "TongueControl_end",
+    "TongueControl",
+    "Head.002",
+    "Head.001",
+    "Head",
+    "HeadDT_end",
+    "HeadDT",
+    "HeadControl",
+    "Tail.002_end",
+    "Tail.002",
+    "Tail.001",
+    "Tail",
+    "Tail.003_end",
+    "Tail.003",
+    "HeadControlRotate_end",
+    "HeadControlRotate",
+    "Root",
+    "LegFPOLE.R_end",
+    "LegFPOLE.R",
+    "LegFIK.R",
+    "LegBPOLE.L_end",
+    "LegBPOLE.L",
+    "LegBIK.L",
+    "LegBPOLE.R_end",
+    "LegBPOLE.R",
+    "LegBIK.R",
+    "LegFPOLE.L_end",
+    "LegFPOLE.L",
+    "LegFIK.L",
+    "Circle",
+    "Armature",
+    "Custom_Body",
+    "Ridiculous_Vehicle"
+  ],
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "modifications": [
+    "Converted the user-supplied source to a self-contained browser GLB",
+    "Normalized +Y up / +Z forward and floor zero; physics are not encoded in this visual asset",
+    "Embedded WebP textures at at most 1024 pixels; no external geometry decoder",
+    "Relinked the supplied palette to both FBX materials",
+    "Retained all source triangles, skin weights, and the source SnakeWalk animation"
+  ]
+}

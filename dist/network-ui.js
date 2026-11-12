@@ -3,6 +3,7 @@ export function postMatchState(room,sim){
  const ended=sim?.phase==='ended',networked=sim?.cars.some(car=>car.networkRole),next=!!(ended&&(networked||sim.options.quickplayBots));
  if(!ended||!networked)return {next,disabled:false,label:'PLAY AGAIN',message:''};
  if(!room||room.closed)return {next,disabled:true,label:'OPPONENT LEFT',message:room?.error||'The opponent left. Find your next match when ready.'};
+ if(room.party&&room.self?.team===null)return {next,disabled:room.recovering,label:'OPEN LOBBY',message:'You are spectating. Open the lobby to choose a team for the next match.'};
  if(room.recovering)return {next,disabled:true,label:'RECONNECTING…',message:'Reconnecting to your opponent. You can also find a new match.'};
  if(room.pendingMatch)return {next,disabled:true,label:'STARTING REMATCH…',message:'Both players agreed. Starting the rematch…'};
  return {next,disabled:false,label:room.rematchWanted?'CANCEL REMATCH REQUEST':'REQUEST REMATCH',message:room.rematchWanted?'Rematch requested. Waiting for your opponent…':room.remoteRematch?'Your opponent requested a rematch. Accept to play again.':'Both players must agree to a rematch.'};
@@ -16,7 +17,7 @@ export function setupNetworkUI({preferences,save=()=>{},rematch=()=>{},next=()=>
   const active=!!room&&!room.closed,quality=active?room.quality.summary(now,room.lastRealtimeAt??room.lastReceive,room.recovering):null,recovering=active&&room.recovering;
   node('reconnect-overlay').hidden=!recovering;if(recovering)put('reconnect-seconds',String(Math.max(0,Math.ceil((room.recoveryDeadline-now)/1000))));
   const warnings={stalled:'CONNECTION INTERRUPTED',loss:'PACKET LOSS',latency:'HIGH PING',unstable:'UNSTABLE CONNECTION',reconnecting:'RECONNECTING'};
-  node('network-notice').hidden=!active||!warnings[quality?.status];if(active){node('network-notice').dataset.quality=quality.status;put('network-notice',warnings[quality.status]||'');const detail=[quality.ping===null?'MEASURING PING':quality.ping+' ms'];if(quality.status==='stalled')detail.push('UPDATES STALLED');else if(quality.loss!==null)detail.push(quality.loss+'% UPDATE LOSS');put('network-hud',(room.matchmade?'ONLINE 1v1':'PRIVATE MATCH')+' · '+detail.join(' · '));}
+  node('network-notice').hidden=!active||!warnings[quality?.status];if(active){node('network-notice').dataset.quality=quality.status;put('network-notice',warnings[quality.status]||'');const detail=[quality.ping===null?'MEASURING PING':quality.ping+' ms'];if(quality.status==='stalled')detail.push('UPDATES STALLED');else if(quality.loss!==null)detail.push(quality.loss+'% UPDATE LOSS');put('network-hud',(room.matchmade?'ONLINE 1v1':room.party?'CUSTOM LOBBY':'PRIVATE MATCH')+' · '+detail.join(' · '));}
   if(sim?.phase==='ended'){const result=postMatchState(room,sim);node('next-match-button').hidden=!result.next;node('rematch-button').disabled=result.disabled;put('rematch-button',result.label);put('rematch-status',result.message);}
  }
  return {render,sync,regionName:()=>REGIONS[preferences.region]};

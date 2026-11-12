@@ -1,6 +1,6 @@
 import {Vector3} from './vendor/three.module.js';
 
-export const driverName=(car,localId=0)=>car?.id===localId?'YOU':car?.matchmade?'OPPONENT':car?.networkRole==='host'?'HOST':car?.networkRole==='guest'?'GUEST':car?.team?([1,2].includes(car.id)?'ACE':'FLUX'):'NOVA';
+export const driverName=(car,localId=0)=>car?.playerName?car.playerName+(car.id===localId?' · YOU':''):car?.id===localId?'YOU':car?.matchmade?'OPPONENT':car?.networkRole==='host'?'HOST':car?.networkRole==='guest'?'GUEST':car?.team?([1,2].includes(car.id)?'ACE':'FLUX'):'NOVA';
 
 // Keep the two local mode families separate while retaining the last selection.
 export function setupLobby(settings,{save,sync},root=document){
@@ -43,13 +43,14 @@ export function setupLobby(settings,{save,sync},root=document){
 export class NameplateLayer{
  constructor(container){this.container=container;this.point=new Vector3();this.labels=[];for(let i=0;i<4;i++){const label=container.ownerDocument.createElement('div');label.className='nameplate';label.hidden=true;container.append(label);this.labels.push(label);}}
  update(view,sim,replay=false,enabled=true){
+  while(this.labels.length<Math.min(8,sim.cars.length)){const label=this.container.ownerDocument.createElement('div');label.className='nameplate';label.hidden=true;this.container.append(label);this.labels.push(label);}
   const {width,height}=view.viewport;
   for(let i=0;i<this.labels.length;i++){
    const label=this.labels[i],car=sim.cars[i],model=car&&view.cars.get(car.id);
-   if(!enabled||!model?.root.visible||(!replay&&car.id===(view.localPlayerId||0))){if(!label.hidden)label.hidden=true;continue;}
+   if(!enabled||!model?.root.visible||(!replay&&car.id===(view.localPlayerId===null?null:view.localPlayerId??0))){if(!label.hidden)label.hidden=true;continue;}
    this.point.copy(model.root.position);this.point.y+=.95;this.point.project(view.camera);
    if(this.point.z< -1||this.point.z>1||Math.abs(this.point.x)>1||Math.abs(this.point.y)>1){if(!label.hidden)label.hidden=true;continue;}
-   const name=driverName(car,view.localPlayerId||0);if(label.textContent!==name)label.textContent=name;
+   const name=driverName(car,view.localPlayerId===null?null:view.localPlayerId??0);if(label.textContent!==name)label.textContent=name;
    label.classList.toggle('orange-name',car.team===1);if(label.hidden)label.hidden=false;
    label.style.transform=`translate3d(${(this.point.x*.5+.5)*width}px,${(-this.point.y*.5+.5)*height}px,0) translate(-50%,-100%)`;
   }

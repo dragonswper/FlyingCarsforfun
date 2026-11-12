@@ -1,0 +1,111 @@
+{
+  "id": "viking",
+  "file": "viking.glb",
+  "sourceFile": "vwhixcl.obj",
+  "sourceBytes": 6802116,
+  "sourceSha256": "00be5e4c7ff26fbbf14ff1905e716242a2e6541c111312eb40f0038454688b2a",
+  "bytes": 2721076,
+  "sha256": "623de5dceff8362854d19afbfd8a7b1f79a434fb817b65ea01752454b20b14b9",
+  "sourceTriangles": 72168,
+  "triangles": 63290,
+  "drawBatches": 5,
+  "credit": {
+    "title": "Viking Battle Vehicle",
+    "author": null,
+    "license": "Not supplied; undetermined",
+    "source": null,
+    "provenance": "User-uploaded model archive; archive and embedded source contain no attribution or license notice"
+  },
+  "sourceBounds": {
+    "min": [
+      -8.264625549316406,
+      -16.00038719177246,
+      -0.08677329868078232
+    ],
+    "max": [
+      10.103775024414062,
+      14.567779541015625,
+      21.70003318786621
+    ]
+  },
+  "normalizedRestDimensions": [
+    1.2017992923355865,
+    1.4254571873411033,
+    2.0
+  ],
+  "visualFloor": 0,
+  "wheels": [
+    {
+      "name": "FR",
+      "front": true,
+      "position": [
+        0.4471528232097626,
+        0.19238854944705963,
+        0.30774596333503723
+      ],
+      "radius": 0.19238884643233406
+    },
+    {
+      "name": "FL",
+      "front": true,
+      "position": [
+        -0.4471528232097626,
+        0.19238854944705963,
+        0.30774590373039246
+      ],
+      "radius": 0.19238884643233406
+    },
+    {
+      "name": "RR",
+      "front": false,
+      "position": [
+        0.40780338644981384,
+        0.15073953568935394,
+        -0.3301856815814972
+      ],
+      "radius": 0.15003973805725343
+    },
+    {
+      "name": "RL",
+      "front": false,
+      "position": [
+        -0.40365710854530334,
+        0.15073953568935394,
+        -0.33018574118614197
+      ],
+      "radius": 0.15003973805725343
+    }
+  ],
+  "paintMaterial": null,
+  "skinJoints": [],
+  "animations": [],
+  "nodeNames": [
+    "Viking_Fixed_Body",
+    "Custom_Body",
+    "Wheel_FL",
+    "Spin_FL",
+    "Steer_FL",
+    "Wheel_FR",
+    "Spin_FR",
+    "Steer_FR",
+    "Wheel_RL",
+    "Spin_RL",
+    "Steer_RL",
+    "Wheel_RR",
+    "Spin_RR",
+    "Steer_RR",
+    "Viking_Vehicle"
+  ],
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "modifications": [
+    "Converted the user-supplied source to a self-contained browser GLB",
+    "Normalized +Y up / +Z forward and floor zero; physics are not encoded in this visual asset",
+    "Embedded WebP textures at at most 1024 pixels; no external geometry decoder",
+    "Reconstructed the missing OBJ MTL using supplied diffuse and normal atlases",
+    "Omitted the all-black emission atlas and the reflection map whose original shader mapping is absent",
+    "Separated four source wheel assemblies with real rolling axles and front steering",
+    "Reduced dense rope and catapult spike meshes to 65%; batched fixed body parts into one material draw"
+  ]
+}

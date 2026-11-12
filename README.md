@@ -1,12 +1,14 @@
 # Boost Circuit — Car Soccer
 
-Complete standalone game source for **FlyingCarsforfun**, including Champions Field, eight selectable vehicles, the supplied Rocket League ball, tests, model credits and research.
+Complete standalone game source for **FlyingCarsforfun**, including Champions Field, 15 selectable vehicles, the supplied Rocket League ball, tests, model credits and research.
 
 An original browser-native 3D car-soccer recreation inspired by Rocket League, written from scratch with a custom fixed-step simulation and Three.js rendering.
 
 **Play:** https://boost-circuit-arena.bobistheman2049.chatgpt.site
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
+
+**1.11:** **Private Match → Custom Lobby** supports 2–8 people, selectable teams/spectators (including the host) and 1–30 minute matches. Controller menus, an on-screen keyboard and saved button/axis bindings are included. Names save locally; text/quick chat is editable. Garage adds seven supplied novelty vehicles, and the supplied stadium’s inner field/goals replace the generated geometry while keeping boost pads. [Release details, controls and limits](docs/community-update.md). All **193 automated tests pass**, plus an actual four-client WebRTC session.
 
 **1.10:** Guest controls recover after long input gaps and predict ball/vehicle contacts immediately. Brief drops hold the same match for a **20-second reconnect window**. Either player can request a rematch or choose **Find Next Match**. Online Match and **Options → Network** save region/ping preferences; the HUD warns about high ping, update loss and stalled connections. Mouse chord release, controller steering/look return and pitch flip cancellation are fixed. [Details and verification](docs/network-recovery.md). Both players must reload for this build.
 
@@ -25,9 +27,10 @@ Use **Share** to control who can open the hosted game. For private access, invit
 - **Doubles:** you and a bot teammate against two bots.
 - **Free play:** no match clock, unlimited boost, ball reset and session summary.
 - **Training:** five 15-second drills: a straight shot, left/right approaches, an aerial and a save.
+- **Custom private lobby:** 2–8 people, up to four per team, spectators and host-selected 1–30 minute length. Choose roles/teams before start; active-match arrivals spectate until the next match.
 - **Private match:** two humans connected by room code; play 1v1, opposing 2v2 teams with a bot each, or two teammates against two bots.
 
-Matches can last two or five minutes. Kickoffs have a three-second countdown; the match clock starts on the first ball touch. At zero, a live ball remains playable until it touches down. A tied match goes to sudden-death overtime. Goals show a short recorded-position replay that can be skipped.
+Exhibition and legacy private matches can last two or five minutes; custom lobbies support one to thirty minutes. Kickoffs have a three-second countdown; the match clock starts on the first ball touch. At zero, a live ball remains playable until it touches down. A tied match goes to sudden-death overtime. Goals show a short recorded-position replay that can be skipped.
 
 ## Driving and physics
 
@@ -43,9 +46,9 @@ Arena scale, some constants and jump behavior follow public community measuremen
 
 ## Presentation
 
-The garage includes Fennec (default, including bots), Octane, Striker GT, Rally RS, Bottled Car, cHe, Cyberpunk Bike and C-17 Globemaster. Vehicles have rolling wheels, front steering and boost flames. Paintable bodies support four finishes; cHe, the bike and plane retain their supplied artwork. The presentation includes Champions Field, goal nets/frames, particles, the supplied Rocket League ball, a ground locator, ball/free cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser. All bodies use the same game hitbox and handling; the bike and plane are novelty choices.
+The garage includes Fennec (default, including bots), Octane, Striker GT, Rally RS, Bottled Car, cHe, Cyberpunk Bike, C-17 Globemaster, Randy Marsh, Ridiculous Vehicle, Viking Battle Vehicle, Sci-fi Three-Wheeler, Wooden Golf Cart, Autorickshaw and Infantry Fighting Vehicle. Vehicles have rolling wheels, front steering and boost flames. Paintable bodies support four finishes; supplied novelty bodies retain their artwork. The presentation includes Champions Field, goal nets/frames, particles, the supplied Rocket League ball, a ground locator, ball/free cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser. All bodies use the same game hitbox and handling; the bike and plane are novelty choices.
 
-The supplied Fennec/Octane, Champions Field and C-17 artwork is adapted under CC BY 4.0. Bottled Car and Cyberpunk Bike use CC BY-NC 4.0; cHe uses CC BY-NC-SA 4.0. The ball archive did not identify a creator or license. Their artwork is separate from the MIT game code; [model credits](docs/model-replacements.md) identify sources and modifications. No original Rocket League audio or accounts are bundled. Ranked matchmaking, original accounts, cosmetic inventories and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
+The supplied Fennec/Octane, Champions Field and C-17 artwork is adapted under CC BY 4.0. Bottled Car and Cyberpunk Bike use CC BY-NC 4.0; cHe uses CC BY-NC-SA 4.0. The ball, Randy, Ridiculous and Viking archives did not identify usable creator/license notices. The new sci-fi vehicle, golf cart and IFV identify CC BY 4.0; the rickshaw identifies Sketchfab Standard. Their separate terms remain in their import records. Their artwork is separate from the MIT game code; [model credits](docs/model-replacements.md) identify sources and modifications. No original Rocket League audio or accounts are bundled. Ranked matchmaking, original accounts, cosmetic inventories and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
 
 ## Controls
 
@@ -64,8 +67,9 @@ The supplied Fennec/Octane, Champions Field and C-17 artwork is adapted under CC
 | R / T | Practice reset / next drill |
 | Escape | Pause / open match menu (guest's online menu does not pause the host) |
 | Enter | Skip goal replay |
+| Y / G | Text chat / quick chat (editable bindings) |
 
-Standard controller: RT/LT drive, left stick steer/pitch, A jump, B boost, X powerslide, Y camera, LB/RB air roll, Start pause, View scoreboard, D-pad up reset, D-pad down next shot. Controller layouts can vary by browser/hardware and remain unverified interactively.
+Standard controller: RT/LT drive, left stick steer/pitch, A jump, B boost, X powerslide, Y camera, LB/RB air roll, Start pause, View scoreboard, D-pad up reset, D-pad down next shot. PlayStation uses the corresponding Cross/Circle/Square/Triangle and L1/R1/L2/R2 buttons under standard browser mapping. Options → Controls rebinds buttons/axes. D-pad left/right opens quick/text chat. Menus use A/Cross to select, B/Circle to return and D-pad/left stick to navigate; text fields offer an on-screen keyboard. Physical hardware/browser mapping remains unverified interactively.
 
 ## Run and verify from source
 
@@ -98,7 +102,7 @@ The source FBX had no animation clips; movement is implemented procedurally. See
 
 ## Champions Field update
 
-The default stadium now uses the uploaded Champions Field architecture, adapted to the game's coordinate system and materials. Its stands, trophies and eight banner textures are retained. The cinematic source's inner pitch and outer shell are replaced with collision-aligned turf, ramps, walls, goals and interactive boost pads. This is an adaptation of the supplied recreation, not an exact port of the official map.
+The stadium uses the uploaded Champions Field architecture, adapted to the game's coordinate system and materials. Its stands, trophies and eight banner textures are retained. Version 1.11 also uses the supplied inner turf, ramps and goals, calibrated to the solver, with the existing interactive boost pads and pitch markings. The obstructing cage/dome is omitted. See [inner geometry calibration](docs/champions-inner.md). This is an adaptation of the supplied recreation.
 
 The model uses 105 draw batches instead of 2,751 source parts and occupies 20.0 MiB instead of 36.9 MiB. Quantization is decoded by the bundled Three.js loader without downloading a separate codec. Low graphics hides seat batches. The Fennec steering, rolling wheels and suspension continue to work. See [model preparation and credits](docs/model-replacements.md).
 

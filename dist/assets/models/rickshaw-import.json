@@ -1,0 +1,94 @@
+{
+  "id": "rickshaw",
+  "file": "rickshaw.glb",
+  "sourceFile": "stylized_vehicle_autorickshaw.glb",
+  "sourceBytes": 25534580,
+  "sourceSha256": "636032cbae6d5b24997ba14371514c520df92216871c46e279c76190bfa426a2",
+  "bytes": 2642336,
+  "sha256": "646ab305f49b02eba85ab048865217dc09339aaa5940395d3e1642caf95da65d",
+  "sourceTriangles": 248626,
+  "triangles": 69800,
+  "drawBatches": 5,
+  "credit": {
+    "author": "gourav.das3650 (https://sketchfab.com/gourav.das3650)",
+    "license": "SKETCHFAB Standard (https://sketchfab.com/licenses)",
+    "source": "https://sketchfab.com/3d-models/stylized-vehicle-autorickshaw-b40307aeeafb42be928b4181551dcb61",
+    "title": "Stylized Vehicle AutoRickshaw"
+  },
+  "licenseVerification": "Exact attribution embedded in the user-supplied GLB; no separate purchase or license document was supplied",
+  "visualLength": 2,
+  "visualFloor": 0,
+  "bounds": [
+    [
+      -0.7406776547431946,
+      0.002068758010864258,
+      -0.999980628490448
+    ],
+    [
+      0.7406776547431946,
+      2.1388802528381348,
+      1.0002549886703491
+    ]
+  ],
+  "wheels": [
+    {
+      "name": "F",
+      "position": [
+        0.0,
+        0.15567989647388458,
+        0.8375338912010193
+      ],
+      "radius": 0.1564284345688937,
+      "front": true
+    },
+    {
+      "name": "RL",
+      "position": [
+        -0.5743482708930969,
+        0.18942619860172272,
+        -0.33601605892181396
+      ],
+      "radius": 0.18576964123285206,
+      "front": false
+    },
+    {
+      "name": "RR",
+      "position": [
+        0.5743482708930969,
+        0.18942619860172272,
+        -0.33601605892181396
+      ],
+      "radius": 0.18576964123285206,
+      "front": false
+    }
+  ],
+  "wheelBase": 1.1735499501228333,
+  "paintMaterial": null,
+  "tracked": false,
+  "sourceAnimations": [],
+  "animations": 0,
+  "skins": 0,
+  "images": 6,
+  "extensionsUsed": [
+    "EXT_texture_webp",
+    "KHR_materials_specular"
+  ],
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "excludedObjects": [],
+  "modifications": [
+    "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+    "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+    "Added measured independent wheel rolling pivots and front steering where appropriate",
+    "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+    "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+    "Kept the rear axle fixed; grouped the source named wheel parts into one front and two rear rolling assemblies"
+  ],
+  "licenseReference": {
+    "source": "https://sketchfab.com/licenses",
+    "verified": "2026-11-12",
+    "section": "FAQ What is forbidden; License Agreement 2.2(h)",
+    "limit": "The Standard license prohibits making the asset available for download, extraction, redistribution or access as a stand-alone file; no separate permission document was supplied."
+  }
+}

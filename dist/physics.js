@@ -105,6 +105,7 @@ export class Simulation{
   this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options};this.prediction=new BallPrediction();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
   if(this.options.mode==='duel')this.cars.push(makeCar(1,1,true));
   if(this.options.mode==='doubles')this.cars.push(makeCar(1,0,true),makeCar(2,1,true),makeCar(3,1,true));
+  if(this.options.mode==='custom'&&Array.isArray(this.options.players)&&this.options.players.length)this.cars=this.options.players.slice(0,8).map(player=>makeCar(player.id,player.team));
   if(Array.isArray(this.options.humanIds))for(const car of this.cars)if(this.options.humanIds.includes(car.id))car.bot=false;
   this.ball={p:new V(0,C.ballRestHeight,0),v:new V(),spin:new V(),q:new Q()};this.pads=createPads();this.score=[0,0];this.remaining=this.options.duration;this.overtime=false;this.elapsed=0;this.phase='kickoff';this.phaseTime=3;this.clockStarted=false;this.lastTouch=-1;this.lastTouchTime=-99;this.replay=[];this.recordTime=0;this.trainingIndex=0;this.trainingHits=0;this.shotTime=15;
   if(this.options.mode==='training')this.loadDrill();else this.kickoff();

@@ -3,14 +3,15 @@ import {RoomTransport} from './network-transport.js';
 import {NET_PROTOCOL,NET_BUILD,MATCH_QUEUE,roomCode,normalizeCode,roomOptions,appearance,guestId,RemoteInputs,STATE_INTERVAL,packInputFrames} from './network-protocol.js';
 import {makeState,GuestReplica,cleanEvents,validState} from './network-state.js';
 import {ConnectionQuality,networkPreferences} from './network-quality.js';
+import {playerName,chatText} from './social.js';
 const colors={blue:'#299bff',ivory:'#e8efec',violet:'#a985fc',mint:'#53dbbd'};
 export const RECOVERY_MS=20000;
 const secret=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toString(16).padStart(2,'0')).join('');
 const validSecret=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
 
 export class NetworkRoom{
- constructor({Transport=RoomTransport,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),onChange=()=>{},onMatch=()=>{},onEvents=()=>{},onDisconnect=()=>{}}={}){
-  Object.assign(this,{Transport,clock,setTimer,clearTimer,onChange,onMatch,onEvents,onDisconnect});this.status='idle';this.closed=false;this.matchmade=false;this.ready=false;this.remoteReady=false;this.rtt=0;this.hostPaused=false;this.matchId=null;this.peerHello=false;this.timers=new Set();this.lastReceive=clock();this.lastRealtimeAt=clock();this.quality=new ConnectionQuality();this.pings=new Map();this.pingId=0;this.preferences=networkPreferences();this.recovering=false;this.rematchWanted=false;this.remoteRematch=false;
+ constructor({Transport=RoomTransport,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),onChange=()=>{},onMatch=()=>{},onEvents=()=>{},onDisconnect=()=>{},onChat=()=>{}}={}){
+  Object.assign(this,{Transport,clock,setTimer,clearTimer,onChange,onMatch,onEvents,onDisconnect,onChat});this.status='idle';this.closed=false;this.matchmade=false;this.ready=false;this.remoteReady=false;this.rtt=0;this.hostPaused=false;this.matchId=null;this.peerHello=false;this.timers=new Set();this.lastReceive=clock();this.lastRealtimeAt=clock();this.quality=new ConnectionQuality();this.pings=new Map();this.pingId=0;this.preferences=networkPreferences();this.recovering=false;this.rematchWanted=false;this.remoteRematch=false;this.chatSeen=new Set();this.chatAt=-Infinity;this.remoteChatAt=-Infinity;
  }
  get connected(){return !this.closed&&!!this.transport?.open&&this.peerHello;}
  get active(){return this.connected&&!!this.matchId&&this.status==='playing';}
@@ -57,6 +58,8 @@ export class NetworkRoom{
   }
   if(packet.t==='reject'){this.fail(packet.reason==='version'?'Game versions differ. Both players should reload the game.':'The room is unavailable. Ask the host for a fresh code.');return;}
   if(!this.peerHello)return;
+  if(packet.t==='chat'){const text=chatText(packet.text);if(typeof packet.id!=='string'||packet.id.length>40||!text||this.chatSeen.has(packet.id)||this.clock()-this.remoteChatAt<700)return;this.remoteChatAt=this.clock();this.chatSeen.add(packet.id);while(this.chatSeen.size>64)this.chatSeen.delete(this.chatSeen.values().next().value);this.onChat({name:this.remoteLook.name,text});return;}
+  if(packet.t==='profile'){this.remoteLook.name=playerName(packet.name);const car=this.sim?.cars.find(car=>car.networkRole!==this.role&&car.networkRole);if(car)car.playerName=this.remoteLook.name;this.change();return;}
   if(packet.t==='ping'){this.quality.report(packet.loss);if(Number.isFinite(packet.at)&&Number.isSafeInteger(packet.id))this.transport.send({t:'pong',id:packet.id,at:packet.at});return;}
   if(packet.t==='pong'){const ping=this.pings.get(packet.id);if(ping&&ping.at===packet.at){this.pings.delete(packet.id);const ms=this.clock()-ping.at;this.rtt=Math.max(0,Math.min(9999,Math.round(ms)));this.quality.rtt(ms);ping.done?.(ms);}return;}
   if(packet.t==='bye'){this.fail(packet.reason==='next'?'Your opponent is searching for their next match.':'The other player left the match.');return;}
@@ -85,7 +88,7 @@ export class NetworkRoom{
   this.rematchWanted=false;this.remoteRematch=false;
   this.matchId=matchId;this.hostPaused=false;this.sequence=0;this.lastPublish=-Infinity;this.lastInput=-Infinity;this.remote=new RemoteInputs();this.playerInputs=new Map();const remoteId=guestId(this.options),localId=this.role==='host'?0:remoteId;
   this.sim=new Simulation({...this.options,humanIds:[0,remoteId],matchmaking:this.matchmade});this.sim.localPlayerId=localId;
-  for(const car of this.sim.cars){const role=car.id===0?'host':car.id===remoteId?'guest':null;if(!role)continue;car.networkRole=role;car.matchmade=this.matchmade;const look=role===this.role?this.look:this.remoteLook;car.appearance={body:look.body,color:look.paint==='blue'&&car.team===1?'#f39838':colors[look.paint]};}
+  for(const car of this.sim.cars){const role=car.id===0?'host':car.id===remoteId?'guest':null;if(!role)continue;car.networkRole=role;car.matchmade=this.matchmade;const look=role===this.role?this.look:this.remoteLook;car.playerName=look.name;car.appearance={body:look.body,color:look.paint==='blue'&&car.team===1?'#f39838':colors[look.paint]};}
   if(this.role==='guest')this.replica=new GuestReplica(this.sim,localId);this.change('playing');this.onMatch(this.sim,this);return this.sim;
  }
  state(packet){if(packet?.matchId===this.matchId&&this.replica?.receive(packet,this.clock()))this.lastStateAt=this.clock();}
@@ -99,6 +102,8 @@ export class NetworkRoom{
  setPaused(paused){if(this.role!=='host'||this.closed||!this.matchId)return;this.hostPaused=!!paused;if(this.active)this.transport.send({t:'pause',matchId:this.matchId,paused:this.hostPaused,state:this.snapshot()});this.change();}
  skipReplay(){if(!this.active)return;if(this.role==='host'){this.sim.skipReplay();this.publish(true);}else this.transport.send({t:'skip',matchId:this.matchId});}
  requestRematch(wanted=true){if(!this.active||this.sim.phase!=='ended'||this.pendingMatch)return false;this.rematchWanted=!!wanted;this.transport.send({t:'rematch',matchId:this.matchId,wanted:this.rematchWanted});this.change();this.maybeRematch();return true;}
+ sendChat(value){const text=chatText(value);if(!text||!this.connected||this.clock()-this.chatAt<800)return false;const id=crypto.randomUUID();if(!this.transport.send({t:'chat',id,text}))return false;this.chatAt=this.clock();this.onChat({name:this.look.name,text});return true;}
+ updateProfile(name){this.look.name=playerName(name);const car=this.sim?.cars.find(car=>car.id===this.sim.localPlayerId);if(car)car.playerName=this.look.name;if(this.connected)this.transport.send({t:'profile',name:this.look.name});}
  maybeRematch(){if(this.role==='host'&&this.rematchWanted&&this.remoteRematch&&this.sim?.phase==='ended')this.startMatch();}
  linkLost(reason){if(this.closed)return;if(this.recovering){this.retryRecovery();return;}if(this.matchId&&validSecret(this.recoveryKey)){this.beginRecovery();return;}this.fail(reason);}
  stopLink(){const old=this.transport;this.transport=null;this.stopTimer(this.heartbeat);this.stopTimer(this.attemptTimer);old?.close();}

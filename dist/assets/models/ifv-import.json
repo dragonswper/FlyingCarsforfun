@@ -1,0 +1,357 @@
+{
+  "id": "ifv",
+  "file": "ifv.glb",
+  "sourceFile": "infantry_fighting_vehicle_concept.glb",
+  "sourceBytes": 32564188,
+  "sourceSha256": "b8bbed683f83c0faeb7d52eabcec56dc5585e6f43283c2c42e112b402e6c212f",
+  "bytes": 4809684,
+  "sha256": "7eddf36ef8c1e84106edbae109296fc37c79141974bc95bd8f394c26c77901fe",
+  "sourceTriangles": 165210,
+  "triangles": 103996,
+  "drawBatches": 39,
+  "credit": {
+    "author": "adilwork23 (https://sketchfab.com/adilwork23)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/infantry-fighting-vehicle-concept-49ff213ce1244856ba741373b6fcf1f0",
+    "title": "Infantry fighting Vehicle concept"
+  },
+  "licenseVerification": "Exact attribution embedded in the user-supplied GLB; no separate purchase or license document was supplied",
+  "visualLength": 2,
+  "visualFloor": 0,
+  "bounds": [
+    [
+      -0.8072148561477661,
+      0.0,
+      -0.9999999403953552
+    ],
+    [
+      0.8072546720504761,
+      1.0725256204605103,
+      0.9999318718910217
+    ]
+  ],
+  "wheels": [
+    {
+      "name": "L1",
+      "position": [
+        -0.377377450466156,
+        0.22328364849090576,
+        0.8261728286743164
+      ],
+      "radius": 0.079346663307235,
+      "front": false
+    },
+    {
+      "name": "L10",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        -0.17649966478347778
+      ],
+      "radius": 0.04483090345608234,
+      "front": false
+    },
+    {
+      "name": "L11",
+      "position": [
+        -0.39143744111061096,
+        0.1531779170036316,
+        -0.28790777921676636
+      ],
+      "radius": 0.10370918070305504,
+      "front": false
+    },
+    {
+      "name": "L12",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        -0.3993157744407654
+      ],
+      "radius": 0.044830943853843834,
+      "front": false
+    },
+    {
+      "name": "L13",
+      "position": [
+        -0.39143744111061096,
+        0.1531779170036316,
+        -0.5107237696647644
+      ],
+      "radius": 0.10370911076376274,
+      "front": false
+    },
+    {
+      "name": "L14",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        -0.622131884098053
+      ],
+      "radius": 0.04483105900119657,
+      "front": false
+    },
+    {
+      "name": "L15",
+      "position": [
+        -0.377377450466156,
+        0.22328364849090576,
+        -0.7335399985313416
+      ],
+      "radius": 0.07934677602150102,
+      "front": false
+    },
+    {
+      "name": "L2",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        0.7147647738456726
+      ],
+      "radius": 0.044830886280175425,
+      "front": false
+    },
+    {
+      "name": "L3",
+      "position": [
+        -0.39143744111061096,
+        0.1531779170036316,
+        0.6033567190170288
+      ],
+      "radius": 0.10370907187461853,
+      "front": false
+    },
+    {
+      "name": "L4",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        0.4919486939907074
+      ],
+      "radius": 0.044830858752531934,
+      "front": false
+    },
+    {
+      "name": "L5",
+      "position": [
+        -0.39143744111061096,
+        0.1531779170036316,
+        0.380540668964386
+      ],
+      "radius": 0.10370911167202763,
+      "front": false
+    },
+    {
+      "name": "L6",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        0.2691326141357422
+      ],
+      "radius": 0.044830923276468135,
+      "front": false
+    },
+    {
+      "name": "L7",
+      "position": [
+        -0.39143744111061096,
+        0.1531779170036316,
+        0.1577244997024536
+      ],
+      "radius": 0.10370911167202763,
+      "front": false
+    },
+    {
+      "name": "L8",
+      "position": [
+        -0.382189005613327,
+        0.22328363358974457,
+        0.046316444873809814
+      ],
+      "radius": 0.044830886280175425,
+      "front": false
+    },
+    {
+      "name": "L9",
+      "position": [
+        -0.39143744111061096,
+        0.1531779170036316,
+        -0.06509166955947876
+      ],
+      "radius": 0.10370918070305504,
+      "front": false
+    },
+    {
+      "name": "R1",
+      "position": [
+        0.4097193479537964,
+        0.22328364849090576,
+        0.8261728286743164
+      ],
+      "radius": 0.079346663307235,
+      "front": false
+    },
+    {
+      "name": "R10",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        -0.17649966478347778
+      ],
+      "radius": 0.04483090345608234,
+      "front": false
+    },
+    {
+      "name": "R11",
+      "position": [
+        0.4237791895866394,
+        0.1531779170036316,
+        -0.28790777921676636
+      ],
+      "radius": 0.10370918070305504,
+      "front": false
+    },
+    {
+      "name": "R12",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        -0.3993157744407654
+      ],
+      "radius": 0.044830943853843834,
+      "front": false
+    },
+    {
+      "name": "R13",
+      "position": [
+        0.4237791895866394,
+        0.1531779170036316,
+        -0.5107237696647644
+      ],
+      "radius": 0.10370911076376274,
+      "front": false
+    },
+    {
+      "name": "R14",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        -0.622131884098053
+      ],
+      "radius": 0.04483105900119657,
+      "front": false
+    },
+    {
+      "name": "R15",
+      "position": [
+        0.4097193479537964,
+        0.22328364849090576,
+        -0.7335399985313416
+      ],
+      "radius": 0.07934677602150102,
+      "front": false
+    },
+    {
+      "name": "R2",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        0.7147647738456726
+      ],
+      "radius": 0.044830886280175425,
+      "front": false
+    },
+    {
+      "name": "R3",
+      "position": [
+        0.4237791895866394,
+        0.1531779170036316,
+        0.6033567190170288
+      ],
+      "radius": 0.10370907187461853,
+      "front": false
+    },
+    {
+      "name": "R4",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        0.4919486939907074
+      ],
+      "radius": 0.044830858752531934,
+      "front": false
+    },
+    {
+      "name": "R5",
+      "position": [
+        0.4237791895866394,
+        0.1531779170036316,
+        0.380540668964386
+      ],
+      "radius": 0.10370911167202763,
+      "front": false
+    },
+    {
+      "name": "R6",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        0.2691326141357422
+      ],
+      "radius": 0.044830923276468135,
+      "front": false
+    },
+    {
+      "name": "R7",
+      "position": [
+        0.4237791895866394,
+        0.1531779170036316,
+        0.1577244997024536
+      ],
+      "radius": 0.10370911167202763,
+      "front": false
+    },
+    {
+      "name": "R8",
+      "position": [
+        0.41453081369400024,
+        0.22328363358974457,
+        0.046316444873809814
+      ],
+      "radius": 0.044830886280175425,
+      "front": false
+    },
+    {
+      "name": "R9",
+      "position": [
+        0.4237791895866394,
+        0.1531779170036316,
+        -0.06509166955947876
+      ],
+      "radius": 0.10370918070305504,
+      "front": false
+    }
+  ],
+  "wheelBase": 0.0,
+  "paintMaterial": null,
+  "tracked": true,
+  "sourceAnimations": [],
+  "animations": 0,
+  "skins": 0,
+  "images": 0,
+  "extensionsUsed": [
+    "KHR_materials_emissive_strength",
+    "KHR_materials_specular"
+  ],
+  "extensionsRequired": [],
+  "excludedObjects": [],
+  "modifications": [
+    "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+    "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+    "Added measured independent wheel rolling pivots and front steering where appropriate",
+    "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+    "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+    "Kept track belts, track links, spare wheels, hull and turret fixed; grouped the actual running gear into 30 non-steering rolling pivots",
+    "Removed all unused source UV channels from the untextured material-only model"
+  ]
+}

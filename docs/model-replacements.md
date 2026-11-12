@@ -52,3 +52,7 @@ Reproduction requires Blender in a development environment: `blender -b -P scrip
 ### Core-update alignment
 
 Both stadium variants have been regenerated with the selected native-simulator ceiling value of 20.48 m. The game-generated pitch now uses a wall outline derived from rl_ball_sym's standard corner mesh. The Fennec GLB remains unchanged; the runtime adapter offsets its visuals for the 0.17 m physics origin while retaining its authored wheel rolling radii and contact with the floor. Hitbox dimensions/offsets are separate from decorative model geometry. See [the core reference audit](core-research.md).
+
+## Supplied inner field and seven novelty bodies — 1.11
+
+The runtime now retains the supplied inner turf/ramp/goal geometry, fitted to the solver while keeping original boost pads and generated markings. See [inner pitch calibration](champions-inner.md). Garage adds seven more supplied bodies: [Randy, Ridiculous and Viking](novelty-assets-a.md), and [sci-fi, golf cart, rickshaw and IFV](novelty-assets-b.md). All use the shared game hitbox and load on demand. Their separate source/author/license metadata and limitations are retained; these artwork files are not relicensed as MIT.

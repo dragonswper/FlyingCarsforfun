@@ -19,6 +19,7 @@ export async function loadChampionsField(onProgress,detail='balanced'){
  root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)if(m.map)m.map.anisotropy=2;});freezeStaticTransforms(root);
  return root;
 }
+export async function loadChampionsInner(onProgress){const gltf=await new GLTFLoader().loadAsync('./assets/models/champions-inner.glb',onProgress),root=gltf.scene;if(!root.getObjectByName('Champions_Inner')||!root.getObjectByName('Champions_Inner_turf'))throw Error('The supplied inner field is missing.');root.traverse(object=>{if(object.isMesh){object.castShadow=false;object.receiveShadow=true;}});freezeStaticTransforms(root);return root;}
 export function setStadiumQuality(root,level){root?.traverse(o=>{if(o.userData.detail==='seats')o.visible=level!=='low';});}
 export function disposeStadium(root){
  const geometries=new Set(),materials=new Set(),textures=new Set();root?.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());

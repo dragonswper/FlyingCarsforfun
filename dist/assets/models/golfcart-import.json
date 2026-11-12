@@ -1,0 +1,98 @@
+{
+  "id": "golfcart",
+  "file": "golfcart.glb",
+  "sourceFile": "wooden_golf_cart_with_golf_club_bags.glb",
+  "sourceBytes": 22748348,
+  "sourceSha256": "8a058d88a531052e3e4e4c414ff8bc812e1e0fe1fb0a138caffbd23e613f973c",
+  "bytes": 3587096,
+  "sha256": "7b1a83fc37260c2911d93f432fc83a74fcb2734069d6530b2d8c1297999fad95",
+  "sourceTriangles": 293244,
+  "triangles": 68197,
+  "drawBatches": 8,
+  "credit": {
+    "author": "bcwilcox (https://sketchfab.com/bcwilcox)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/wooden-golf-cart-with-golf-club-bags-7a2f3d7f7b014481a1e71bf5faf2af57",
+    "title": "Wooden Golf Cart With Golf Club Bags"
+  },
+  "licenseVerification": "Exact attribution embedded in the user-supplied GLB; no separate purchase or license document was supplied",
+  "visualLength": 2,
+  "visualFloor": 0,
+  "bounds": [
+    [
+      -0.560671865940094,
+      3.001093864440918e-05,
+      -0.9999053478240967
+    ],
+    [
+      0.5607588887214661,
+      1.4790561199188232,
+      0.9999205470085144
+    ]
+  ],
+  "wheels": [
+    {
+      "name": "FL",
+      "position": [
+        -0.45665881037712097,
+        0.21246546506881714,
+        0.7873991131782532
+      ],
+      "radius": 0.23634198322632846,
+      "front": true
+    },
+    {
+      "name": "FR",
+      "position": [
+        0.4843975007534027,
+        0.22427479922771454,
+        0.7689470648765564
+      ],
+      "radius": 0.23215147496070504,
+      "front": true
+    },
+    {
+      "name": "RL",
+      "position": [
+        -0.47880128026008606,
+        0.23017945885658264,
+        -0.5706742405891418
+      ],
+      "radius": 0.2354451339537808,
+      "front": false
+    },
+    {
+      "name": "RR",
+      "position": [
+        0.4548741579055786,
+        0.23460796475410461,
+        -0.5765789151191711
+      ],
+      "radius": 0.23160968549614555,
+      "front": false
+    }
+  ],
+  "wheelBase": 1.3517996668815613,
+  "paintMaterial": null,
+  "tracked": false,
+  "sourceAnimations": [],
+  "animations": 0,
+  "skins": 0,
+  "images": 12,
+  "extensionsUsed": [
+    "EXT_texture_webp"
+  ],
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "excludedObjects": [],
+  "modifications": [
+    "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+    "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+    "Added measured independent wheel rolling pivots and front steering where appropriate",
+    "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+    "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+    "Separated approximate outer wooden tire/hub regions from the single connected scanned cart using measured cylindrical regions; retained their UV artwork",
+    "Removed three unused source UV channels; every source image uses the retained TEXCOORD_0"
+  ]
+}

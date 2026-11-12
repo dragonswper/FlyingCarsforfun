@@ -1,0 +1,93 @@
+{
+  "id": "scifi",
+  "file": "scifi.glb",
+  "sourceFile": "modular_sci-fi_vehicle_set_0.115_test.glb",
+  "sourceBytes": 24193992,
+  "sourceSha256": "ef88fe41a259ce99ed63b9f1c12e94ff9c184c3be0360bee6f1ddac85a73c8b1",
+  "bytes": 1790012,
+  "sha256": "5147e52a4b3b05905b0188eaf51e7f5acd7a3f5c8735ee70224f0a8845947aeb",
+  "sourceTriangles": 689040,
+  "triangles": 71600,
+  "drawBatches": 21,
+  "credit": {
+    "author": "3DHaupt (https://sketchfab.com/dennish2010)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/modular-sci-fi-vehicle-set-0115-test-5b095f8940c840b389522609cebf46d4",
+    "title": "Modular Sci-fi Vehicle Set 0.115 Test"
+  },
+  "licenseVerification": "Exact attribution embedded in the user-supplied GLB; no separate purchase or license document was supplied",
+  "visualLength": 2,
+  "visualFloor": 0,
+  "bounds": [
+    [
+      -0.49170681834220886,
+      -0.00016997754573822021,
+      -0.9999922513961792
+    ],
+    [
+      0.4917137920856476,
+      1.376025676727295,
+      0.9999567270278931
+    ]
+  ],
+  "wheels": [
+    {
+      "name": "F",
+      "position": [
+        -0.0019365055486559868,
+        0.15681171417236328,
+        0.8379225730895996
+      ],
+      "radius": 0.15169245053705907,
+      "front": true
+    },
+    {
+      "name": "RL",
+      "position": [
+        -0.31983494758605957,
+        0.15681615471839905,
+        -0.8266535997390747
+      ],
+      "radius": 0.15168878483446843,
+      "front": false
+    },
+    {
+      "name": "RR",
+      "position": [
+        0.3194088339805603,
+        0.15083423256874084,
+        -0.8266584873199463
+      ],
+      "radius": 0.1516893365720357,
+      "front": false
+    }
+  ],
+  "wheelBase": 1.66457861661911,
+  "paintMaterial": null,
+  "tracked": false,
+  "sourceAnimations": [
+    "Take 01"
+  ],
+  "animations": 0,
+  "skins": 0,
+  "images": 0,
+  "extensionsUsed": [],
+  "extensionsRequired": [],
+  "excludedObjects": [
+    "Plane.008_0",
+    "Icosphere",
+    "Icosphere.001",
+    "Icosphere.002",
+    "Icosphere.003"
+  ],
+  "modifications": [
+    "Baked source transforms and normalized to +Y up / +Z forward, 2 metre length and floor zero",
+    "Batched fixed body by source material, welded coincident positions while retaining corner UVs, and simplified dense surfaces",
+    "Added measured independent wheel rolling pivots and front steering where appropriate",
+    "Preserved supplied material colors and finishes; no Custom_Paint material is assigned",
+    "Embedded WebP quality 90 textures at at most 1024 pixels; no external geometry decoder",
+    "Selected the one coherent assembled three-wheeler already present in the supplied set",
+    "Baked the first imported animation pose; removed the display floor and importer-created hidden bone-shape helpers",
+    "Replaced source armatures and demonstration clip with procedural tire rolling/front steering; fixed leg geometry is retained"
+  ]
+}

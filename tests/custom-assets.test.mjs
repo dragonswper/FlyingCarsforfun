@@ -42,6 +42,6 @@ test('the replacement ball retains the supplied panel artwork, source record and
  const ball=makeRocketBall(template);ball.updateMatrixWorld(true);let radius=0,triangles=0;const point=new T.Vector3();ball.traverse(mesh=>{if(!mesh.isMesh)return;const p=mesh.geometry.attributes.position;triangles+=(mesh.geometry.index?.count||p.count)/3;for(let i=0;i<p.count;i++)radius=Math.max(radius,point.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld).length());});near(radius,C.ballVisualRadius,1e-5);assert.equal(triangles,4416);assert.equal(ball.name,'Rocket_League_Ball');
 });
 
-test('all eight garage bodies resolve through the same catalog used by network appearances',()=>{
+test('all garage bodies resolve through the same catalog used by network appearances',()=>{
  const html=fs.readFileSync(new URL('../dist/index.html',import.meta.url),'utf8'),cards=[...html.matchAll(/data-body="([^"]+)"/g)].map(m=>m[1]);assert.deepEqual([...cards].sort(),[...BODY_TYPES].sort());for(const id of Object.keys(CUSTOM_BODY_FILES))assert.ok(fs.existsSync(new URL('../dist/assets/'+id+'-preview.png',import.meta.url)));
 });
