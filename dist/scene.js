@@ -113,6 +113,7 @@ export class GameView{
  resize(){const w=window.innerWidth,h=window.innerHeight;this.viewport||={width:w,height:h};this.viewport.width=w;this.viewport.height=h;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
  setCamera(settings){this.cameraSettings=normalizeCamera(settings);}
  orbitCamera(yaw,pitch){return this.chase.orbit(yaw,pitch,this.cameraMode);}
+ stickCamera(x,y){this.chase.stick(x,y,this.cameraMode);}
  async ensureBody(body,onProgress){
   if(body!=='bottled'&&!Object.hasOwn(CUSTOM_BODY_FILES,body))return;
   const template=await(body==='bottled'?loadBottled(onProgress):loadCustomBody(body,onProgress));this.bodyWarmups||=new Map();

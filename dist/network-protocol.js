@@ -1,6 +1,6 @@
 /* Original game protocol, using NetplayJS's documented signaling wire format. */
 import {BODY_TYPES} from './bodies.js';
-export const NET_PROTOCOL=1,NET_BUILD='boost-circuit-1.9.0',SIGNAL_URL='wss://netplayjs.varunramesh.net/';
+export const NET_PROTOCOL=1,NET_BUILD='boost-circuit-1.10.0',SIGNAL_URL='wss://netplayjs.varunramesh.net/';
 export const MATCH_QUEUE='flyingcarsforfun-casual-duel-300-'+NET_BUILD;
 export const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const MAX_PACKET=32768,INPUT_TIMEOUT=300,STATE_INTERVAL=1000/30;
@@ -14,10 +14,12 @@ export function appearance(value={}){value||={};return {body:BODY_TYPES.includes
 const unit=value=>Number.isFinite(value)?Math.max(-1,Math.min(1,value)):0;
 export function cleanInput(value={}){value||={};return {throttle:unit(value.throttle),steer:unit(value.steer),pitch:unit(value.pitch),roll:unit(value.roll),jump:value.jump===true,boost:value.boost===true,drift:value.drift===true,dodgeDeadzone:Number.isFinite(value.dodgeDeadzone)?Math.max(.1,Math.min(1,value.dodgeDeadzone)):.5};}
 export const neutralInput=()=>cleanInput();
+export function packInputFrames(frames){return frames.slice(-4).map(frame=>{const i=cleanInput(frame.i),round=n=>Math.round(n*1000)/1000;return [frame.n,round(i.throttle),round(i.steer),round(i.pitch),round(i.roll),(i.jump?1:0)|(i.boost?2:0)|(i.drift?4:0),round(i.dodgeDeadzone)];});}
+function frameInput(frame){if(!Array.isArray(frame))return cleanInput(frame.i);if(frame.length!==7||!frame.slice(1).every(Number.isFinite)||!Number.isInteger(frame[5])||frame[5]<0||frame[5]>7)return null;return cleanInput({throttle:frame[1],steer:frame[2],pitch:frame[3],roll:frame[4],jump:!!(frame[5]&1),boost:!!(frame[5]&2),drift:!!(frame[5]&4),dodgeDeadzone:frame[6]});}
 export function decodePacket(raw){if(typeof raw!=='string'||raw.length>MAX_PACKET)return null;try{const value=JSON.parse(raw);return value&&typeof value==='object'&&!Array.isArray(value)&&typeof value.t==='string'?value:null;}catch{return null;}}
 export function validCounter(value){return Number.isSafeInteger(value)&&value>=0&&value<=0x7fffffff;}
 export class RemoteInputs{
- constructor(){this.queue=[];this.received=0;this.ack=0;this.lastAt=-Infinity;this.current=neutralInput();}
- receive(frames,now){if(!Array.isArray(frames)||frames.length>16)return false;let accepted=false;for(const frame of frames){if(!frame||!validCounter(frame.n)||frame.n<=this.received||frame.n>this.received+240)continue;this.received=frame.n;this.queue.push({n:frame.n,input:cleanInput(frame.i)});accepted=true;}if(accepted){this.lastAt=now;if(this.queue.length>24)this.queue.splice(0,this.queue.length-24);}return accepted;}
- next(now){if(now-this.lastAt>INPUT_TIMEOUT){this.queue.length=0;this.current=neutralInput();return this.current;}if(this.queue.length){const frame=this.queue.shift();this.current=frame.input;this.ack=frame.n;}return this.current;}
+ constructor(){this.queue=[];this.received=0;this.ack=0;this.lastAt=-Infinity;this.current=neutralInput();this.latest=neutralInput();this.jumpEdges=0;this.receivedJump=false;}
+ receive(frames,now){if(!Array.isArray(frames)||frames.length>16)return false;let accepted=false;for(const frame of frames){const n=Array.isArray(frame)?frame[0]:frame?.n;if(!frame||!validCounter(n)||n<=this.received)continue;const input=frameInput(frame);if(!input)continue;if(input.jump&&!this.receivedJump)this.jumpEdges=Math.min(2,this.jumpEdges+1);this.receivedJump=input.jump;this.received=n;this.latest=input;accepted=true;}if(accepted){this.lastAt=now;this.queue=[{n:this.received,input:this.latest}];}return accepted;}
+ next(now){if(now-this.lastAt>INPUT_TIMEOUT){this.queue.length=0;this.jumpEdges=0;this.receivedJump=false;this.current=neutralInput();return this.current;}const previousJump=this.current.jump;this.current={...this.latest};if(this.jumpEdges){this.current.jump=!previousJump;if(this.current.jump)this.jumpEdges--;}this.queue.length=0;this.ack=this.received;return this.current;}
 }

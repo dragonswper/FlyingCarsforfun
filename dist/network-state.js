@@ -1,5 +1,6 @@
 import {Vector3,Quaternion} from './vendor/three.module.js';
-import {C,makeCar,stepCar} from './physics.js';
+import {C,makeCar,stepCar,collideCarBall,collideCars} from './physics.js';
+import {stepBall} from './ball.js';
 import {cleanInput,validCounter} from './network-protocol.js';
 
 const NUMBERS=['boost','boostTime','handbrake','jumpTime','jumpEndTime','airTime','noContact','flipTime','selfRightTime','demoTime','supersonicTime','hitCooldown','extraHitCooldown','recoverTime','score','goals','assists','saves','touches','demos','renderSteer','renderThrottle'];
@@ -29,17 +30,21 @@ export class GuestReplica{
  constructor(sim,localId){
   this.sim=sim;this.localId=localId;const car=sim.cars.find(c=>c.id===localId);this.predicted=makeCar(car.id,car.team);applyCar(this.predicted,encodeCar(car));this.pending=[];this.inputSequence=0;this.frames=[];this.lastSequence=-1;this.offset=null;this.lastPhase=sim.phase;this.replayAt=-1;
   this.visualP=car.p.clone();this.visualQ=car.q.clone();this.qA=new Quaternion();this.qB=new Quaternion();this.forward=new Vector3();
+  this.predictedBall={p:sim.ball.p.clone(),q:sim.ball.q.clone(),v:sim.ball.v.clone(),spin:sim.ball.spin.clone()};this.visualBall=sim.ball.p.clone();this.visualBallQ=sim.ball.q.clone();this.otherCars=sim.cars.filter(c=>c.id!==localId).map(car=>{const other=makeCar(car.id,car.team);applyCar(other,encodeCar(car));return other;});
   const pose=()=>({p:[0,0,0],q:[0,0,0,1]});this.output={ball:pose(),cars:sim.cars.map(car=>({...pose(),id:car.id,team:car.team}))};
  }
  step(input){
-  const frame={n:++this.inputSequence,i:cleanInput(input)};this.pending.push(frame);if(this.pending.length>120)this.pending.shift();if(this.sim.phase==='playing')stepCar(this.predicted,frame.i,C.step);return frame;
+  const frame={n:++this.inputSequence,i:cleanInput(input)};this.pending.push(frame);if(this.pending.length>120)this.pending.shift();if(this.sim.phase==='playing')this.predict(frame.i);return frame;
  }
- inputFrames(){return this.pending.slice(-16);}
+ predict(input){stepCar(this.predicted,input,C.step);stepBall(this.predictedBall,C.step);collideCarBall(this.predicted,this.predictedBall);for(const other of this.otherCars){other.p.addScaledVector(other.v,C.step);collideCars(this.predicted,other);}}
+ inputFrames(){return this.pending.slice(-4);}
  receive(value,now){
   if(value.n<=this.lastSequence||!validState(value,this.sim))return false;
   const changed=this.lastPhase!==value.phase;this.lastSequence=value.n;this.lastPhase=value.phase;
   applyState(this.sim,value);const local=value.cars.find(car=>car.id===this.localId);applyCar(this.predicted,local);this.pending=this.pending.filter(frame=>frame.n>value.ack);
-  if(changed)this.pending.length=0;else if(value.phase==='playing')for(const frame of this.pending)stepCar(this.predicted,frame.i,C.step);
+  this.predictedBall.p.fromArray(value.ball.p);this.predictedBall.q.fromArray(value.ball.q);this.predictedBall.v.fromArray(value.ball.v);this.predictedBall.spin.fromArray(value.ball.spin);for(const other of this.otherCars)applyCar(other,value.cars.find(car=>car.id===other.id));
+  if(changed)this.pending.length=0;else if(value.phase==='playing')for(const frame of this.pending.slice(-48))this.predict(frame.i);
+  if(changed||this.visualBall.distanceToSquared(this.predictedBall.p)>64){this.visualBall.copy(this.predictedBall.p);this.visualBallQ.copy(this.predictedBall.q);}
   if(changed||this.visualP.distanceToSquared(this.predicted.p)>16){this.visualP.copy(this.predicted.p);this.visualQ.copy(this.predicted.q);}
   const offset=value.elapsed-now/1000;if(this.offset===null||changed)this.offset=offset;else this.offset+=(offset-this.offset)*.03;
   this.frames.push(value);if(this.frames.length>12)this.frames.shift();
@@ -53,6 +58,7 @@ export class GuestReplica{
   let alpha=b.elapsed>a.elapsed?Math.max(0,Math.min(1,(time-a.elapsed)/(b.elapsed-a.elapsed))):1;if(a.phase!==b.phase)alpha=1;
   const blend=(out,from,to)=>{let snap=false;for(let i=0;i<3;i++)if(Math.abs(from.p[i]-to.p[i])>8)snap=true;const mix=snap?1:alpha;for(let i=0;i<3;i++)out.p[i]=from.p[i]+(to.p[i]-from.p[i])*mix;this.qA.fromArray(from.q);this.qB.fromArray(to.q);this.qA.slerp(this.qB,mix).toArray(out.q);};
   blend(this.output.ball,a.ball,b.ball);
+  if(!this.paused){const smooth=1-Math.exp(-30*Math.max(0,dt));this.visualBall.lerp(this.predictedBall.p,smooth);this.visualBallQ.slerp(this.predictedBall.q,smooth);this.visualBall.toArray(this.output.ball.p);this.visualBallQ.toArray(this.output.ball.q);}
   for(let i=0;i<this.output.cars.length;i++){
    const from=a.cars[i],to=b.cars[i],out=this.output.cars[i];blend(out,from,to);this.qA.fromArray(to.q);this.forward.set(0,0,1).applyQuaternion(this.qA);
    out.speed=to.v[0]*this.forward.x+to.v[1]*this.forward.y+to.v[2]*this.forward.z;out.steer=to.renderSteer;out.throttle=to.renderThrottle;out.grounded=to.grounded;out.boosting=to.boosting;out.demo=to.demoTime>0;

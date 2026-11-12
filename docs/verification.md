@@ -4,7 +4,7 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**134 automated tests pass for version 1.9.0.**
+**163 automated tests pass for version 1.10.0.** See [guest response, recovery and post-match verification](network-recovery.md) for the latest reproductions and fixes.
 
 The [1.8 verification notes](contact-and-vehicle-update.md#validation-and-limits) record the wall/landing reproductions, camera/input checks, new model imports, private-match appearance exchange and offline previews. Actual browser/GPU testing remains unavailable.
 

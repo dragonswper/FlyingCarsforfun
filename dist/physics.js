@@ -46,7 +46,7 @@ export function stepCar(c,input,dt,unlimited=false){
   c.airTime+=dt;
   if(c.selfRightTime>0){c.selfRightTime=Math.max(0,c.selfRightTime-dt);c.q.rotateTowards(c.selfRightTarget,C.maxAngularSpeed*dt);c.omega.set(0,0,0);if(c.q.angleTo(c.selfRightTarget)<1e-6)c.selfRightTime=0;}
   else{
-   if(c.flipTime>0){c.flipTime=Math.max(0,c.flipTime-dt);c.omega.x+=c.flipAxis.x*224*dt;c.omega.z+=c.flipAxis.z*260*dt;const elapsed=C.flipDuration-c.flipTime;if(elapsed>=.15&&(c.v.y<0||elapsed<.21))c.v.y*=Math.pow(.65,dt/C.step);}
+   if(c.flipTime>0){c.flipTime=Math.max(0,c.flipTime-dt);if(c.flipAxis.x*i.pitch<-.25)c.flipAxis.x=0;if(c.flipAxis.x===0)c.omega.x*=Math.exp(-60*dt);else c.omega.x+=c.flipAxis.x*224*dt;c.omega.z+=c.flipAxis.z*260*dt;const elapsed=C.flipDuration-c.flipTime;if(elapsed>=.15&&(c.v.y<0||elapsed<.21))c.v.y*=Math.pow(.65,dt/C.step);}
    else{const k=C.airTorqueScale;c.omega.x+=(i.pitch*130-c.omega.x*30*(1-Math.abs(i.pitch)))*k*dt;c.omega.y+=(i.steer*95-c.omega.y*20*(1-Math.abs(i.steer)))*k*dt;c.omega.z+=(-i.roll*400-c.omega.z*50)*k*dt;}
    lengthClamp(c.omega,C.maxAngularSpeed);const spin=c.omega.length();if(spin>.001)c.q.multiply(new Q().setFromAxisAngle(c.omega.clone().divideScalar(spin),spin*dt)).normalize();
   }c.v.addScaledVector(f,i.throttle*C.airThrottleAccel*dt);
@@ -92,7 +92,7 @@ export function collideCarBall(c,b){
  if(c.extraHitCooldown<=1e-9){const forward=FWD.clone().applyQuaternion(c.q),direction=b.p.clone().sub(c.p);direction.y*=.35;direction.normalize().addScaledVector(forward,-direction.dot(forward)*.35).normalize();b.v.addScaledVector(direction,relativeSpeed*curve(BALL_HIT_CURVE,relativeSpeed));c.extraHitCooldown=2*C.step;}
  lengthClamp(b.v,C.ballMaxSpeed);lengthClamp(b.spin,C.ballMaxSpin);lengthClamp(c.omega,C.maxAngularSpeed);return true;
 }
-function collideCars(a,b,emit){
+export function collideCars(a,b,emit=()=>{}){
  if(a.demoTime>0||b.demoTime>0||a.p.distanceToSquared(b.p)>9)return;const A=basis(a),B=basis(b),center=c=>c.p.clone().addScaledVector(UP.clone().applyQuaternion(c.q),C.hitboxOffsetUp).addScaledVector(FWD.clone().applyQuaternion(c.q),C.hitboxOffsetForward),delta=center(b).sub(center(a)),aa=[A.r,A.u,A.f],bb=[B.r,B.u,B.f],half=[C.hitboxHalfWidth,C.hitboxHalfHeight,C.hitboxHalfLength],project=(axes,n)=>axes.reduce((r,axis,i)=>r+Math.abs(axis.dot(n))*half[i],0),ground=a.grounded&&b.grounded&&a.normal.y>.8&&b.normal.y>.8;
  if(ground&&Math.abs(delta.y)>project(aa,UP)+project(bb,UP))return;const axes=ground?[A.r.clone().setY(0).normalize(),A.f.clone().setY(0).normalize(),B.r.clone().setY(0).normalize(),B.f.clone().setY(0).normalize()]:[...aa,...bb,...aa.flatMap(x=>bb.map(y=>x.clone().cross(y)))];let overlap=Infinity,normal;
  for(const axis of axes){if(axis.lengthSq()<1e-8)continue;axis.normalize();const depth=project(aa,axis)+project(bb,axis)-Math.abs(delta.dot(axis));if(depth<=0)return;if(depth<overlap){overlap=depth;normal=axis.clone().multiplyScalar(delta.dot(axis)<0?-1:1);}}

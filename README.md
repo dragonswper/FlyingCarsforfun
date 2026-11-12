@@ -8,6 +8,8 @@ An original browser-native 3D car-soccer recreation inspired by Rocket League, w
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.10:** Guest controls recover after long input gaps and predict ball/vehicle contacts immediately. Brief drops hold the same match for a **20-second reconnect window**. Either player can request a rematch or choose **Find Next Match**. Online Match and **Options → Network** save region/ping preferences; the HUD warns about high ping, update loss and stalled connections. Mouse chord release, controller steering/look return and pitch flip cancellation are fixed. [Details and verification](docs/network-recovery.md). Both players must reload for this build.
+
 **1.9:** Choose **Online Match** to search for a real opponent for up to **60 seconds**. A connected opponent starts a five-minute casual 1v1 automatically after both vehicles load; an empty search starts a clearly labeled local bot match using your selected bot difficulty. Cancel or Escape leaves the queue. Keep the tab visible while searching. Both players must reload for the matching game build. Private room codes remain available.
 
 **1.8.1:** Press **Jump (default Spacebar / controller A)** while resting upside down to hop and flip back onto your wheels. One press is enough. Normal jumps and aerial dodges keep their existing controls. Both players should reload before joining a room.

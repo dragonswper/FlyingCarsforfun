@@ -11,7 +11,7 @@ export class RoomTransport{
  connect(code,role){
   this.code=code;this.begin(queueID(code),role);
  }
- connectQueue(queue){if(typeof queue!=='string'||!/^[a-zA-Z0-9._:-]{1,160}$/.test(queue))throw new Error('Invalid matchmaking queue.');this.begin(queue,'auto');}
+ connectQueue(queue,role='auto'){if(typeof queue!=='string'||!/^[a-zA-Z0-9._:-]{1,160}$/.test(queue))throw new Error('Invalid matchmaking queue.');this.begin(queue,role);}
  begin(queue,role){
   if(!this.WebSocketClass||!this.RTCClass)throw new Error('This browser does not support WebRTC multiplayer. Try a current desktop browser.');
   this.queue=queue;this.role=role;this.ws=new this.WebSocketClass(this.signalURL);this.timer(()=>{if(!this.registered)this.fail('The connection service did not respond. Try again.');},12000);
@@ -42,7 +42,7 @@ export class RoomTransport{
   if(this.closed)return;if(this.role==='auto'){this.role=initiator?'host':'guest';this.onRole(this.role);if(this.closed)return;}
   this.peerID=peerID;this.initiator=initiator;this.pc=new this.RTCClass({iceServers:this.iceServers});
   this.pc.onicecandidate=e=>{if(e.candidate)this.sendSignal({kind:'send-message',type:'candidate',destinationID:this.peerID,payload:e.candidate});};
-  this.pc.onconnectionstatechange=()=>{const state=this.pc.connectionState;if(state==='failed'||state==='closed'){if(!this.closed)this.fail('The other player disconnected. Create or join a new room.');}else if(state==='disconnected')this.timer(()=>{if(this.pc?.connectionState==='disconnected')this.fail('The peer connection was lost. Create or join a new room.');},8000);};
+  this.pc.onconnectionstatechange=()=>{const state=this.pc.connectionState;if(['failed','closed','disconnected'].includes(state)&&!this.closed)this.fail('The peer connection was interrupted.');};
   this.pc.ondatachannel=e=>this.attachChannel(e.channel);
   if(initiator){this.attachChannel(this.pc.createDataChannel('control',{ordered:true}));this.attachChannel(this.pc.createDataChannel('realtime',{ordered:false,maxRetransmits:0}));}
   this.timer(()=>{if(!this.open)this.fail('The browsers could not establish a peer connection. Try another network or a self-hosted signaling/TURN service.');},18000);
@@ -56,7 +56,7 @@ export class RoomTransport{
  }
  send(packet,realtime=false){
   if(this.closed)return false;const channel=this.channels[realtime?'realtime':'control'];if(channel?.readyState!=='open'||channel.bufferedAmount>(realtime?32768:131072))return false;
-  const data=JSON.stringify(packet);if(data.length>MAX_PACKET)return false;try{channel.send(data);return true;}catch{return false;}
+  const wire=realtime?(this.wireSequence||0)+1:null,data=JSON.stringify(realtime?{...packet,w:wire}:packet);if(data.length>MAX_PACKET)return false;try{channel.send(data);if(realtime)this.wireSequence=wire;return true;}catch{return false;}
  }
  fail(reason){if(this.closed)return;this.close();this.onClose(reason);}
  close(){if(this.closed)return;this.closed=true;this.open=false;this.earlyPackets.length=0;for(const id of this.timers)clearTimeout(id);this.timers.clear();for(const channel of Object.values(this.channels)){channel.onclose=null;channel.close();}if(this.pc){this.pc.onconnectionstatechange=null;this.pc.close();}if(this.ws){this.ws.onclose=null;this.ws.onerror=null;this.ws.close();}}

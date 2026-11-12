@@ -30,7 +30,7 @@ test('untrusted room options, cosmetics, packets and controls have bounded value
 });
 test('remote input rejects duplicates, neutralizes stale held buttons and bounds backlog',()=>{
  const queue=new RemoteInputs();queue.receive([{n:1,i:{boost:true,jump:true,throttle:1}}],0);assert.equal(queue.next(10).jump,true);assert.equal(queue.ack,1);assert.equal(queue.receive([{n:1,i:{boost:false}}],20),false);assert.equal(queue.next(301).boost,false);assert.equal(queue.next(301).throttle,0);
- for(let n=2;n<100;n++)queue.receive([{n,i:{steer:1}}],400);assert.ok(queue.queue.length<=24);assert.equal(queue.receive([{n:1000,i:{throttle:1}}],400),false);queue.next(401);assert.ok(queue.ack<=99);
+ for(let n=2;n<100;n++)queue.receive([{n,i:{steer:1}}],400);assert.ok(queue.queue.length<=24);assert.equal(queue.receive([{n:1000,i:{throttle:1}}],400),true);queue.next(401);assert.equal(queue.ack,1000);
 });
 test('host alone starts the room, guest readiness gates it, and local perspectives differ',async t=>{
  const p=await pair(t,{duration:120,difficulty:'expert'});assert.equal(p.host.status,'lobby');assert.equal(p.guest.options.duration,120);assert.equal(p.host.startMatch(),false);assert.equal(p.guest.startMatch(),false);await start(p);
@@ -73,14 +73,14 @@ test('a guest can self-right with one jump press and keep its recovery target th
  p.host.publish(true);await settle();assert.equal(recovering,true);assert.equal(car.grounded,true);assert.equal(car.selfRightTime,0);near(car.p.y,C.carHeight);assert.ok(car.q.angleTo(p.guest.replica.predicted.q)<1e-6);assert.equal(p.guest.replica.predicted.grounded,true);assert.deepEqual(p.errors,[]);
  const packet=makeState(p.host.sim,999,p.host.remote.ack,p.host.matchId);packet.cars[1].selfRightTarget=[0,0,0,0];assert.equal(validState(packet,p.guest.sim),false);packet.cars[1].selfRightTarget=[0,0,0,1];packet.cars[1].selfRightTime=10;assert.equal(validState(packet,p.guest.sim),false);
 });
-test('remote poses interpolate between authoritative snapshots and snap through kickoff teleports',()=>{
- const host=new Simulation(),guest=new Simulation(),replica=new GuestReplica(guest,1);host.phase=guest.phase='playing';host.elapsed=0;replica.receive(makeState(host,1,0,'match'),0);host.ball.p.x=2;host.elapsed=.1;replica.receive(makeState(host,2,0,'match'),100);near(replica.sample(100,1/60).ball.p[0],.3);
+test('remote cars interpolate while the predicted ball responds promptly and kickoff teleports snap',()=>{
+ const host=new Simulation(),guest=new Simulation(),replica=new GuestReplica(guest,1);host.phase=guest.phase='playing';host.elapsed=0;replica.receive(makeState(host,1,0,'match'),0);host.ball.p.x=2;host.cars[0].p.x=2;host.elapsed=.1;replica.receive(makeState(host,2,0,'match'),100);const pose=replica.sample(100,1/60);near(pose.cars[0].p[0],.3);assert.ok(pose.ball.p[0]>.3&&pose.ball.p[0]<2);
  host.kickoff();host.ball.p.x=20;host.elapsed=.2;replica.receive(makeState(host,3,0,'match'),200);near(replica.sample(200,1/60).ball.p[0],20);assert.equal(replica.sim.replay.length,0);
 });
 test('goals, final stats, host pause, rematches and disconnects propagate in room order',async t=>{
  const p=await pair(t);await start(p);p.host.setPaused(true);await settle();assert.equal(p.guest.hostPaused,true);assert.equal(p.guest.replica.paused,true);p.host.setPaused(false);await settle();assert.equal(p.guest.hostPaused,false);
  p.host.sim.score=[0,1];p.host.sim.cars[1].goals=1;p.host.sim.cars[1].score=100;p.host.sim.phase='ended';p.host.events([{type:'end',won:false}]);await settle();assert.deepEqual(p.guest.sim.score,[0,1]);assert.equal(p.guest.sim.phase,'ended');assert.equal(p.guest.sim.cars[1].goals,1);assert.equal(p.events.at(-1).type,'end');
- const oldMatch=p.host.matchId;assert.equal(p.host.startMatch(),true);await settle();assert.notEqual(p.host.matchId,oldMatch);assert.equal(p.guest.matchId,p.host.matchId);assert.deepEqual(p.guest.sim.score,[0,0]);p.guest.receive({...makeState(p.host.sim,999,0,oldMatch),score:[50,50]});assert.deepEqual(p.guest.sim.score,[0,0]);p.host.close();await settle();assert.equal(p.guest.closed,true);assert.equal(p.guest.status,'error');assert.ok(p.errors.length>0);
+ const oldMatch=p.host.matchId;assert.equal(p.host.startMatch(),false);assert.equal(p.guest.requestRematch(),true);await settle();assert.equal(p.host.matchId,oldMatch);assert.equal(p.host.requestRematch(),true);await settle();assert.notEqual(p.host.matchId,oldMatch);assert.equal(p.guest.matchId,p.host.matchId);assert.deepEqual(p.guest.sim.score,[0,0]);p.guest.receive({...makeState(p.host.sim,999,0,oldMatch),score:[50,50]});assert.deepEqual(p.guest.sim.score,[0,0]);p.host.close();await settle();assert.equal(p.guest.closed,true);assert.equal(p.guest.status,'error');assert.ok(p.errors.length>0);
 });
 test('guest HUD values use the guest car instead of the host car',()=>{
  const sim=new Simulation({humanIds:[0,1]});sim.cars[0].boost=80;sim.cars[1].boost=12;sim.cars[1].v.set(0,0,20);assert.equal(sim.state(1).boost,12);near(sim.state(1).speed,72);assert.equal(sim.state().boost,80);

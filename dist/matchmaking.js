@@ -1,13 +1,14 @@
 import {NetworkRoom} from './network-room.js';
 import {MATCH_QUEUE,appearance,roomOptions} from './network-protocol.js';
+import {networkPreferences,regionQueue} from './network-quality.js';
 
 export const SEARCH_MS=60_000,SETUP_MS=20_000;
 // One absolute search deadline survives every connection retry. A verified peer
 // replaces searching with a bounded setup phase; failed setup uses the original
 // remaining search time. Only one terminal result can own the game afterwards.
 export class Matchmaker{
- constructor({Room=NetworkRoom,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),prepare=async()=>{},queue=MATCH_QUEUE,onChange=()=>{},onMatch=()=>{},onBots=()=>{},onDisconnect=()=>{},onEvents=()=>{}}={}){
-  Object.assign(this,{Room,clock,setTimer,clearTimer,prepare,queue,onChange,onMatch,onBots,onDisconnect,onEvents});this.phase='idle';this.finished=false;this.started=false;this.attempt=null;this.attempts=0;this.timers=new Set();this.reason='';this.matchedRoom=null;
+ constructor({Room=NetworkRoom,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),prepare=async()=>{},queue=MATCH_QUEUE,onChange=()=>{},onRoomChange=()=>{},onMatch=()=>{},onBots=()=>{},onDisconnect=()=>{},onEvents=()=>{}}={}){
+  Object.assign(this,{Room,clock,setTimer,clearTimer,prepare,queue,onChange,onRoomChange,onMatch,onBots,onDisconnect,onEvents});this.phase='idle';this.finished=false;this.started=false;this.attempt=null;this.attempts=0;this.timers=new Set();this.reason='';this.matchedRoom=null;
  }
  state(){return {phase:this.phase,remaining:this.started?Math.max(0,Math.ceil((this.deadline-this.clock())/1000)):60,elapsed:this.started?Math.min(60,Math.max(0,(this.clock()-this.startedAt)/1000)):0,prepared:!!this.attempt?.prepared,reason:this.reason,attempts:this.attempts};}
  emit(){this.onChange(this.state());}
@@ -15,7 +16,7 @@ export class Matchmaker{
  clearTimers(){for(const id of this.timers)this.clearTimer(id);this.timers.clear();}
  owns(attempt){return !this.finished&&this.attempt===attempt;}
  start(look,options={}){
-  if(this.started)return false;this.started=true;this.look=appearance(look);this.options={...roomOptions(options),mode:'duel',coop:false,duration:300};this.startedAt=this.clock();this.deadline=this.startedAt+SEARCH_MS;this.phase='searching';this.tick();if(!this.finished)this.connect();return true;
+  if(this.started)return false;this.started=true;this.look=appearance(look);this.options={...roomOptions(options),mode:'duel',coop:false,duration:300};this.preferences=networkPreferences(options.network);this.selectedQueue=this.queue===MATCH_QUEUE?regionQueue(this.queue,this.preferences.region):this.queue;this.startedAt=this.clock();this.deadline=this.startedAt+SEARCH_MS;this.phase='searching';this.tick();if(!this.finished)this.connect();return true;
  }
  tick(){
   if(this.finished)return;
@@ -28,19 +29,20 @@ export class Matchmaker{
   const attempt={id:++this.attempts,found:false,preparing:false,prepared:false,startRequested:false,room:null};this.attempt=attempt;this.phase='searching';
   attempt.room=new this.Room({clock:this.clock,onChange:()=>this.changed(attempt),onMatch:sim=>this.won(attempt,sim),onEvents:events=>{if(this.matchedRoom===attempt.room)this.onEvents(events,attempt.room);},onDisconnect:reason=>{if(this.matchedRoom===attempt.room)this.onDisconnect(reason,attempt.room);else this.retry(attempt,'The connection was interrupted. Still searching…');}});
   this.emit();if(!this.owns(attempt))return;
-  try{attempt.room.matchmake(this.look,this.options,this.queue);}catch{this.retry(attempt,'The match service is unavailable. Still searching…');}
+  try{attempt.room.matchmake(this.look,this.options,this.selectedQueue,this.preferences);}catch{this.retry(attempt,'The match service is unavailable. Still searching…');}
  }
  changed(attempt){
+  if(this.matchedRoom===attempt.room){this.onRoomChange(attempt.room);return;}
   if(!this.owns(attempt)||attempt.room.closed)return;const room=attempt.room;
   if(attempt.found&&this.clock()>=attempt.setupDeadline){this.retry(attempt,'Match setup took too long. Searching again…');return;}
   if(!attempt.found&&this.clock()>=this.deadline){this.bots('No opponent connected in 60 seconds.');return;}
   if(room.connected&&room.options){
-   if(!attempt.found){attempt.found=true;attempt.setupDeadline=this.clock()+SETUP_MS;this.phase='preparing';this.reason='';}
+   if(!attempt.found){attempt.found=true;attempt.setupDeadline=this.clock()+SETUP_MS;this.phase='checking';this.reason='';}
    if(!attempt.preparing){
     attempt.preparing=true;this.emit();if(!this.owns(attempt))return;
-    Promise.resolve().then(()=>{if(this.owns(attempt))return this.prepare(room);}).then(()=>{
+    let checking=true;Promise.resolve().then(()=>{if(this.owns(attempt))return room.checkConnection?.();}).then(()=>{if(!this.owns(attempt))return;checking=false;this.phase='preparing';this.emit();if(this.owns(attempt))return this.prepare(room);}).then(()=>{
      if(!this.owns(attempt)||room.closed)return;if(this.clock()>=attempt.setupDeadline){this.retry(attempt,'Match setup took too long. Searching again…');return;}attempt.prepared=true;this.emit();if(!this.owns(attempt))return;if(room.role==='guest')room.setReady(true);this.maybeStart(attempt);
-    }).catch(()=>this.retry(attempt,'A vehicle could not load. Still searching…'));
+    }).catch(error=>this.retry(attempt,checking?(error?.message||'The ping check failed. Still searching…'):'A vehicle could not load. Still searching…'));
    }
    this.maybeStart(attempt);
   }else this.phase=room.role!=='auto'&&room.role?'connecting':'searching';
