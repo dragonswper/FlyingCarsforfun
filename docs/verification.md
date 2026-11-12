@@ -21,3 +21,7 @@ The managed environment reports a running runtime with remote_desktop enabled bu
 ## Publishing
 
 A successful Sites deployment verifies that the exact committed source/build was published at the reported URL; it does not verify gameplay. GitHub source is saved under games/boost-circuit in the existing user-selected repository, preserving the Riftfall project.
+
+## Fennec checks — 12 November 2026
+
+Five additional checks import the actual converted GLB using Three.js GLTFLoader. Texture loading is replaced by empty Texture objects in the Node test harness, so the tests verify geometry/material binding/rig structure rather than browser image decoding. They cover self-contained assets and rig nodes, floor/axis/scale alignment, forward/reverse rolling and wheel radii, front Ackermann steering, pause behavior, independent paint materials, safe shared-geometry reuse, chassis motion and replay animation fields. An offline Blender render of the converted model was inspected for orientation and appearance; it does not verify the browser scene.

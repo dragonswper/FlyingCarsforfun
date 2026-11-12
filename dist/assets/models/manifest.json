@@ -1,0 +1,24 @@
+{
+  "assets": [
+    {
+      "id": "fennec",
+      "name": "Fennec - Rocket League Car",
+      "file": "fennec.glb",
+      "creator": "Jako",
+      "creatorUrl": "https://sketchfab.com/fairlight51",
+      "sourceUrl": "https://sketchfab.com/3d-models/fennec-rocket-league-car-5b43b50b6eeb4a12a29671df3418f57a",
+      "license": "CC-BY-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "providedBy": "User upload",
+      "sha256": "d0c75471d219f653433c5a98cc0f194eda00e6f18a817256f80d9796394d6ada",
+      "bytes": 6632376,
+      "modifications": [
+        "Converted FBX to self-contained GLB",
+        "Normalized model scale, forward axis and wheel contact height",
+        "Relinked textures and optimized them to at most 1024 pixels",
+        "Created independent steering and rolling pivots for four wheels",
+        "Added procedural rolling, front steering and chassis suspension; no animation clips were supplied"
+      ]
+    }
+  ]
+}

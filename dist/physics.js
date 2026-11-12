@@ -50,7 +50,7 @@ function curvature(speed){const points=[[0,.69],[5,.398],[10,.235],[15,.1375],[1
 export function stepCar(c,input,dt,unlimited=false){
  if(c.demoTime>0){c.demoTime=Math.max(0,c.demoTime-dt);if(c.demoTime===0)spawnCar(c,c.id%2?15:-15,c.team?42:-42,c.team?Math.PI:0);return;}
  const i=controls(input),{f,u,r}=basis(c),jumpPressed=i.jump&&!c.jumpHeld;c.hitCooldown=Math.max(0,c.hitCooldown-dt);c.noContact=Math.max(0,c.noContact-dt);
- c.boosting=i.boost&&(unlimited||c.boost>0);c.drifting=i.drift&&c.grounded;
+ c.renderSteer=i.steer;c.renderThrottle=i.throttle;c.boosting=i.boost&&(unlimited||c.boost>0);c.drifting=i.drift&&c.grounded;
  if(c.grounded){
   const forward=f.clone().addScaledVector(c.normal,-f.dot(c.normal)).normalize(),right=new V().crossVectors(c.normal,forward).normalize();
   const speed=c.v.dot(forward),lateral=c.v.dot(right);let acceleration=0;
@@ -194,6 +194,6 @@ export class Simulation{
   }
   this.recordTime+=dt;if(this.recordTime>=.05){this.recordTime=0;this.replay.push(this.snapshot());if(this.replay.length>100)this.replay.shift();}
  }
- snapshot(){return {ball:{p:this.ball.p.toArray(),q:this.ball.q.toArray()},cars:this.cars.map(c=>({id:c.id,team:c.team,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting})),time:this.elapsed};}
+ snapshot(){return {ball:{p:this.ball.p.toArray(),q:this.ball.q.toArray()},cars:this.cars.map(c=>({id:c.id,team:c.team,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting,speed:c.v.dot(FWD.clone().applyQuaternion(c.q)),steer:c.renderSteer||0,grounded:c.grounded})),time:this.elapsed};}
  state(){return {phase:this.phase,mode:this.options.mode,score:[...this.score],remaining:this.remaining,overtime:this.overtime,phaseTime:this.phaseTime,elapsed:this.elapsed,boost:this.cars[0].boost,speed:this.cars[0].v.length()*3.6,grounded:this.cars[0].grounded,trainingIndex:this.trainingIndex,trainingHits:this.trainingHits,drillName:this.drillName,shotTime:this.shotTime,players:this.cars.map(c=>({id:c.id,team:c.team,goals:c.goals,touches:c.touches,demos:c.demos,score:c.score}))};}
 }

@@ -1,6 +1,7 @@
-/* Original stadium, vehicle and ball models. No extracted game assets. */
+/* Procedural scene plus adapters for user-supplied vehicle/stadium models. */
 import * as T from './vendor/three.module.js';
 import { C, createPads, clamp } from './physics.js';
+import { loadFennec, makeFennecModel, animateVehicle, disposeVehicle, disposeFennecTemplate } from './vehicles.js';
 const v=(x,y,z)=>new T.Vector3(x,y,z);
 const material=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.55,metalness:.18,...extra});
 const teamColors=['#299bff','#ff9345'];
@@ -127,9 +128,10 @@ export class GameView{
  }
  resize(){const w=window.innerWidth,h=window.innerHeight;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
  quality(level){this.renderer.setPixelRatio(level==='low'?1:Math.min(window.devicePixelRatio||1,1.7));this.renderer.shadowMap.enabled=level!=='low';this.resize();}
- sync(sim,paint='#299bff',body='striker'){
-  for(const c of this.cars.values()){this.scene.remove(c.root);c.root.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>m?.dispose());});}this.cars.clear();
-  for(const car of sim.cars){const model=makeCarModel(car.id===0?paint:teamColors[car.team],car.id===0?body:'striker');const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
+ async loadAssets(onProgress){await loadFennec(onProgress);}
+ sync(sim,paint='#299bff',body='fennec'){
+  for(const c of this.cars.values()){this.scene.remove(c.root);disposeVehicle(c);}this.cars.clear();
+  for(const car of sim.cars){const chosen=car.id===0?body:'fennec',color=car.id===0?paint:teamColors[car.team];const model=chosen==='fennec'?makeFennecModel(color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
    this.cars.set(car.id,model);this.scene.add(model.root);}this.update(sim,0,true);
  }
  burst(position,color='#ffc478',count=25){
@@ -138,7 +140,13 @@ export class GameView{
  update(sim,dt,menu=false,snapshot=null){
   this.menuTime+=dt;this.spin+=dt;
   const cars=snapshot?.cars||sim.cars.map(c=>({id:c.id,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting}));
-  for(const state of cars){const model=this.cars.get(state.id);if(!model)continue;model.root.position.fromArray(state.p);model.root.quaternion.fromArray(state.q);model.root.visible=!state.demo;model.flame.visible=!!state.boosting&&!menu;model.flame.scale.z=1+Math.sin(this.spin*80)*.15;const car=sim.cars.find(c=>c.id===state.id);const speed=car?car.v.dot(new T.Vector3(0,0,1).applyQuaternion(car.q)):0;for(const wheel of model.wheels){wheel.rolling.rotation.x+=speed*dt/.235;wheel.pivot.rotation.y=wheel.front?(car?.renderSteer||0)*.35:0;}}
+  for(const state of cars){
+   const model=this.cars.get(state.id);if(!model)continue;
+   model.root.position.fromArray(state.p);model.root.quaternion.fromArray(state.q);model.root.visible=!state.demo;
+   model.flame.visible=!!state.boosting&&!menu;model.flame.scale.z=1+Math.sin(this.spin*80)*.15;
+   const car=sim.cars.find(c=>c.id===state.id),speed=snapshot?(state.speed||0):(car?car.v.dot(new T.Vector3(0,0,1).applyQuaternion(car.q)):0);
+   animateVehicle(model,{speed:menu?0:speed,steer:menu?0:snapshot?(state.steer||0):(car?.renderSteer||0),dt,grounded:snapshot?state.grounded!==false:car?.grounded!==false,throttle:menu?0:car?.renderThrottle||0});
+  }
   this.ball.position.fromArray(snapshot?.ball.p||sim.ball.p.toArray());this.ball.quaternion.fromArray(snapshot?.ball.q||sim.ball.q.toArray());this.ballShadow.position.set(this.ball.position.x,.022,this.ball.position.z);this.ballIndicator.position.set(this.ball.position.x,.028,this.ball.position.z);this.ballIndicator.visible=!menu;const shadowScale=1+this.ball.position.y*.13;this.ballShadow.scale.setScalar(shadowScale);this.ballShadow.material.opacity=.35/(1+this.ball.position.y*.35);
   this.arena.pads.forEach((p,i)=>{const active=sim.pads[i].timer<=0;p.orb.visible=active;p.ring.material.emissiveIntensity=active?1.8:.1;p.orb.rotation.y=this.spin*1.6;p.orb.position.y=(sim.pads[i].big?.55:.22)+Math.sin(this.spin*2+i)*.045;});
   for(let i=this.particles.length-1;i>=0;i--){const p=this.particles[i];p.life-=dt;p.mesh.position.addScaledVector(p.v,dt);p.v.y-=5*dt;p.mesh.material.opacity=Math.max(0,p.life/p.max);if(p.life<=0){this.scene.remove(p.mesh);p.mesh.geometry.dispose();p.mesh.material.dispose();this.particles.splice(i,1);}}
@@ -155,5 +163,5 @@ export class GameView{
   }
   const smooth=dt===0?1:1-Math.exp(-7*dt);this.camera.position.lerp(desired,smooth);this.look.lerp(target,smooth);this.camera.lookAt(this.look);this.camera.fov=T.MathUtils.lerp(this.camera.fov,menu?45:sim.cars[0].boosting?91:85,Math.min(1,dt*5));this.camera.updateProjectionMatrix();this.renderer.render(this.scene,this.camera);
  }
- dispose(){this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});this.renderer.dispose();}
+ dispose(){this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();this.renderer.dispose();}
 }

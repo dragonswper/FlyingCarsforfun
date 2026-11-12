@@ -31,9 +31,9 @@ Arena scale, some constants and jump behavior follow public community measuremen
 
 ## Presentation
 
-Original procedural Striker GT and Rally RS cars, four paint finishes, a night stadium, instanced crowd, goal nets/frames, boost flames, impact particles, a patterned ball, ground locator, ball/car cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser.
+The supplied Fennec model (default, including all bot cars), optional procedural Striker GT and Rally RS cars, four paint finishes, a night stadium, instanced crowd, goal nets/frames, boost flames, impact particles, a patterned ball, ground locator, ball/car cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser.
 
-No Rocket League logos, cars, audio, stadium meshes, UI artwork or other extracted game assets are bundled. Online multiplayer, ranked matchmaking, original accounts, cosmetics and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
+The Fennec model was supplied by the user and is credited to Jako under CC BY 4.0. Its source artwork is separate from the MIT-licensed game code. No original Rocket League audio or accounts are bundled. Online multiplayer, ranked matchmaking, original accounts, cosmetics and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
 
 ## Controls
 
@@ -71,6 +71,12 @@ The tests cover simulation, geometry, input mappings, static assets and HTTP ser
 
 ## Research and credits
 
-See [research notes](docs/research.md) for sources, implementation decisions and differences. The simulation/game/interface code and models are original. Three.js 0.170.0 is MIT licensed; its license is in dist/vendor/. Barlow Condensed by Jeremy Tribby is SIL OFL licensed; its license is in dist/assets/fonts/. Cover and garage illustrations are original SVGs. Reference images were reviewed only and are not distributed.
+See [research notes](docs/research.md) for sources, implementation decisions and differences. The game/interface code and procedural models are original. The Fennec is user-supplied third-party artwork, adapted under CC BY 4.0; see [model credits](docs/model-replacements.md). Three.js 0.170.0 is MIT licensed; its license is in dist/vendor/. Barlow Condensed by Jeremy Tribby is SIL OFL licensed; its license is in dist/assets/fonts/. Cover and garage illustrations are original SVGs. Reference images were reviewed only and are not distributed.
 
 The project was created in a cloud workspace. No software was installed and no settings were changed on the user's PC. Browser local storage is used for optional preferences and career data. No native process, filesystem or shell access is exposed by the game.
+
+## Fennec model update
+
+The default vehicle now uses the supplied Fennec FBX, converted to a self-contained 6.4 MiB GLB. All four wheels have separate rolling pivots; the front pair steer independently using Ackermann-style angles. Wheel rotation follows signed speed and each actual wheel radius, including reversing. Chassis pitch, roll and suspension motion respond to acceleration and steering. Physics orientation still drives jumps, dodges and aerial rolls. Replays record speed/steering for the same animation. Paint variants use separate material instances while geometry/textures are shared safely between cars.
+
+The source FBX had no animation clips; movement is implemented procedurally. See [model preparation and credits](docs/model-replacements.md).

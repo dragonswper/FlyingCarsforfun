@@ -30,3 +30,7 @@ The short replay stores positions/orientations, not a downloadable native replay
 ## Verification boundary
 
 Unit/integration checks cover physics math, goals/clock, boost, controls, finite scene geometry, asset resolution and a long-running bot simulation. Browser-control tools were unavailable in the managed environment, so interactive feel, WebGL shading, real gamepads, audio and frame rate remain unverified. That limit is stated in the release instead of presenting automated geometry checks as human playtesting.
+
+## User-supplied Fennec update — 12 November 2026
+
+The supplied Fennec replaces the default car visuals and all bot car visuals. Source: [Fennec by Jako](https://sketchfab.com/3d-models/fennec-rocket-league-car-5b43b50b6eeb4a12a29671df3418f57a), listed as CC Attribution by the Sketchfab API. This model is separate from the original procedural artwork described above. Four wheel meshes were already separate in the supplied FBX; there were no animation actions. The conversion adds stable pivots, forward/up alignment, embedded resized textures and runtime wheel/chassis animation.
