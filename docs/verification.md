@@ -4,7 +4,7 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**65 automated tests pass.**
+**70 automated tests pass.**
 
 `npm run check` parses every authored runtime module and JavaScript preparation script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
 
@@ -56,3 +56,11 @@ Auto starts with the simplified stadium, no multisample antialiasing, no realtim
 Twenty-two new checks independently exercise source unit conversions, exact boost timing, jump hold/second-jump deadlines, Octane offsets, mesh-derived corner boundaries, live/predicted trajectory agreement, rolling/spin behavior, pickup cylinder heights, goal/assist scoring, supersonic hysteresis, four bot profiles, defensive priority, teammate rotations, cached predictions, finite matches, FOV across aspect ratios, preference bounds, keyboard/mouse rebinding, controller sensitivity/deadzones and settings accessibility links. Existing tests were updated where they asserted old rounded constants or throttle-based dodging.
 
 All 65 tests pass. With the more accurate outline and spherical pickups, the pitch now uses 15 pre-cull draw submissions (including all 34 pickups), with zero pitch shadow casters. An imported corner profile replaces a guessed boundary; both stadium variants were recalibrated to the selected 20.48 m ceiling. Native source notices and the numeric/source audit are included. The automated checks remain headless; browser interaction, controller hardware, audio, GPU rendering and FPS have not been measured.
+
+## Menu and HUD checks — 12 November 2026
+
+Five additional behavior tests exercise separate Exhibition/Training selections, back navigation and restored mode choices, Escape handling with open dialogs or a hidden lobby, keyboard focus/help navigation, render-pose nameplates and visibility culling, pooled label reuse, and saved interface preference bounds. The original 65 simulation, asset, geometry and input tests still pass. Static checks verify HTML nesting, unique IDs, local fonts/assets and runtime imports. The font subsets retain their source license and contain valid WOFF tables; they total 56,800 bytes instead of 1,158,616 bytes for the three downloaded TTF files.
+
+The reviewed screenshots and actual recreated components are listed in [UI reference notes](ui-references.md). The requested Game UI Database page returned HTTP 403 and the web tool reported a robots exclusion, so those specific tabs were not inspected. Eight accessible public Rocket League screenshots from Interface In Game were downloaded to scratch and visually inspected; none are included as runtime screenshots/backgrounds.
+
+The managed `cua_repl.js`/browser-control tool is still absent. No substitute controller, browser installation or preview server was used. Interactive CSS layout, visual equivalence, real WebGL frame rate and hardware behavior remain **unverified**. Three.js projection calculations were checked at 1920×1080, 1280×720 and 390×844 to keep the showroom car in view; these calculations are not rendered UI screenshots.

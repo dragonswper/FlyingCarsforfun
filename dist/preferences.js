@@ -1,4 +1,5 @@
 const bounded=(value,min,max,fallback)=>Number.isFinite(Number(value))?Math.max(min,Math.min(max,Number(value))):fallback;
+export function normalizeInterface(value={}){return {scale:bounded(value?.scale,70,120,100),nameplates:value?.nameplates!==false,speed:value?.speed===true};}
 export const CAMERA_FIELDS=Object.freeze([
  {key:'fov',label:'Field of view',min:60,max:110,step:1,value:110,unit:'° horizontal'},
  {key:'distance',label:'Distance',min:100,max:400,step:10,value:270,unit:'cm'},

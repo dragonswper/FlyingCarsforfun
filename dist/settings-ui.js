@@ -10,6 +10,7 @@ export function setupSettings(settings,{save,apply}){
   for(const [action,button]of buttons){button.textContent=bindingName(settings.bindings[action]);button.setAttribute('aria-label',BINDING_LABELS[action]+': '+bindingName(settings.bindings[action])+'. Change binding.');}
   const list=node('controls-bindings');list.replaceChildren();for(const [action,label]of Object.entries(BINDING_LABELS)){const row=document.createElement('div'),key=document.createElement('kbd'),description=document.createElement('span');key.textContent=bindingCodes(settings.bindings,action).map(bindingName).join(' / ');description.textContent=label;row.append(key,description);list.append(row);}
   const hint=document.querySelector('.controls-hint');if(hint)hint.textContent=`${bindingName(settings.bindings.jump)} JUMP  ·  ${bindingName(settings.bindings.boost)} BOOST  ·  ${bindingName(settings.bindings.drift)} SLIDE`;
+  for(const [id,action]of [['reset-key','reset'],['next-key','next'],['scoreboard-key','scoreboard']])node(id).textContent=bindingName(settings.bindings[action]);
  }
  function cancelCapture(){capture=null;node('binding-capture').hidden=true;}
  function commitBinding(code){
@@ -26,5 +27,7 @@ export function setupSettings(settings,{save,apply}){
  node('reset-controls').addEventListener('click',()=>{settings.controls=normalizeControls(CONTROL_DEFAULTS);settings.bindings=normalizeBindings(DEFAULT_BINDINGS);node('invert-pitch').checked=false;apply('controls');save();refreshRanges();refreshBindings();status('Controls restored.');});
  node('invert-pitch').addEventListener('change',()=>{settings.controls.invertPitch=node('invert-pitch').checked;apply('controls');save();status('Controls saved.');});
  const volume=node('master-volume');volume.addEventListener('input',()=>{settings.volume=Number(volume.value);node('volume-value').value=volume.value+'%';apply('audio');});volume.addEventListener('change',()=>{save();status('Volume saved.');});
- function sync(){refreshRanges();refreshBindings();node('invert-pitch').checked=settings.controls.invertPitch;volume.value=settings.volume;node('volume-value').value=settings.volume+'%';}sync();return {sync,cancelCapture};
+ const scale=node('hud-scale');scale.addEventListener('input',()=>{settings.interface.scale=Number(scale.value);node('hud-scale-value').value=scale.value+'%';apply('interface');});scale.addEventListener('change',()=>{save();status('Interface scale saved.');});
+ for(const [id,field]of [['nameplates-toggle','nameplates'],['speed-toggle','speed']])node(id).addEventListener('change',()=>{settings.interface[field]=node(id).checked;apply('interface');save();status('Interface settings saved.');});
+ function sync(){refreshRanges();refreshBindings();node('invert-pitch').checked=settings.controls.invertPitch;volume.value=settings.volume;node('volume-value').value=settings.volume+'%';scale.value=settings.interface.scale;node('hud-scale-value').value=scale.value+'%';node('nameplates-toggle').checked=settings.interface.nameplates;node('speed-toggle').checked=settings.interface.speed;}sync();return {sync,cancelCapture};
 }

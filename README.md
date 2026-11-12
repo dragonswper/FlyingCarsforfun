@@ -73,7 +73,7 @@ The tests cover simulation, geometry, input mappings, static assets and HTTP ser
 
 ## Research and credits
 
-See [research notes](docs/research.md) for sources, implementation decisions and differences. The game/interface code and procedural models are original. The Fennec and Champions Field are user-supplied third-party artwork, adapted under CC BY 4.0; see [model credits](docs/model-replacements.md). Three.js 0.170.0 is MIT licensed; its license is in dist/vendor/. Barlow Condensed by Jeremy Tribby is SIL OFL licensed; its license is in dist/assets/fonts/. Cover and garage illustrations are original SVGs. Reference images were reviewed only and are not distributed.
+See [research notes](docs/research.md) for sources, implementation decisions and differences. The game/interface code and procedural models are original. The Fennec and Champions Field are user-supplied third-party artwork, adapted under CC BY 4.0; see [model credits](docs/model-replacements.md). Three.js 0.170.0 is MIT licensed; its license is in dist/vendor/. Rajdhani by Indian Type Foundry (current UI) and Barlow Condensed by Jeremy Tribby (retained original asset) are SIL OFL licensed; licenses are in dist/assets/fonts/. Cover and garage illustrations are original SVGs. Reference images were reviewed only and are not distributed.
 
 The project was created in a cloud workspace. No software was installed and no settings were changed on the user's PC. Browser local storage is used for optional preferences and career data. No native process, filesystem or shell access is exposed by the game.
 
@@ -101,6 +101,16 @@ These are measured reductions in rendering work, not a guaranteed frame-rate inc
 
 The 1.4 update cross-checks the supplied RocketSim, RLBot-Beast, rl_ball_sym and RocketGPU repositories against rl.source.gs. It adds a collision-mesh-derived corner outline, offset Octane/Fennec contacts, source jump/boost timing, spin-aware ball friction, shared bounce prediction, proper goal/assist scoring and four bot behavior levels: Rookie, Pro, All-Star and Expert. The boost pickups are now spheres and still use three instanced draws.
 
-Settings is organized into Display, Camera, Controls and Audio. Camera includes **horizontal FOV**, distance/height in centimetres, angle and stiffness. Controls supports keyboard/mouse rebinding with conflict checks, steering/aerial sensitivity, deadzones and pitch inversion. Audio adds master volume. Preferences persist locally, and restoring camera/controls leaves career data intact.
+Options is organized into Camera, Controls, Interface, Video and Audio. Camera includes **horizontal FOV**, distance/height in centimetres, angle and stiffness. Controls supports keyboard/mouse rebinding with conflict checks, steering/aerial sensitivity, deadzones and pitch inversion. Audio adds master volume. Preferences persist locally, and restoring camera/controls leaves career data intact.
 
 The physics remains an original browser implementation with documented approximations, rather than a claim of bit-identical native simulation. [Read the core source/value audit](docs/core-research.md). Native CUDA, Rust and RLBot installations are not required. All **65 automated tests** pass; interactive browser verification remains unavailable in the managed workspace.
+
+## Menu and HUD update — 1.5
+
+The interface now follows the classic Rocket League field-front menus: left-side slanted navigation, a bottom player banner, blue glass Options tabs, a compact blue/orange score clock, a segmented amber boost dial, red ball-cam indicator, gold kickoff/goal messages, player nameplates and a scorer banner in replays. Exhibition and Training have separate selections. Garage customization keeps the live Fennec visible; all previous car, paint, camera, control, difficulty and graphics choices remain available.
+
+**Options → Interface** controls HUD size (70–120%), nameplates and the optional speed display. Keyboard hints follow saved bindings. The scoreboard groups teams and displays score, goals, assists and saves. Menus support click, keyboard focus, arrow navigation and Escape to go back. Gameplay supports the existing standard gamepad mapping.
+
+The requested Game UI Database page was blocked by robots/HTTP 403 in the workspace. Public Rocket League screenshots from Interface In Game were inspected instead; [the reference notes](docs/ui-references.md) identify the exact images and visual limits. This is a close visual recreation with the game's own branding and implemented local features, not verified pixel parity. Pass, shop, online/social and unrelated screens are omitted.
+
+The UI uses local HTML/CSS/SVG and 57 KB of subset Rajdhani fonts, with no screenshot backgrounds, remote font requests or added WebGL draw calls for the HUD. Nameplate elements are pooled and follow interpolated car positions. The simulation and optimized stadium assets are retained. **70 automated tests pass**; actual browser layout, GPU performance, audio and hardware-controller testing remain unverified in this managed workspace.
