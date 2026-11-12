@@ -1,12 +1,14 @@
 # Boost Circuit — Car Soccer
 
-Complete standalone game source for **FlyingCarsforfun**, including the Champions Field stadium, animated Fennec, tests, model credits and research.
+Complete standalone game source for **FlyingCarsforfun**, including the Champions Field stadium, animated Fennec and Bottled Car, tests, model credits and research.
 
 An original browser-native 3D car-soccer recreation inspired by Rocket League, written from scratch with a custom fixed-step simulation and Three.js rendering.
 
 **Play:** https://boost-circuit-arena.bobistheman2049.chatgpt.site
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
+
+**1.7:** Select **Garage → Bottled Car** for the new novelty vehicle, with rolling wheels, front steering, suspension, boost flames and the existing paint finishes. The whole bottle assembly is retained and uses the same collision/handling as the other cars. The optional model loads when selected, or when a private-match opponent uses it; both players prepare their chosen bodies before Ready/Start. Reload both players' pages after this update so game builds match.
 
 The hosted game's Share settings control who can open it. Allow your friend to visit a private Site or choose public access before using that link together; a room code does not grant website access. Both players can also use another static deployment of this source. All rendering runs on each player's GPU; the room host runs the authoritative physics. No game installation or cloud GPU is required. The game has no separate game accounts. Desktop keyboard/mouse or a standard gamepad is required; touch driving is not included.
 
@@ -34,9 +36,9 @@ Arena scale, some constants and jump behavior follow public community measuremen
 
 ## Presentation
 
-The supplied Fennec model (default, including all bot cars), optional procedural Striker GT and Rally RS cars, four paint finishes, the supplied Champions Field stadium architecture, detailed stands, goal nets/frames, boost flames, impact particles, a patterned ball, ground locator, ball/car cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser.
+The supplied Fennec model (default, including all bot cars), optional procedural Striker GT and Rally RS cars, the supplied Bottled Car novelty body, four paint finishes, the supplied Champions Field stadium architecture, detailed stands, goal nets/frames, boost flames, impact particles, a patterned ball, ground locator, ball/car cameras, scoreboard, boost meter, stats and synthesized audio. Garage options and local career records persist in this browser.
 
-The Fennec model by Jako and Champions Field model by Prabhu Ram / virtualmakes were supplied by the user and adapted under CC BY 4.0. Their artwork is separate from the game code. No original Rocket League audio or accounts are bundled. Ranked matchmaking, original accounts, cosmetic inventories and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
+The Fennec model by Jako and Champions Field model by Prabhu Ram / virtualmakes were supplied by the user and adapted under CC BY 4.0. Bottled Car by Urizel is adapted under CC BY-NC 4.0 for noncommercial use. Their artwork is separate from the game code. No original Rocket League audio or accounts are bundled. Ranked matchmaking, original accounts, cosmetic inventories and advanced original-game mechanics such as reliable flip resets/wavedashes are outside this release.
 
 ## Controls
 
@@ -76,7 +78,7 @@ The tests cover simulation, geometry, input mappings, static assets and HTTP ser
 
 ## Research and credits
 
-See [research notes](docs/research.md) for sources, implementation decisions and differences. The game/interface code and procedural models are original. The Fennec and Champions Field are user-supplied third-party artwork, adapted under CC BY 4.0; see [model credits](docs/model-replacements.md). Three.js 0.170.0 is MIT licensed; its license is in dist/vendor/. Rajdhani by Indian Type Foundry (current UI) and Barlow Condensed by Jeremy Tribby (retained original asset) are SIL OFL licensed; licenses are in dist/assets/fonts/. Cover and garage illustrations are original SVGs. Reference images were reviewed only and are not distributed.
+See [research notes](docs/research.md) for sources, implementation decisions and differences. The game/interface code and procedural models are original. Fennec and Champions Field are user-supplied third-party artwork adapted under CC BY 4.0; Bottled Car and its garage thumbnail are adapted under CC BY-NC 4.0. See [model credits](docs/model-replacements.md). Three.js 0.170.0 is MIT licensed; its license is in dist/vendor/. Rajdhani by Indian Type Foundry (current UI) and Barlow Condensed by Jeremy Tribby (retained original asset) are SIL OFL licensed; licenses are in dist/assets/fonts/. Cover and procedural-car illustrations are original SVGs. Reference images were reviewed only and are not distributed.
 
 The project was created in a cloud workspace. No software was installed and no settings were changed on the user's PC. Browser local storage is used for optional preferences and career data. No native process, filesystem or shell access is exposed by the game.
 

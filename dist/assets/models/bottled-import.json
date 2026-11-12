@@ -1,0 +1,92 @@
+{
+  "sourceFile": "bottled_car.glb",
+  "sourceBytes": 14883648,
+  "sourceSha256": "bf4b0ba8a0baf0d4b3b08ebf354cff0b6885bfe4810e0f200a44c6e1ee15ba95",
+  "sourceTriangles": 29482,
+  "triangles": 29482,
+  "drawBatches": 13,
+  "visualLength": 2,
+  "sourceBounds": {
+    "min": [
+      -0.06404100358486176,
+      -0.061570998281240505,
+      -0.1719679981470108
+    ],
+    "max": [
+      0.07115299999713898,
+      0.07113599777221684,
+      0.17436499893665314
+    ]
+  },
+  "normalization": {
+    "scale": 5.774789052274041,
+    "centerX": -0.0021200000000000004,
+    "centerZ": 0.001198500394821167,
+    "floor": -0.061570998281240505
+  },
+  "wheels": [
+    {
+      "name": "FL",
+      "position": [
+        -0.1985372476171815,
+        0.25715712136134183,
+        0.2359665405794868
+      ],
+      "radius": 0.0934072064158076,
+      "triangles": 1696
+    },
+    {
+      "name": "FR",
+      "position": [
+        0.19853724761718153,
+        0.25715712136134183,
+        0.2359665405794868
+      ],
+      "radius": 0.0934072064158076,
+      "triangles": 1696
+    },
+    {
+      "name": "RL",
+      "position": [
+        -0.1985372476171815,
+        0.25709937347081907,
+        -0.5060938526377275
+      ],
+      "radius": 0.09333214323974992,
+      "triangles": 1696
+    },
+    {
+      "name": "RR",
+      "position": [
+        0.19853724761718153,
+        0.25709937347081907,
+        -0.5060938526377275
+      ],
+      "radius": 0.09333214323974992,
+      "triangles": 1696
+    }
+  ],
+  "credit": {
+    "author": "Urizel (https://sketchfab.com/urizel)",
+    "license": "CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)",
+    "source": "https://sketchfab.com/3d-models/bottled-car-cd38a415db8a4607ab9dd3cc67d27462",
+    "title": "Bottled car"
+  },
+  "modifications": [
+    "Centered and scaled the entire supplied bottle assembly to a 2 metre novelty body",
+    "Split welded-position wheel islands without changing UV/normal seams",
+    "Added four rolling pivots and independent front steering",
+    "Replaced full-scene transmission with inexpensive alpha-blended bottle glass",
+    "Preserved the glass bottle, cork, tag, display feet and original texture artwork",
+    "Re-encoded embedded textures as WebP quality 90 at their original dimensions and removed unused transmission texture"
+  ],
+  "file": "bottled.glb",
+  "bytes": 3130000,
+  "sha256": "ec49aecdd7eac8579d906b411385a03eb27065c208ab0085753a215053a3b4b4",
+  "images": 16,
+  "textureEncoding": "WebP quality 90, original 1024 pixel dimensions",
+  "extensionsRequired": [
+    "EXT_texture_webp"
+  ],
+  "animations": 0
+}

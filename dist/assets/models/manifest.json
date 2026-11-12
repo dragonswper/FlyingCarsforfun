@@ -69,6 +69,27 @@
         "Original full-detail model remains available in High graphics",
         "Updated ceiling calibration to the verified 20.48 metre arena height"
       ]
+    },
+    {
+      "id": "bottled",
+      "name": "Bottled car",
+      "file": "bottled.glb",
+      "creator": "Urizel",
+      "creatorUrl": "https://sketchfab.com/urizel",
+      "sourceUrl": "https://sketchfab.com/3d-models/bottled-car-cd38a415db8a4607ab9dd3cc67d27462",
+      "license": "CC-BY-NC-4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-nc/4.0/",
+      "providedBy": "User upload",
+      "sha256": "ec49aecdd7eac8579d906b411385a03eb27065c208ab0085753a215053a3b4b4",
+      "bytes": 3130000,
+      "modifications": [
+        "Centered and scaled the entire supplied bottle assembly to a 2 metre novelty body",
+        "Split welded-position wheel islands without changing UV/normal seams",
+        "Added four rolling pivots and independent front steering",
+        "Replaced full-scene transmission with inexpensive alpha-blended bottle glass",
+        "Preserved the glass bottle, cork, tag, display feet and original texture artwork",
+        "Re-encoded embedded textures as WebP quality 90 at their original dimensions and removed unused transmission texture"
+      ]
     }
   ]
 }

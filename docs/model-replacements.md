@@ -1,5 +1,24 @@
 # User-supplied model replacements
 
+## Bottled Car — 1.7
+
+**Bottled car**, by [Urizel](https://sketchfab.com/urizel). [Original model](https://sketchfab.com/3d-models/bottled-car-cd38a415db8a4607ab9dd3cc67d27462). The supplied GLB embeds the artist's attribution and [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) license. The adapted model and its rendered garage thumbnail retain that noncommercial license, separate from the game's MIT code license.
+
+The user's `bottled_car.glb` downloaded successfully at 14,883,648 bytes. The optimized self-contained runtime model is 3,130,000 bytes, with all 29,482 source triangles retained in 13 material/mesh batches. The glass bottle, cork, tag, car and wooden display supports are preserved. The full assembly is centered on the car axis, normalized to two metres long and aligned to the existing visual floor. This is a decorative novelty body with the same Octane/Fennec physics hitbox and driving behavior as the other garage choices; the enclosing bottle does not change collision dimensions.
+
+Four tire/hub islands were separated using shared-position topology while preserving UV and normal seams. Independent steering and rolling pivots use their measured radii (about 0.0934 m) and the actual 0.7421 m visual wheelbase. Front wheels steer, rear wheels remain straight, signed speed controls rolling, and the body has procedural suspension. The source included no animation clips. The car's paint material supports the existing four finishes without recoloring the glass, cork, tag or wooden supports.
+
+The source's full-scene glass transmission was replaced with inexpensive single-sided alpha blending to avoid a second render of the stadium. Embedded images are WebP quality 90 at their original 1024-pixel dimensions; unused transmission imagery is omitted. The model needs native browser WebP decoding, supported by current desktop browsers, and no external decoder/CDN. It is fetched and warmed only when selected, restored from a saved choice, or needed for a private opponent. Private-match Ready/Start waits for both appearances; failures show an explicit retry. Geometry/textures are shared between cars while paint materials and animation pivots remain independent.
+
+Reproduction in a development environment:
+
+```sh
+node scripts/import-bottled.mjs /path/to/bottled_car.glb /tmp/bottled-rigged.glb
+blender -b -P scripts/optimize-bottled.py -- /tmp/bottled-rigged.glb dist/assets/models/bottled.glb
+```
+
+`bottled-import.json` records the original/output SHA-256, source credit, normalization, wheel measurements and modifications. Only the optimized derivative is committed. Preparation and offline rendering ran in the isolated cloud workspace; players need no Blender or native installation. Offline previews were inspected, but browser image decoding and WebGL output remain unverified here.
+
 ## Fennec
 
 **Fennec - Rocket League Car**, by [Jako](https://sketchfab.com/fairlight51). [Original model](https://sketchfab.com/3d-models/fennec-rocket-league-car-5b43b50b6eeb4a12a29671df3418f57a). Licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), as identified by the public Sketchfab model metadata. User supplied fennec-rocket-league-car.zip. The artwork is not covered by the game's MIT license.

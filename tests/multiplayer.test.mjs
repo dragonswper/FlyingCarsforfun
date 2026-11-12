@@ -15,9 +15,9 @@ function hub(transform=packet=>packet){
   close(){if(this.closed)return;this.closed=true;this.open=false;if(waiting.get(this.code)===this)waiting.delete(this.code);if(this.peer&&!this.peer.closed)queueMicrotask(()=>{if(!this.peer.closed)this.peer.onClose('Peer disconnected.');});}
  };
 }
-async function pair(t,options={},transform){
+async function pair(t,options={},transform,looks={}){
  const Transport=hub(transform);let now=0;const events=[],errors=[];const host=new NetworkRoom({Transport,clock:()=>now,onDisconnect:r=>errors.push(r)}),guest=new NetworkRoom({Transport,clock:()=>now,onEvents:e=>events.push(...e),onDisconnect:r=>errors.push(r)});
- t.after(()=>{host.close();guest.close();});host.create(options,{body:'fennec',paint:'blue'});guest.join(host.code,{body:'rally',paint:'mint'});await settle();return {host,guest,events,errors,advance:ms=>now+=ms};
+ t.after(()=>{host.close();guest.close();});host.create(options,looks.host||{body:'fennec',paint:'blue'});guest.join(host.code,looks.guest||{body:'rally',paint:'mint'});await settle();return {host,guest,events,errors,advance:ms=>now+=ms};
 }
 async function start(pair){pair.guest.setReady(true);await settle();assert.equal(pair.host.startMatch(),true);await settle();}
 
@@ -38,6 +38,11 @@ test('host alone starts the room, guest readiness gates it, and local perspectiv
 });
 test('doubles supports teammates or opposing human teams while retaining exactly two bots',async t=>{
  for(const coop of [false,true]){const p=await pair(t,{mode:'doubles',coop});await start(p);const id=guestId(p.host.options);assert.equal(p.host.sim.cars.filter(c=>c.bot).length,2);assert.equal(p.guest.sim.localPlayerId,id);assert.equal(p.host.sim.cars[id].team,coop?0:1);assert.equal(p.host.sim.cars[id].bot,false);p.host.close();p.guest.close();}
+});
+test('custom Bottled Car appearance survives the room handshake, both player perspectives and rematches',async t=>{
+ const p=await pair(t,{},undefined,{host:{body:'bottled',paint:'violet'},guest:{body:'bottled',paint:'mint'}});assert.equal(p.host.remoteLook.body,'bottled');assert.equal(p.guest.remoteLook.body,'bottled');await start(p);
+ for(const peer of [p.host,p.guest]){assert.equal(peer.sim.cars[0].appearance.body,'bottled');assert.equal(peer.sim.cars[1].appearance.body,'bottled');assert.equal(peer.sim.cars[0].appearance.color,'#a985fc');assert.equal(peer.sim.cars[1].appearance.color,'#53dbbd');}
+ const match=p.host.matchId;assert.equal(p.host.startMatch(),true);await settle();assert.notEqual(p.host.matchId,match);assert.equal(p.guest.matchId,p.host.matchId);assert.equal(p.guest.sim.cars[p.guest.sim.localPlayerId].appearance.body,'bottled');assert.deepEqual(p.errors,[]);
 });
 test('older game builds are rejected before any simulation starts',async t=>{
  const p=await pair(t,{},(packet,role)=>packet.t==='hello'&&role==='guest'?{...packet,build:'old-build'}:packet);assert.equal(p.host.closed,true);assert.equal(p.guest.closed,true);assert.ok(p.errors.some(e=>/versions differ/.test(e)));assert.equal(p.host.sim,undefined);

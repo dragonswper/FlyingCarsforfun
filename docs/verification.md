@@ -4,7 +4,7 @@ The release was developed and tested in an isolated Linux cloud workspace. No ap
 
 ## Automated checks
 
-**86 automated tests pass.**
+**93 automated tests pass for version 1.7.0.**
 
 `npm run check` parses every authored runtime module and JavaScript preparation script. `npm test` exercises the original simulation, Three.js scene geometry, input handlers, asset references and static HTTP server without installing packages.
 
@@ -17,6 +17,12 @@ Three.js math/geometry can run without a GPU; these tests do not render WebGL pi
 The Sites managed-preview skill requires the supplied `cua_repl.js` browser tool. It was not present in the available tools, and `open_in_codex` was also unavailable. In accordance with that workflow, no alternative browser controller was installed or substituted and no preview server was started. The game remains unverified for interactive browser play, actual GPU performance, CSS layouts, fullscreen, audio output and real controllers.
 
 The managed environment reports a running runtime with remote_desktop enabled but state unknown. Environment: `ccarenv_b64_Y2NhcmVudl84NmY1OTI5ZWEyZjg4MTkxYmM5M2JmYTlhMWZjNDNmNQ`.
+
+## Bottled Car checks — 12 November 2026
+
+Six new checks import the actual optimized GLB with Three.js, verify self-contained images, file hashes, source attribution/license, preserved triangle count, floor/scale/axes, all four wheel pivots and measured radii, forward/reverse/airborne rolling, front steering, suspension isolation, independent paint materials, shared geometry lifetime and inexpensive glass settings. Image loaders are stubbed in Node, including the WebP extension, so these tests do not verify browser texture decoding. Asset-loading tests exercise single-flight/deduplication, pending readiness, failure cleanup and explicit retries. A seventh test exchanges the new appearance through actual NetworkRoom handshakes over the existing in-memory transport, checks both players' colors and verifies rematches retain the chosen body.
+
+The original and optimized models and the garage thumbnail were inspected through offline Blender renders. The default Fennec/stadium startup does not fetch the optional Bottled Car asset; it is loaded at selection, saved-choice restoration or private-room preparation. Source size fell from 14,883,648 to 3,130,000 bytes. Browser visual quality, WebP decoding, real device FPS and a two-browser private game remain unverified because the required managed browser tool is unavailable. The previous release's separate real-WebRTC checks are documented below; this update's new cosmetic exchange checks use the deterministic transport harness.
 
 ## Publishing
 

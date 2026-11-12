@@ -9,13 +9,14 @@ import {setupLobby,NameplateLayer,driverName} from './interface.js';
 import {NetworkRoom} from './network-room.js';
 import {normalizeCode} from './network-protocol.js';
 import {setupRoomUI} from './room-ui.js';
+import {BODY_TYPES,BODY_NAMES,prepareRoomVehicles} from './bodies.js';
 const $=id=>document.getElementById(id),show=(id,on)=>{$(id).hidden=!on;},text=(id,value)=>{const node=$(id),next=String(value);if(node.textContent!==next)node.textContent=next;};
 const paints={blue:{hex:'#299bff',name:'ELECTRIC BLUE'},ivory:{hex:'#e8efec',name:'ARCTIC WHITE'},violet:{hex:'#a985fc',name:'ULTRAVIOLET'},mint:{hex:'#53dbbd',name:'MINT VELOCITY'}};
 const names={duel:'DUEL · 1v1',doubles:'DOUBLES · 2v2',free:'FREE PLAY',training:'TRAINING'};
 const key='boost-circuit.v1';
 const defaults={mode:'duel',duration:300,difficulty:'pro',quality:'auto',sound:true,ballcam:true,fps:false,paint:'blue',body:'fennec',xp:0,matches:0,wins:0,goals:0,touches:0,history:[]};
 let settings={...defaults};try{const data=JSON.parse(localStorage.getItem(key)||'{}');if(data&&typeof data==='object')settings={...settings,...data};}catch{}
-for(const [name,valid]of Object.entries({mode:['duel','doubles','free','training'],duration:[120,300],difficulty:Object.keys(BOT_LEVELS),quality:['auto','low','balanced','high'],paint:Object.keys(paints),body:['fennec','striker','rally']}))if(!valid.includes(settings[name]))settings[name]=defaults[name];
+for(const [name,valid]of Object.entries({mode:['duel','doubles','free','training'],duration:[120,300],difficulty:Object.keys(BOT_LEVELS),quality:['auto','low','balanced','high'],paint:Object.keys(paints),body:BODY_TYPES}))if(!valid.includes(settings[name]))settings[name]=defaults[name];
 for(const field of ['xp','matches','wins','goals','touches'])settings[field]=clamp(Number(settings[field])||0,0,1e9);
 if(settings.vehicleRevision!==2){settings.body='fennec';settings.vehicleRevision=2;}
 if(settings.performanceRevision!==1){if(settings.quality==='high')settings.quality='auto';settings.performanceRevision=1;}
@@ -23,7 +24,7 @@ settings.camera=normalizeCamera(settings.camera);settings.controls=normalizeCont
 settings.interface=normalizeInterface(settings.interface);
 settings.history=Array.isArray(settings.history)?settings.history.filter(x=>x&&typeof x==='object').slice(0,8):[];
 const save=()=>{try{localStorage.setItem(key,JSON.stringify(settings));}catch{}};
-let view,sim,input,motion,settingsUI,room=null,started=false,paused=false,resultSaved=false,accumulator=0,last=performance.now(),lastUI=0,frames=0,fpsTime=0,renderFPS=60,replayFrames=[],lastCount='',feedTimer,scoreSignature='',announcement=null;
+let view,sim,input,motion,settingsUI,room=null,bodySelection=0,vehicleWarning='',started=false,paused=false,resultSaved=false,accumulator=0,last=performance.now(),lastUI=0,frames=0,fpsTime=0,renderFPS=60,replayFrames=[],lastCount='',feedTimer,scoreSignature='',announcement=null;
 const localId=()=>sim?.localPlayerId||0,online=()=>!!(room?.connected&&room.matchId),localCar=()=>sim?.cars.find(car=>car.id===localId());
 const nameplates=new NameplateLayer($('nameplates'));
 const dialog=id=>{if(id==='garage-dialog')document.body.classList.add('garage-open');if(!$(id).open)$(id).showModal();},close=id=>{if($(id).open)$(id).close();},closeAll=()=>document.querySelectorAll('dialog[open]').forEach(d=>d.close());
@@ -36,14 +37,25 @@ function syncSettings(){
  const practice=['free','training'].includes(settings.mode);$('duration').disabled=practice;$('difficulty').disabled=practice;
  $('play-screen').dataset.category=practice?'practice':'match';text('play-heading',practice?'TRAINING':'EXHIBITION MATCH');text('play-button',settings.mode==='free'?'START FREE PLAY':settings.mode==='training'?'START TRAINING':'CREATE MATCH');
  text('mode-description',practice?(settings.mode==='free'?'Explore the field. Boost is unlimited.':'Five drills. Fifteen seconds per shot.'):(BOT_LEVELS[settings.difficulty]?.description||'Ready when you are.'));
- text('showroom-car',settings.body==='fennec'?'FENNEC':settings.body==='striker'?'STRIKER GT':'RALLY RS');text('showroom-paint',paints[settings.paint].name);text('paint-name',paints[settings.paint].name);$('paint-dot').style.background=paints[settings.paint].hex;
+ text('showroom-car',BODY_NAMES[settings.body]);text('showroom-paint',paints[settings.paint].name);text('paint-name',paints[settings.paint].name);$('paint-dot').style.background=paints[settings.paint].hex;
  text('profile-level',String(1+Math.floor(settings.xp/1000)).padStart(2,'0'));text('profile-xp',`${settings.xp.toLocaleString()} XP · ${settings.wins} VICTORIES`);text('profile-name',settings.xp>=5000?'CIRCUIT REGULAR':settings.xp>=1000?'RISING DRIVER':'ROOKIE DRIVER');$('profile-progress').style.width=(settings.xp%1000)/10+'%';settingsUI?.sync();applyInterface();
 }
 const lobbyUI=setupLobby(settings,{save,sync:syncSettings});
-const roomUI=setupRoomUI({host:options=>openRoom('host',options),join:code=>openRoom('guest',code),ready:value=>room?.setReady(value),start:()=>{sound.start();room?.startMatch();},leave:()=>{if(started)menu();else{room?.close();room=null;roomUI.render(null);close('multiplayer-dialog');}}});
+const roomUI=setupRoomUI({host:options=>openRoom('host',options),join:code=>openRoom('guest',code),ready:async value=>{const session=room;if(!session)return;try{if(value)await prepareRoomBodies(session,true);if(room===session&&!session.closed)session.setReady(value);}catch{}},start:()=>startRoom(),leave:()=>{if(started)menu();else{room?.close();room=null;roomUI.render(null);close('multiplayer-dialog');}}});
+function prepareRoomBodies(session,retry=false){
+ return prepareRoomVehicles(session,body=>view.ensureBody(body),()=>{if(room===session)roomUI.render(session);},retry);
+}
+async function prepareSavedBody(){try{await view.ensureBody(settings.body,event=>text('loading-progress',event.total?'Bottled car · '+Math.round(event.loaded/event.total*100)+'%':'Loading bottled car…'));}catch{settings.body='fennec';vehicleWarning='Your saved vehicle could not load. Fennec is ready; retry the other body in Garage.';save();}}
+async function startRoom(){const session=room;if(!session||session.role!=='host')return;sound.start();try{await prepareRoomBodies(session,true);if(room===session&&!session.closed)session.startMatch();}catch{}}
+async function chooseBody(body){
+ const request=++bodySelection;$('garage-dialog').setAttribute('aria-busy','true');text('garage-status','Preparing '+BODY_NAMES[body]+'…');
+ try{await view.ensureBody(body,event=>{if(request===bodySelection&&event.total)text('garage-status','Loading '+BODY_NAMES[body]+' · '+Math.round(event.loaded/event.total*100)+'%');});if(request!==bodySelection||started)return;settings.body=body;save();syncSettings();view.sync(sim,paints[settings.paint].hex,body);await view.prepare();if(request===bodySelection)text('garage-status',BODY_NAMES[body]+' READY');}
+ catch{if(request===bodySelection)text('garage-status','The vehicle could not load. Select it again to retry.');}
+ finally{if(request===bodySelection)$('garage-dialog').removeAttribute('aria-busy');}
+}
 function openRoom(role,value){
  if(role==='guest')try{value=normalizeCode(value);}catch(error){roomUI.render(null,error.message);return;}
- room?.close();let session;session=new NetworkRoom({onChange:state=>{if(room===state)roomUI.render(state);},onMatch:newSim=>{if(room===session)presentMatch(newSim);},onEvents:events=>{if(room===session&&sim===session.sim){sim.events.push(...events);if(sim.events.length>100)sim.events.splice(0,sim.events.length-100);}},onDisconnect:reason=>{if(room!==session)return;if(started)menu(false);roomUI.render(session,reason);dialog('multiplayer-dialog');}});room=session;
+ room?.close();let session;session=new NetworkRoom({onChange:state=>{if(room===state){roomUI.render(state);if(state.connected&&!state.assetsReady&&!state.assetsPromise&&!state.assetsError)prepareRoomBodies(state).catch(()=>{});}},onMatch:newSim=>{if(room===session)presentMatch(newSim);},onEvents:events=>{if(room===session&&sim===session.sim){sim.events.push(...events);if(sim.events.length>100)sim.events.splice(0,sim.events.length-100);}},onDisconnect:reason=>{if(room!==session)return;if(started)menu(false);roomUI.render(session,reason);dialog('multiplayer-dialog');}});room=session;
  sound.start();if(role==='host')session.create(value,{body:settings.body,paint:settings.paint});else session.join(value,{body:settings.body,paint:settings.paint});
 }
 class Sound{
@@ -76,7 +88,7 @@ function action(name){
  if(name==='hide-scoreboard')show('score-panel',false);
 }
 function start(){
- if(online()){if(room.role==='host')room.startMatch();return;}
+ if(online()){if(room.role==='host')startRoom();return;}
  sound.start();closeAll();settings.duration=Number($('duration').value);settings.difficulty=$('difficulty').value;save();
  presentMatch(new Simulation({mode:settings.mode,duration:settings.duration,difficulty:settings.difficulty}));
 }
@@ -138,13 +150,14 @@ window.addEventListener('keydown',e=>{if(e.code==='Enter'&&started&&!paused&&sim
 for(const [button,id]of [['garage-button','garage-dialog'],['customize-button','garage-dialog'],['controls-button','controls-dialog'],['settings-button','settings-dialog'],['about-button','about-dialog']])$(button).addEventListener('click',()=>dialog(id));
 $('pause-settings-button').addEventListener('click',()=>{close('pause-dialog');dialog('settings-dialog');});$('settings-dialog').addEventListener('close',()=>{if(started&&paused)dialog('pause-dialog');});
 $('pause-dialog').addEventListener('cancel',e=>{e.preventDefault();resume();});$('result-dialog').addEventListener('cancel',e=>{e.preventDefault();menu();});
-$('garage-dialog').addEventListener('close',()=>document.body.classList.remove('garage-open'));
+$('garage-dialog').addEventListener('close',()=>{document.body.classList.remove('garage-open');bodySelection++;$('garage-dialog').removeAttribute('aria-busy');text('garage-status','');});
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>close(b.dataset.close)));document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target!==d||['pause-dialog','result-dialog','multiplayer-dialog'].includes(d.id))return;const rect=d.getBoundingClientRect();if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)d.close();}));
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{settings.mode=b.dataset.mode;save();syncSettings();}));
 for(const id of ['duration','difficulty'])$(id).addEventListener('change',()=>{settings[id]=id==='duration'?Number($(id).value):$(id).value;save();syncSettings();});
-for(const [data,field]of [['paint','paint'],['body','body']])document.querySelectorAll(`[data-${data}]`).forEach(b=>b.addEventListener('click',()=>{settings[field]=b.dataset[data];save();syncSettings();if(!started)view.sync(sim,paints[settings.paint].hex,settings.body);}));
+document.querySelectorAll('[data-body]').forEach(button=>button.addEventListener('click',()=>chooseBody(button.dataset.body)));
+document.querySelectorAll('[data-paint]').forEach(button=>button.addEventListener('click',()=>{settings.paint=button.dataset.paint;save();syncSettings();if(!started)view.sync(sim,paints[settings.paint].hex,settings.body);}));
 for(const id of ['quality','sound','ballcam','fps-toggle'])$(id).addEventListener('change',()=>{settings.quality=$('quality').value;settings.sound=$('sound').checked;settings.ballcam=$('ballcam').checked;settings.fps=$('fps-toggle').checked;save();if(id==='quality')view.quality(settings.quality);view.cameraMode=settings.ballcam;if(settings.sound)sound.start();});
 $('career-button').addEventListener('click',()=>{text('career-matches',settings.matches);text('career-wins',settings.wins);text('career-goals',settings.goals);text('career-touches',settings.touches);const list=$('history');list.replaceChildren();if(!settings.history.length)list.textContent='Your first match is the start of your story.';for(const h of settings.history){const row=document.createElement('div');row.className='history-row';const label=document.createElement('strong'),score=document.createElement('span');label.textContent=(names[h.mode]||'MATCH')+(h.won?' · WIN':' · LOSS');score.textContent=`${Math.max(0,Number(h.blue)||0)} — ${Math.max(0,Number(h.orange)||0)}`;row.append(label,score);list.append(row);}dialog('career-dialog');});
 $('fullscreen-button').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{feed('FULLSCREEN UNAVAILABLE IN THIS VIEW');}});$('retry-button').addEventListener('click',()=>location.reload());window.addEventListener('resize',()=>view?.resize());window.addEventListener('pagehide',event=>{room?.close();if(event.persisted){pause();return;}input?.dispose();view?.dispose();sound.dispose();});
 window.addEventListener('pageshow',event=>{if(event.persisted&&room?.closed){menu();roomUI.render(null,'The room closed when you left this page. Create or join a new room.');dialog('multiplayer-dialog');}});
-try{view=new GameView($('arena'));view.setCamera(settings.camera);view.quality(settings.quality);text('loading-label','OPENING CHAMPIONS FIELD');await view.loadAssets(event=>{const asset=event.asset==='stadium'?'Champions Field':'Fennec';text('loading-progress',event.total?`${asset} · ${Math.round(event.loaded/event.total*100)}%`:`Loading ${asset}…`);});sim=new Simulation({mode:'free'});motion=new MotionBuffer(sim);view.sync(sim,paints[settings.paint].hex,settings.body);input=new Input($('arena'),{bindings:settings.bindings,controls:settings.controls,active:()=>started&&!paused&&sim.phase!=='ended',action});settingsUI=setupSettings(settings,{save,apply:kind=>{if(kind==='camera')view.setCamera(settings.camera);if(kind==='controls')input.setPreferences({bindings:settings.bindings,controls:settings.controls});if(kind==='audio')sound.update();if(kind==='interface')applyInterface();}});syncSettings();save();text('loading-label','WARMING UP THE ARENA');await view.prepare();last=performance.now();show('loading',false);show('lobby',true);Object.defineProperty(window,'boostCircuit',{value:Object.freeze({version:'1.6.0',getPerformance:()=>({...view.diagnostics(),fps:renderFPS}),getState:()=>structuredClone({...sim.state(localId()),active:started,paused,localPlayerId:localId(),network:online()?{role:room.role,hostPaused:room.hostPaused,rtt:room.rtt}:null})})});requestAnimationFrame(frame);}catch(error){fail(error);}
+try{view=new GameView($('arena'));view.setCamera(settings.camera);view.quality(settings.quality);text('loading-label','OPENING CHAMPIONS FIELD');await view.loadAssets(event=>{const asset=event.asset==='stadium'?'Champions Field':'Fennec';text('loading-progress',event.total?`${asset} · ${Math.round(event.loaded/event.total*100)}%`:`Loading ${asset}…`);});await prepareSavedBody();sim=new Simulation({mode:'free'});motion=new MotionBuffer(sim);view.sync(sim,paints[settings.paint].hex,settings.body);input=new Input($('arena'),{bindings:settings.bindings,controls:settings.controls,active:()=>started&&!paused&&sim.phase!=='ended',action});settingsUI=setupSettings(settings,{save,apply:kind=>{if(kind==='camera')view.setCamera(settings.camera);if(kind==='controls')input.setPreferences({bindings:settings.bindings,controls:settings.controls});if(kind==='audio')sound.update();if(kind==='interface')applyInterface();}});syncSettings();save();text('loading-label','WARMING UP THE ARENA');await view.prepare();last=performance.now();show('loading',false);show('lobby',true);if(vehicleWarning)text('menu-help',vehicleWarning);Object.defineProperty(window,'boostCircuit',{value:Object.freeze({version:'1.7.0',getPerformance:()=>({...view.diagnostics(),fps:renderFPS}),getState:()=>structuredClone({...sim.state(localId()),active:started,paused,localPlayerId:localId(),network:online()?{role:room.role,hostPaused:room.hostPaused,rtt:room.rtt}:null})})});requestAnimationFrame(frame);}catch(error){fail(error);}

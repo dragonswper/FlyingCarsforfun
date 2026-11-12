@@ -1,11 +1,21 @@
-/* Runtime adapters for the supplied Fennec. Wheel motion is procedural, not an authored clip. */
+/* Runtime adapters for the supplied vehicles. Wheel motion is procedural. */
 import * as T from './vendor/three.module.js';
 import {C,curve,STEERING_CURVE} from './constants.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 let fennecTemplate=null,fennecPromise;
+let bottledTemplate=null,bottledPromise;
 export async function loadFennec(onProgress){
  if(!fennecPromise)fennecPromise=new GLTFLoader().loadAsync('./assets/models/fennec.glb',onProgress).then(gltf=>{validateFennecRig(gltf.scene);fennecTemplate=gltf.scene;return gltf.scene;});
  return fennecPromise;
+}
+export function loadBottled(onProgress){
+ if(!bottledPromise)bottledPromise=new GLTFLoader().loadAsync('./assets/models/bottled.glb',onProgress).then(gltf=>{validateBottledRig(gltf.scene);bottledTemplate=gltf.scene;return gltf.scene;}).catch(error=>{bottledPromise=null;throw error;});
+ return bottledPromise;
+}
+export function validateBottledRig(root){
+ if(!root.getObjectByName('Bottled_Body'))throw new Error('The bottled-car body is missing.');
+ for(const name of ['FL','FR','RL','RR'])for(const prefix of ['Steer_','Spin_'])if(!root.getObjectByName(prefix+name))throw new Error(`Bottled-car wheel rig is missing ${prefix+name}.`);
+ return true;
 }
 export function validateFennecRig(root){
  if(!root.getObjectByName('Fennec_Body'))throw new Error('Fennec body is missing.');
@@ -33,9 +43,25 @@ export function makeFennecModel(color='#299bff',template=fennecTemplate){
  const wheels=['FL','FR','RL','RR'].map(name=>{const pivot=visual.getObjectByName('Steer_'+name),rolling=visual.getObjectByName('Spin_'+name);return {name,pivot,rolling,front:name[0]==='F',radius:pivot.userData.rollingRadius||(name[0]==='F'?.15980912:.1722),restY:pivot.position.y};});
  return {kind:'fennec',root,visual,paint,chassis,wheels,flame:boostFlame(root),travel:0,lastSpeed:0,setColor(value){paint.color.set(value);}};
 }
+export function makeBottledModel(color='#299bff',template=bottledTemplate){
+ if(!template)throw new Error('The bottled-car model has not loaded.');validateBottledRig(template);
+ const root=new T.Group();root.name='Bottled_Vehicle';const visual=template.clone(true),materials=new Map();visual.position.y=-C.carHeight;root.add(visual);
+ visual.traverse(mesh=>{
+  if(!mesh.isMesh)return;mesh.userData.sharedGeometry=true;mesh.castShadow=true;mesh.receiveShadow=true;
+  const clone=material=>{if(!materials.has(material)){const copy=material.clone();for(const value of Object.values(copy))if(value?.isTexture)value.anisotropy=4;if(copy.transparent)copy.forceSinglePass=true;
+   if(['BOTTLE_INSIDE','BOTTLE_OUTSIDE'].includes(copy.name)){copy.depthWrite=false;copy.side=T.FrontSide;if('transmission'in copy)copy.transmission=0;mesh.castShadow=false;}
+   materials.set(material,copy);}return materials.get(material);};mesh.material=Array.isArray(mesh.material)?mesh.material.map(clone):clone(mesh.material);
+ });
+ const paint=[...materials.values()].find(material=>material.name==='Bottled_Paint');if(!paint)throw new Error('The bottled-car paint material is missing.');paint.color.set(color);
+ const chassis=new T.Group();chassis.name='Bottled_Suspension';const body=visual.getObjectByName('Bottled_Body');body.parent.add(chassis);chassis.add(body);
+ const wheels=['FL','FR','RL','RR'].map(name=>{const pivot=visual.getObjectByName('Steer_'+name);return {name,pivot,rolling:visual.getObjectByName('Spin_'+name),front:name[0]==='F',radius:pivot.userData.rollingRadius,restY:pivot.position.y};});
+ const flame=boostFlame(root);flame.name='Bottled_Boost';flame.position.set(0,.25,.18);
+ const wheelBase=wheels[0].pivot.position.z-wheels[2].pivot.position.z;
+ return {kind:'bottled',root,visual,paint,chassis,wheels,wheelBase,flame,travel:0,lastSpeed:0,setColor(value){paint.color.set(value);}};
+}
 export function animateVehicle(model,{speed=0,steer=0,dt=0,grounded=true,throttle=0}={}){
  if(dt<=0)return;dt=Math.min(dt,.1);speed=Number.isFinite(speed)?speed:0;steer=T.MathUtils.clamp(steer,-1,1);
- const response=1-Math.exp(-12*dt),baseAngle=steer*curve(STEERING_CURVE,Math.abs(speed))*Math.PI/180,wheelBase=1.095;
+ const response=1-Math.exp(-12*dt),baseAngle=steer*curve(STEERING_CURVE,Math.abs(speed))*Math.PI/180,wheelBase=model.wheelBase||1.095;
  for(const wheel of model.wheels){
   const spinSpeed=grounded?speed:Math.abs(throttle)>.05?throttle*Math.max(6,Math.abs(speed)):speed;
   wheel.rolling.rotation.x=(wheel.rolling.rotation.x+spinSpeed*dt/(wheel.radius||.235))%(Math.PI*2);
@@ -56,4 +82,7 @@ export function disposeVehicle(model){
 }
 export function disposeFennecTemplate(){
  if(!fennecTemplate)return;const geometries=new Set(),materials=new Set(),textures=new Set();fennecTemplate.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m){materials.add(m);for(const value of Object.values(m))if(value?.isTexture)textures.add(value);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());fennecTemplate=null;fennecPromise=null;
+}
+export function disposeBottledTemplate(){
+ if(!bottledTemplate)return;const geometries=new Set(),materials=new Set(),textures=new Set();bottledTemplate.traverse(object=>{if(object.geometry)geometries.add(object.geometry);for(const material of Array.isArray(object.material)?object.material:[object.material])if(material){materials.add(material);for(const value of Object.values(material))if(value?.isTexture)textures.add(value);}});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());bottledTemplate=null;bottledPromise=null;
 }
