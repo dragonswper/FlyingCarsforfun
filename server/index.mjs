@@ -4,13 +4,9 @@ import {readFileSync, createReadStream} from 'node:fs';
 import {stat} from 'node:fs/promises';
 import {resolve, sep, extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {randomBytes} from 'node:crypto';
 import {WebSocketServer} from 'ws';
-import {NET_BUILD, decodePacket, MAX_PACKET} from '../dist/network-protocol.js';
-import {C} from '../dist/physics.js';
-import {GuestAuth} from './auth.mjs';
-import {ServerSession} from './session.mjs';
-import {ServerMatchQueue} from './matchmaking.mjs';
+import {NET_BUILD, MAX_PACKET} from '../dist/network-protocol.js';
+import {GameService} from './game-service.mjs';
 export {ServerSession} from './session.mjs';
 const ROOT = fileURLToPath(new URL('../dist/', import.meta.url));
 const MIME = {
@@ -44,15 +40,9 @@ export function createGameServer({
     );
   if (tlsProxy && (!publicOrigin || !/^https:\/\/[^/]+$/.test(publicOrigin)))
     throw Error('A trusted TLS proxy requires an explicit HTTPS PUBLIC_ORIGIN.');
-  const rooms = new Map(),
-    bindings = new Map(),
-    sockets = new Set(),
-    identities = new Map(),
-    auth = new GuestAuth();
-  let closed = false,
-    last = performance.now(),
-    accumulator = 0,
-    lastQueue = 0;
+  const service = new GameService({maxRooms, region, queueClock, autostart: tick});
+  const {rooms, bindings, sockets, auth, queue} = service;
+  let closed = false;
   const secure = (request) =>
     !!request.socket.encrypted || (tlsProxy && request.headers['x-forwarded-proto'] === 'https');
   const originOK = (request) =>
@@ -69,58 +59,6 @@ export function createGameServer({
     });
     response.end(JSON.stringify(data));
   };
-  const reject = (socket, message) => {
-    if (socket.readyState === 1) socket.send(JSON.stringify({t: 'server-error', message}));
-    socket.close(1008);
-  };
-  function makeRoom(options, matchmade = false) {
-    if (rooms.size >= maxRooms) throw Error('This server has no free rooms.');
-    const code = 'BCS-' + randomBytes(16).toString('base64url');
-    const room = new ServerSession({
-      code,
-      options,
-      matchmade,
-      onEmpty: (session) => {
-        rooms.delete(session.code);
-        session.close(false);
-      }
-    });
-    rooms.set(code, room);
-    return room;
-  }
-  const queue = new ServerMatchQueue({
-    clock: queueClock,
-    onMatch: (players, options, bots) => {
-      const room = makeRoom(options, options.mode !== 'custom');
-      for (const player of players) {
-        player.socket.send(
-          JSON.stringify({
-            t: 'server-queue',
-            phase: 'preparing',
-            remaining: 0,
-            reason: bots
-              ? 'Search finished after 60 seconds. Empty driving slots will use bots.'
-              : 'Players found. Preparing vehicles…'
-          })
-        );
-        const attached = room.attach(player.socket, player.packet, player.identity);
-        bindings.set(player.socket, {room, ...attached});
-        const perTeam = options.mode === 'doubles' ? 2 : 1,
-          index = players.indexOf(player);
-        attached.entry.member.team =
-          options.mode === 'custom'
-            ? null
-            : ['free', 'training'].includes(options.mode)
-              ? 0
-              : index < perTeam
-                ? 0
-                : 1;
-        attached.entry.member.ready = true;
-      }
-      room.sendLobby();
-      if (options.mode !== 'custom') room.startMatch();
-    }
-  });
   const httpHandler = async (request, response) => {
     const origin = request.headers.origin;
     // The provider's health probe may be local HTTP. It carries no game data.
@@ -280,135 +218,8 @@ export function createGameServer({
     }
     wss.handleUpgrade(request, socket, head, (ws) => wss.emit('connection', ws, request));
   });
-  wss.on('connection', (socket, request) => {
-    sockets.add(socket);
-    let messages = 0,
-      bucket = performance.now(),
-      handshake = setTimeout(() => reject(socket, 'Authenticate within ten seconds.'), 10000),
-      joinTimer;
-    handshake.unref?.();
-    socket.on('message', (raw, binary) => {
-      if (binary) {
-        reject(socket, 'Use JSON text packets.');
-        return;
-      }
-      const packet = decodePacket(String(raw));
-      if (!packet) {
-        reject(socket, 'Invalid game packet.');
-        return;
-      }
-      const now = performance.now();
-      if (now - bucket > 1000) {
-        bucket = now;
-        messages = 0;
-      }
-      if (++messages > 240) {
-        reject(socket, 'Too many game packets.');
-        return;
-      }
-      const current = bindings.get(socket);
-      if (current) {
-        try {
-          current.room.receiveClient(current.entry, packet);
-        } catch {
-          reject(socket, 'The game packet could not be applied.');
-        }
-        return;
-      }
-      if (!identities.has(socket)) {
-        if (packet.build !== NET_BUILD) {
-          reject(socket, 'Game versions differ. Reload all clients.');
-          return;
-        }
-        const identity =
-          packet.t === 'server-auth' && auth.consume(packet.ticket, request.headers.origin || '');
-        if (!identity) {
-          reject(socket, 'A fresh authenticated guest ticket is required.');
-          return;
-        }
-        identities.set(socket, identity);
-        clearTimeout(handshake);
-        handshake = null;
-        joinTimer = setTimeout(() => {
-          if (!bindings.has(socket) && !queue.waiting.has(socket))
-            reject(socket, 'Choose a lobby or search for a match.');
-        }, 15000);
-        joinTimer.unref?.();
-        socket.send(JSON.stringify({t: 'server-authenticated', build: NET_BUILD, region}));
-        return;
-      }
-      if (packet.t === 'server-measure' && Number.isSafeInteger(packet.id)) {
-        socket.send(JSON.stringify({t: 'server-measured', id: packet.id}));
-        return;
-      }
-      if (packet.t === 'server-cancel') {
-        queue.remove(socket);
-        socket.close();
-        return;
-      }
-      if (
-        !['server-create', 'server-join', 'server-resume', 'server-queue'].includes(packet.t) ||
-        packet.build !== NET_BUILD
-      ) {
-        reject(socket, 'Invalid room request or game version.');
-        return;
-      }
-      if (queue.waiting.has(socket)) {
-        reject(socket, 'This connection is already searching.');
-        return;
-      }
-      try {
-        const identity = identities.get(socket);
-        if (
-          [...bindings.values()].some(
-            (value) =>
-              value.entry.member.authId === identity.id && value.link.open && !value.link.closed
-          )
-        )
-          throw Error('This guest session is already in a room.');
-        if (packet.t === 'server-queue') {
-          queue.add(socket, identity, packet);
-          return;
-        }
-        const room =
-          packet.t === 'server-create' ? makeRoom(packet.options) : rooms.get(packet.code);
-        if (!room)
-          throw Error('That lobby does not exist on this server. Check the URL and BCS invite.');
-        const attached = room.attach(socket, packet, identity);
-        bindings.set(socket, {room, ...attached});
-      } catch (error) {
-        reject(socket, error.message || 'The room could not be joined.');
-      }
-    });
-    socket.on('error', () => {});
-    socket.on('close', () => {
-      sockets.delete(socket);
-      identities.delete(socket);
-      queue.remove(socket);
-      clearTimeout(handshake);
-      clearTimeout(joinTimer);
-      const current = bindings.get(socket);
-      bindings.delete(socket);
-      if (current && current.entry.link === current.link) current.room.lostPeer(current.entry);
-    });
-  });
-  const pump = () => {
-    const now = performance.now();
-    accumulator = Math.min(0.15, accumulator + Math.max(0, (now - last) / 1000));
-    last = now;
-    let steps = 0;
-    while (accumulator >= C.step && steps++ < 18) {
-      for (const room of rooms.values()) room.pump(C.step);
-      accumulator -= C.step;
-    }
-    if (now - lastQueue >= 100) {
-      lastQueue = now;
-      queue.pump();
-      auth.prune();
-    }
-  };
-  const timer = tick ? setInterval(pump, 1000 / 120) : null;
-  timer?.unref?.();
+  wss.on('connection', (socket, request) => service.accept(socket, request.headers.origin || ''));
+  const pump = () => service.pump();
   return {
     server,
     rooms,
@@ -425,19 +236,7 @@ export function createGameServer({
     async close() {
       if (closed) return;
       closed = true;
-      clearInterval(timer);
-      for (const socket of sockets)
-        if (socket.readyState === 1)
-          socket.send(
-            JSON.stringify({
-              t: 'server-error',
-              message: 'The server is restarting. Please find a new match shortly.'
-            })
-          );
-      for (const room of rooms.values()) room.close(false);
-      rooms.clear();
-      queue.waiting.clear();
-      for (const socket of sockets) socket.terminate();
+      service.close();
       await new Promise((resolve) => wss.close(resolve));
       if (server.listening) await new Promise((resolve) => server.close(resolve));
     }

@@ -2,9 +2,15 @@
 
 The Node.js 22+ service runs authoritative physics at **120 Hz** independently of any player's browser. Every browser predicts its own car and receives server snapshots at **30 Hz** (20 Hz with more than two cars). Rendering uses each player's GPU; the server does not need a GPU. Both the game page and the game service can run on one free Render web service.
 
-## Free option: Render Singapore
+## Recommended no-card option: Cloudflare
+
+[Cloudflare deployment instructions](cloudflare-free.md) use Workers Free, a SQLite-backed Durable Object and an Oceania placement hint. This serves the same updated client and authoritative gameplay without a card or PC installation. Public deployment still requires your account.
+
+## Optional Render Singapore deployment
 
 [Deploy the Free service](https://render.com/deploy?repo=https://github.com/dragonswper/FlyingCarsforfun)
+
+**Render can request billing verification even on Free.** If your account does so, use the Cloudflare route above; there is no bypass provided by this project.
 
 The repository includes [render.yaml](../render.yaml): **one `plan: free` Node web service in Singapore**, one simultaneous room, no database, disk, paid background worker or additional service. Automatic redeployment is off so a later repository update cannot unexpectedly restart your match.
 

@@ -1,4 +1,5 @@
 import {randomBytes} from 'node:crypto';
+import {Buffer} from 'node:buffer';
 import {PartyRoom} from '../dist/party-room.js';
 import {partySecret} from '../dist/party-transport.js';
 import {NET_BUILD, appearance, MAX_PACKET} from '../dist/network-protocol.js';

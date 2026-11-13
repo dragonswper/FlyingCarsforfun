@@ -4,6 +4,8 @@ node_modules
 test-results
 .env
 .env.*
+.dev.vars
+.dev.vars.*
 *.pem
 *.key
 *.p12
