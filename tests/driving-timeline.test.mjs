@@ -60,3 +60,21 @@ test('a mid-step render preserves its visible pose when authority corrects car a
  for(const [oldPose,newPose]of [[before.cars[1],after.cars[1]],[before.ball,after.ball]])
   assert.ok(Math.hypot(...oldPose.p.map((n,axis)=>n-newPose.p[axis]))<1e-8);
 });
+
+test('fresh controls rebase a slow client input clock without waiting for a connection timeout',()=>{
+ const remote=new ServerInputs();let sequence=0;
+ for(let tick=0;tick<120;tick++){
+  const now=tick*1000/120;
+  if(tick%2===0)remote.receive([{n:++sequence,i:{throttle:.6}}],now);
+  remote.next(now);
+ }
+ assert.ok(remote.inputTick<=sequence+10,'The held timeline permanently outran the active client');
+ assert.ok(remote.ack>=sequence-1);
+});
+
+test('driving recovers after repeated 220ms render hitches without permanent server corrections',()=>{
+ const result=drivingTrial(60,200,{hitches:true});
+ assert.equal(result.stalledFrames,0,JSON.stringify(result));
+ assert.ok(result.p95SpeedError<.04,JSON.stringify(result));
+ assert.ok(result.p95CorrectionMetres<.03,JSON.stringify(result));
+});

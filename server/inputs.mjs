@@ -1,5 +1,5 @@
 import {RemoteInputs, cleanInput, validCounter, INPUT_TIMEOUT} from '../dist/network-protocol.js';
-export const MAX_INPUT_BUFFER = 4, RECENT_INPUT_BUFFER = 2;
+export const MAX_INPUT_BUFFER = 4, RECENT_INPUT_BUFFER = 2, MAX_INPUT_CLOCK_SKEW = 8;
 
 // Physics advances once per fixed 120 Hz tick. ACKs describe the latest control
 // actually consumed, rather than the most recently received packet.
@@ -44,6 +44,13 @@ export class ServerInputs extends RemoteInputs {
         (this.carriedJumps || 0) + dropped.filter(frame => frame.press).length
       );
     }
+    // The browser bounds physics catch-up after a long render hitch. Fresh
+    // packets can then carry a slower input clock even though the connection
+    // never timed out. Rebase to that clock instead of remaining permanently
+    // ahead of all the client's prediction history. This changes sequence
+    // alignment only; it does not rewind or fast-forward server physics.
+    if (accepted && this.inputTick != null &&
+      this.inputTick - this.received > MAX_INPUT_CLOCK_SKEW) this.inputTick = null;
     return accepted;
   }
   next(now) {

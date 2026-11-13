@@ -8,7 +8,7 @@ const percentile = (values, p) => values.sort((a, b) => a - b)[
 // Run server ticks, browser frames and packet arrivals on independent clocks.
 // Unlike a loop that renders after every physics step, this reproduces real
 // animation-frame batching and held controls between uneven input deliveries.
-export function drivingTrial(fps, rtt = 200) {
+export function drivingTrial(fps, rtt = 200, {hitches = false} = {}) {
   const host = new Simulation({humanIds: [0, 1]}),
     guest = new Simulation({humanIds: [0, 1]});
   host.phase = guest.phase = 'playing';
@@ -21,6 +21,7 @@ export function drivingTrial(fps, rtt = 200) {
   replica.receive(makeState(host, 1, 0, 'test'), 0);
   replica.setLatency(rtt);
   const framePattern = [0.83, 1.17, 0.96, 1.04, 1, 1];
+  const measuredAfter = hitches ? 4000 : 2000;
   let sequence = 1, now = 0, serverAt = 0, renderAt = 0, lastRender = 0,
     accumulator = 0, lastSend = -Infinity, renders = 0, serverTicks = 0,
     lastPose = null, stalledFrames = 0, measuredFrames = 0, maxSnapshotSnap = 0;
@@ -35,7 +36,7 @@ export function drivingTrial(fps, rtt = 200) {
         else {
           const before = replica.sample(now, 0).cars[1].p.slice();
           replica.receive(packet.state, now);
-          if (now > 1000) corrections.push(replica.lastCorrection);
+          if (now > measuredAfter) corrections.push(replica.lastCorrection);
           const after = replica.sample(now, 0).cars[1].p;
           maxSnapshotSnap = Math.max(maxSnapshotSnap,
             Math.hypot(...after.map((n, axis) => n - before[axis])));
@@ -70,14 +71,15 @@ export function drivingTrial(fps, rtt = 200) {
       }
       const pose = replica.sample(now, dt, accumulator / C.step).cars[1].p.slice(),
         speed = replica.predicted.v.length();
-      if (lastPose && dt > 0 && now > 2000 && speed > 5) {
+      if (lastPose && dt > 0 && now > measuredAfter && speed > 5) {
         const distance = Math.hypot(...pose.map((n, axis) => n - lastPose[axis]));
         if (distance < 1e-6) stalledFrames++;
         speedErrors.push(Math.abs(distance / dt - speed) / speed);
         measuredFrames++;
       }
       lastPose = pose;
-      renderAt += 1000 / fps * framePattern[renders % framePattern.length];
+      renderAt += hitches && now < 2500 && renders % 20 === 10 ? 220 :
+        1000 / fps * framePattern[renders % framePattern.length];
       renders++;
     }
   }
