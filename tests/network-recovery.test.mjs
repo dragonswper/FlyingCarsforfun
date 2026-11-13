@@ -79,11 +79,12 @@ test('quality warnings use measured ping, jitter, peer loss reports and traffic 
  const q=new ConnectionQuality();assert.equal(q.summary(0,0).status,'measuring');q.rtt(40);q.rtt(45);assert.equal(q.summary(0,0).status,'good');q.report(.12);assert.equal(q.summary(0,0).status,'loss');assert.equal(q.summary(0,0).loss,12);q.report(2);assert.equal(q.remoteLoss,.12);assert.equal(q.summary(2000,0).status,'stalled');assert.equal(q.summary(2000,0,true).status,'reconnecting');const slow=new ConnectionQuality();slow.rtt(250);assert.equal(slow.summary(0,0).status,'latency');const jitter=new ConnectionQuality();jitter.rtt(30);jitter.rtt(140);assert.equal(jitter.summary(0,0).status,'unstable');
 });
 test('region and ping preferences are bounded and regional queues are separate from Worldwide',()=>{
- assert.deepEqual(networkPreferences({region:'fake',maxPing:-20}),{region:'worldwide',maxPing:200});assert.equal(regionQueue('build','worldwide'),'build');assert.equal(regionQueue('build','oceania'),'build-oceania');assert.deepEqual(networkPreferences({region:'europe',maxPing:0}),{region:'europe',maxPing:0});
+ assert.deepEqual(networkPreferences({region:'fake',maxPing:-20}),{region:'worldwide',maxPing:200,strictPing:false});assert.equal(regionQueue('build','worldwide'),'build');assert.equal(regionQueue('build','oceania'),'build-oceania');assert.deepEqual(networkPreferences({region:'europe',maxPing:0}),{region:'europe',maxPing:0,strictPing:false});
 });
-test('matching checks the stricter measured ping limit and ignores unsolicited probe responses',async t=>{
- const h=await game(t);h.host.preferences.maxPing=100;h.host.remotePreferences={maxPing:150};h.hub.rewrite=packet=>{if(packet.t==='pong')h.clock.now+=130;return packet;};await assert.rejects(h.host.checkConnection(),/limit 100 ms/);const before=h.host.quality.samples.length;h.host.receive({t:'pong',id:999999,at:h.clock.now});assert.equal(h.host.quality.samples.length,before);
+test('unsolicited probe responses do not change measured quality',async t=>{
+ const h=await game(t),before=h.host.quality.samples.length;h.host.receive({t:'pong',id:999999,at:h.clock.now});assert.equal(h.host.quality.samples.length,before);
 });
+
 test('a failed ping admission retries without resetting the 60-second search deadline',async t=>{
  const clock=new Clock(),rooms=[],fallback=[];class Room{constructor(callbacks){Object.assign(this,callbacks);rooms.push(this);}matchmake(look,options,queue,prefs){this.queue=queue;this.preferences=prefs;this.connected=true;this.options=options;this.onChange();}checkConnection(){return Promise.reject(Error('Opponent ping was too high.'));}close(){this.closed=true;}}
  const match=new Matchmaker({Room,clock:()=>clock.now,setTimer:clock.set,clearTimer:clock.clear,onBots:options=>fallback.push(options)});t.after(()=>match.cancel());match.start({}, {network:{region:'oceania',maxPing:100}});await settle();assert.match(match.reason,/ping/);assert.ok(rooms[0].queue.endsWith('-oceania'));await clock.advance(60000);assert.equal(fallback.length,1);assert.equal(match.deadline,60000);assert.ok(rooms.every(room=>room.closed));

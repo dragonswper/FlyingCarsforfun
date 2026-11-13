@@ -21,7 +21,8 @@ function broker(){
   send(packet){if(this.closed||!this.open)return false;const copy=structuredClone(packet);queueMicrotask(()=>{if(!this.peer.closed)this.peer.onPacket(copy);});return true;}
   close(){if(this.closed)return;this.closed=true;this.open=false;if(queues.get(this.queue)===this)queues.delete(this.queue);if(this.peer&&!this.peer.closed)queueMicrotask(()=>{if(!this.peer.closed)this.peer.onClose('Opponent disconnected.');});}
  }
- class Room extends NetworkRoom{constructor(options){super({...options,Transport});}}
+ // Isolate the queue/setup state machine; real timed admission is covered in connection-admission.test.mjs.
+ class Room extends NetworkRoom{constructor(options){super({...options,Transport});}checkConnection(){return Promise.resolve();}}
  return {Room,queues,transports};
 }
 function harness(t,{prepare=async()=>{}}={}){

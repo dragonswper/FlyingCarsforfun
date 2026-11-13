@@ -10,7 +10,7 @@ export class Matchmaker{
  constructor({Room=NetworkRoom,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),prepare=async()=>{},queue=MATCH_QUEUE,onChange=()=>{},onRoomChange=()=>{},onMatch=()=>{},onBots=()=>{},onDisconnect=()=>{},onEvents=()=>{},onChat=()=>{},onChatState=()=>{}}={}){
   Object.assign(this,{Room,clock,setTimer,clearTimer,prepare,queue,onChange,onRoomChange,onMatch,onBots,onDisconnect,onEvents,onChat,onChatState});this.phase='idle';this.finished=false;this.started=false;this.attempt=null;this.attempts=0;this.timers=new Set();this.reason='';this.matchedRoom=null;
  }
- state(){return {phase:this.phase,remaining:this.started?Math.max(0,Math.ceil((this.deadline-this.clock())/1000)):60,elapsed:this.started?Math.min(60,Math.max(0,(this.clock()-this.startedAt)/1000)):0,prepared:!!this.attempt?.prepared,reason:this.reason,attempts:this.attempts};}
+ state(){return {phase:this.phase,remaining:this.started?Math.max(0,Math.ceil((this.deadline-this.clock())/1000)):60,elapsed:this.started?Math.min(60,Math.max(0,(this.clock()-this.startedAt)/1000)):0,prepared:!!this.attempt?.prepared,reason:this.reason,attempts:this.attempts,connection:this.attempt?.room?.connectionReport||null};}
  emit(){this.onChange(this.state());}
  later(fn,ms){let id;id=this.setTimer(()=>{this.timers.delete(id);if(!this.finished)fn();},ms);this.timers.add(id);return id;}
  clearTimers(){for(const id of this.timers)this.clearTimer(id);this.timers.clear();}

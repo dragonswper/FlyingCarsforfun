@@ -1,5 +1,5 @@
 export const REGIONS=Object.freeze({worldwide:'Worldwide',americas:'Americas',europe:'Europe',asia:'Asia',oceania:'Oceania',meaf:'Middle East / Africa'});
-export function networkPreferences(value={}){return {region:Object.hasOwn(REGIONS,value?.region)?value.region:'worldwide',maxPing:[0,100,150,200,300].includes(value?.maxPing)?value.maxPing:200};}
+export function networkPreferences(value={}){return {region:Object.hasOwn(REGIONS,value?.region)?value.region:'worldwide',maxPing:[0,100,150,200,300].includes(value?.maxPing)?value.maxPing:200,strictPing:value?.strictPing===true};}
 export const regionQueue=(queue,region)=>region==='worldwide'?queue:queue+'-'+region;
 
 // A bounded sequence window allows eight packets of reordering before estimating
@@ -14,4 +14,13 @@ export class ConnectionQuality{
  rtt(ms){if(!Number.isFinite(ms)||ms<0||ms>10000)return;this.samples.push(ms);if(this.samples.length>8)this.samples.shift();}
  report(loss){if(loss===null||Number.isFinite(loss)&&loss>=0&&loss<=1)this.remoteLoss=loss;}
  summary(now,lastReceive,recovering=false){const ping=this.samples.length?Math.round(this.samples.reduce((a,b)=>a+b,0)/this.samples.length):null,jitter=this.samples.length>1?Math.round(this.samples.slice(1).reduce((sum,n,i)=>sum+Math.abs(n-this.samples[i]),0)/(this.samples.length-1)):0,local=this.delivery.loss(),loss=local===null?this.remoteLoss:Math.max(local,this.remoteLoss||0);let status='good';if(recovering)status='reconnecting';else if(now-lastReceive>1800)status='stalled';else if(loss!==null&&loss>=.05)status='loss';else if(ping!==null&&ping>180)status='latency';else if(jitter>35)status='unstable';else if(ping===null)status='measuring';return {status,ping,jitter,loss:loss===null?null:Math.round(loss*100)};}
+}
+
+// A startup outlier must not veto an otherwise steady connection. Each strict
+// preference is enforced independently; warning-only preferences do not veto it.
+export function assessConnection(samples,local={},remote={}){
+ const sorted=samples.filter(ms=>Number.isFinite(ms)&&ms>=0&&ms<=10000).sort((a,b)=>a-b);if(sorted.length<3)return null;
+ const prefs=[networkPreferences(local),networkPreferences(remote)],middle=Math.floor(sorted.length/2),ping=Math.round(sorted.length%2?sorted[middle]:(sorted[middle-1]+sorted[middle])/2);
+ const preferred=Math.min(...prefs.map(pref=>pref.maxPing||Infinity)),limit=Math.min(...prefs.map(pref=>pref.strictPing&&pref.maxPing?pref.maxPing:Infinity));
+ return {ping,samples:sorted.length,minimum:Math.round(sorted[0]),maximum:Math.round(sorted.at(-1)),preferred:Number.isFinite(preferred)?preferred:null,limit:Number.isFinite(limit)?limit:null,warning:ping>preferred,accepted:ping<=limit};
 }

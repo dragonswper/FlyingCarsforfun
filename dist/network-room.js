@@ -2,7 +2,7 @@ import {Simulation} from './physics.js';
 import {RoomTransport} from './network-transport.js';
 import {NET_PROTOCOL,NET_BUILD,MATCH_QUEUE,roomCode,normalizeCode,roomOptions,appearance,guestId,RemoteInputs,STATE_INTERVAL,packInputFrames} from './network-protocol.js';
 import {makeState,GuestReplica,cleanEvents,validState} from './network-state.js';
-import {ConnectionQuality,networkPreferences} from './network-quality.js';
+import {ConnectionQuality,networkPreferences,assessConnection} from './network-quality.js';
 import {playerName,chatText} from './social.js';
 import {ChatHistory} from './chat-history.js';
 const colors={blue:'#299bff',ivory:'#e8efec',violet:'#a985fc',mint:'#53dbbd'};
@@ -39,14 +39,29 @@ export class NetworkRoom{
   else{this.transport.send({t:'hello',protocol:NET_PROTOCOL,build:NET_BUILD,role:this.role,matchmade:this.matchmade,look:this.look,network:this.preferences});this.later(()=>{if(!this.peerHello)this.fail('The other player did not complete the version check. Try a fresh room.');},8000);}
   this.startHeartbeat();
  }
- startHeartbeat(){this.stopTimer(this.heartbeat);this.heartbeat=this.later(()=>{if(!this.recovering&&this.clock()-this.lastReceive>(this.matchId?3000:15000)){this.linkLost('The other player stopped responding.');return;}if(this.connected){this.ping();this.transport.send({t:'probe'},true);}this.change();this.startHeartbeat();},1000);}
- ping(done){const id=++this.pingId,at=this.clock();this.pings.set(id,{at,done});while(this.pings.size>16)this.pings.delete(this.pings.keys().next().value);this.transport?.send({t:'ping',id,at,loss:this.quality.delivery.loss()});}
+ startHeartbeat(){this.stopTimer(this.heartbeat);this.heartbeat=this.later(()=>{if(!this.recovering&&this.clock()-this.lastReceive>(this.matchId?3000:15000)){this.linkLost('The other player stopped responding.');return;}if(this.connected){this.transport.refreshStats?.();this.ping();this.transport.send({t:'probe'},true);}this.change();this.startHeartbeat();},1000);}
+ ping(done){const id=++this.pingId,at=this.clock();this.pings.set(id,{at,done});while(this.pings.size>16)this.pings.delete(this.pings.keys().next().value);if(!this.transport?.send({t:'ping',id,at,loss:this.quality.delivery.loss()},true)){this.pings.delete(id);return null;}return id;}
+ get connectionInfo(){return this.transport?.connectionInfo;}
  checkConnection(){
   if(!this.connected)return Promise.reject(Error('The opponent disconnected. Still searching…'));
-  return new Promise((resolve,reject)=>{const check={samples:[],reject};this.preflight=check;const finish=error=>{if(this.preflight!==check)return;this.preflight=null;this.stopTimer(check.timer);error?reject(error):resolve();};check.timer=this.later(()=>finish(Error('The opponent did not answer the ping check. Still searching…')),4000);
-   for(let i=0;i<3;i++)this.ping(ms=>{if(this.preflight!==check)return;check.samples.push(ms);if(check.samples.length===3){const limit=Math.min(this.preferences.maxPing||Infinity,this.remotePreferences?.maxPing||Infinity),measured=Math.max(...check.samples);finish(measured>limit?Error(`Opponent ping was ${Math.round(measured)} ms (limit ${limit} ms). Still searching…`):null);}});
-  });
+  if(this.preflight)return this.preflight.promise;
+  const check={samples:[],ids:new Set(),timers:[]};this.preflight=check;
+  check.promise=new Promise((resolve,reject)=>{
+   check.reject=reject;
+   const finish=()=>{if(this.preflight!==check)return;this.preflight=null;for(const timer of check.timers)this.stopTimer(timer);for(const id of check.ids)this.pings.delete(id);
+    const report=assessConnection(check.samples,this.preferences,this.remotePreferences);this.connectionReport=report;
+    if(!report){reject(Error('Too few gameplay packets answered the connection test. Still searching…'));return;}
+    this.quality.samples=check.samples.slice(-8);this.rtt=report.ping;
+    if(!report.accepted)reject(Error(`Opponent ping was ${report.ping} ms (strict limit ${report.limit} ms). Use Warn and connect or raise the strict limit in Network options.`));else resolve(report);
+   };
+   // Warm up the data channel, then measure seven independent realtime echoes.
+   // Pings use the gameplay channel, avoiding reliable-channel retransmission delay.
+   const warmup=this.ping();if(warmup!==null)check.ids.add(warmup);
+   for(let n=0;n<7;n++)check.timers.push(this.later(()=>{if(this.preflight!==check)return;const id=this.ping(ms=>{if(this.preflight!==check)return;check.samples.push(ms);if(check.samples.length===7)finish();});if(id!==null)check.ids.add(id);},300+n*180));
+   check.timers.push(this.later(finish,5000));
+  });return check.promise;
  }
+
  receive(packet){
   if(this.closed)return;this.lastReceive=this.clock();if(Number.isSafeInteger(packet.w)&&packet.w>0)this.lastRealtimeAt=this.clock();this.quality.delivery.receive(packet.w);
   if(this.recovering){this.receiveRecovery(packet);return;}
@@ -62,7 +77,7 @@ export class NetworkRoom{
   if(packet.t==='chat'){const text=chatText(packet.text);if(typeof packet.id!=='string'||packet.id.length>40||!text||this.chatSeen.has(packet.id)||this.clock()-this.remoteChatAt<700)return;this.remoteChatAt=this.clock();this.chatSeen.add(packet.id);while(this.chatSeen.size>64)this.chatSeen.delete(this.chatSeen.values().next().value);this.onChat({name:this.remoteLook.name,text});if(this.role==='host')this.chat.add({id:packet.id,name:this.remoteLook.name,text});return;}
   if(packet.t==='chat-state'){if(this.role==='guest')this.chat.replace(packet.state);return;}
   if(packet.t==='profile'){this.remoteLook.name=playerName(packet.name);const car=this.sim?.cars.find(car=>car.networkRole!==this.role&&car.networkRole);if(car)car.playerName=this.remoteLook.name;this.change();return;}
-  if(packet.t==='ping'){this.quality.report(packet.loss);if(Number.isFinite(packet.at)&&Number.isSafeInteger(packet.id))this.transport.send({t:'pong',id:packet.id,at:packet.at});return;}
+  if(packet.t==='ping'){this.quality.report(packet.loss);if(Number.isFinite(packet.at)&&Number.isSafeInteger(packet.id))this.transport.send({t:'pong',id:packet.id,at:packet.at},true);return;}
   if(packet.t==='pong'){const ping=this.pings.get(packet.id);if(ping&&ping.at===packet.at){this.pings.delete(packet.id);const ms=this.clock()-ping.at;this.rtt=Math.max(0,Math.min(9999,Math.round(ms)));this.quality.rtt(ms);ping.done?.(ms);}return;}
   if(packet.t==='bye'){this.fail(packet.reason==='next'?'Your opponent is searching for their next match.':'The other player left the match.');return;}
   if(packet.t==='room'&&this.role==='guest'&&!this.matchId){this.options=roomOptions(packet.options);if(this.matchmade&&(this.options.mode!=='duel'||this.options.duration!==300||this.options.coop)){this.fail('The opponent requested incompatible match settings.');return;}if(validSecret(packet.recoveryKey))this.recoveryKey=packet.recoveryKey;this.remoteLook=appearance(packet.hostLook);if(packet.chatState)this.chat.replace(packet.chatState);this.change('lobby');}
