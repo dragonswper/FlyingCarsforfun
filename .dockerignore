@@ -1,0 +1,16 @@
+.git
+.openai
+node_modules
+test-results
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+certs
+secrets
+tests
+docs
+*.log

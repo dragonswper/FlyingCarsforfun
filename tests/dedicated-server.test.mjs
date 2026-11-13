@@ -1,17 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import WebSocket from 'ws';
+import {TrustedSocket as WebSocket,TrustedLink as Link,tls,secureFetch,credentials} from './helpers/secure-server.mjs';
 import {setTimeout as delay} from 'node:timers/promises';
 import {createGameServer} from '../server/index.mjs';
 import {DedicatedRoom,parseServerInvite} from '../dist/dedicated-room.js';
 import {ServerLink,serverEndpoint} from '../dist/server-link.js';
 import {NET_BUILD} from '../dist/network-protocol.js';
 import {C} from '../dist/physics.js';
-class Link extends ServerLink{constructor(url,options){super(url,{...options,WebSocketClass:WebSocket});}}
+
 async function until(check,label,timeout=5000){const started=performance.now();while(!check()){if(performance.now()-started>timeout)throw Error('Timed out: '+label);await delay(10);}}
 async function lobby(t,{people=2,maxPeople=4}={}){
- const app=createGameServer(),address=await app.listen(0),base='http://127.0.0.1:'+address.port,url=base.replace('http:','ws:')+'/multiplayer',clients=[],chat=[],errors=[];
- function make(name){const room=new DedicatedRoom({address:url,Link,onChat:message=>chat.push({recipient:name,...message}),onDisconnect:message=>errors.push({name,message})});clients.push(room);return room;}
+ const app=createGameServer({tls}),address=await app.listen(0),base='https://127.0.0.1:'+address.port,url=base.replace('https:','wss:')+'/multiplayer',clients=[],chat=[],errors=[];
+ function make(name){const room=new DedicatedRoom({address:url,Link,credentials:credentials(url),onChat:message=>chat.push({recipient:name,...message}),onDisconnect:message=>errors.push({name,message})});clients.push(room);return room;}
  t.after(async()=>{for(const room of clients)room.close();await app.close();});const owner=make('Owner');owner.create({maxPeople,duration:120},{name:'Owner'});await until(()=>owner.admitted,'owner admission');for(let n=1;n<people;n++){const guest=make('Player '+n);guest.join(owner.invite,{name:'Player '+n});await until(()=>guest.admitted,'guest admission');}await until(()=>owner.members.length===people,'roster');return {app,base,url,clients,owner,make,chat,errors};
 }
 async function start(h){for(let n=0;n<h.clients.length;n++){h.clients[n].chooseTeam(n%2);h.clients[n].setReady(true);}await until(()=>h.owner.members.every(member=>member.team!==null&&member.ready),'ready');assert.equal(h.owner.startMatch(),true);await until(()=>h.clients.every(room=>room.active),'match');return h.app.rooms.get(h.owner.code);}
@@ -37,15 +37,15 @@ test('shared chat reaches everyone and a late spectator receives the current fee
 test('a departing owner passes management to a remaining player and the server releases empty rooms',async t=>{
  const h=await lobby(t),guest=h.clients[1];h.owner.close();await until(()=>guest.canManage&&guest.members.length===1,'owner transfer');assert.equal(guest.ownerId,guest.id);guest.close();await until(()=>h.app.rooms.size===0,'empty room release');
 });
-test('HTTP serves the game and health without exposing files outside the public directory',async t=>{
- const h=await lobby(t,{people:1});const health=await fetch(h.base+'/health');assert.equal(health.status,200);assert.equal((await health.json()).build,NET_BUILD);const index=await fetch(h.base+'/');assert.equal(index.status,200);assert.match(await index.text(),/CUSTOM PRIVATE LOBBY/);const traversal=await fetch(h.base+'/..%2fpackage.json');assert.equal(traversal.status,403);const method=await fetch(h.base+'/',{method:'POST'});assert.equal(method.status,405);
+test('HTTPS serves the game and health without exposing files outside the public directory',async t=>{
+ const h=await lobby(t,{people:1});const health=await secureFetch(h.base+'/health');assert.equal(health.status,200);assert.equal((await health.json()).build,NET_BUILD);const index=await secureFetch(h.base+'/');assert.equal(index.status,200);assert.match(await index.text(),/CUSTOM PRIVATE LOBBY/);const traversal=await secureFetch(h.base+'/..%2fpackage.json');assert.equal(traversal.status,403);const method=await secureFetch(h.base+'/',{method:'POST'});assert.equal(method.status,405);
 });
 test('invalid versions, unknown invites and cross-origin upgrades are rejected',async t=>{
  const h=await lobby(t,{people:1}),bad=h.make('Bad');bad.join('BCS-AAAAAAAAAAAAAAAAAAAAAA',{name:'Bad'});await until(()=>bad.closed,'missing invite');assert.match(bad.error,/does not exist/);const ws=new WebSocket(h.url);t.after(()=>ws.terminate());await new Promise(resolve=>ws.once('open',resolve));const reply=new Promise(resolve=>ws.once('message',data=>resolve(JSON.parse(String(data)))));ws.send(JSON.stringify({t:'server-create',build:'old',token:'a'.repeat(32)}));assert.match((await reply).message,/versions differ/);
  const forbidden=new WebSocket(h.url,{origin:'https://unrelated.invalid'});t.after(()=>forbidden.terminate());const failed=new Promise(resolve=>forbidden.on('unexpected-response',(request,response)=>{response.resume();resolve(response.statusCode);}));forbidden.on('error',()=>{});assert.equal(await failed,403);
 });
-test('server endpoint validation supports HTTP convenience URLs and rejects mixed-content hosting',()=>{
- assert.equal(serverEndpoint('http://localhost:8787',{protocol:'http:'}),'ws://localhost:8787/multiplayer');assert.equal(serverEndpoint('https://arena.example',{protocol:'https:'}),'wss://arena.example/multiplayer');assert.throws(()=>serverEndpoint('ws://localhost:8787',{protocol:'https:'}),/needs a secure/);assert.throws(()=>serverEndpoint('javascript:alert(1)'),/Use a ws/);assert.throws(()=>serverEndpoint('wss://name:password@arena.example'),/without a password/);assert.throws(()=>parseServerInvite('BCS-bad'),/complete BCS/);
+test('server endpoint validation permits HTTPS convenience URLs and rejects plaintext hosting',()=>{
+ assert.throws(()=>serverEndpoint('http://localhost:8787',{protocol:'http:'}),/secure wss/);assert.equal(serverEndpoint('https://arena.example',{protocol:'https:'}),'wss://arena.example/multiplayer');assert.throws(()=>serverEndpoint('ws://localhost:8787',{protocol:'https:'}),/needs a secure/);assert.throws(()=>serverEndpoint('javascript:alert(1)'),/Use a wss/);assert.throws(()=>serverEndpoint('wss://name:password@arena.example'),/without a password/);assert.throws(()=>parseServerInvite('BCS-bad'),/complete BCS/);
 });
 
 test('both players must consent before the dedicated server starts a fresh rematch',async t=>{

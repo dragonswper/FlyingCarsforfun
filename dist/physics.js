@@ -105,7 +105,7 @@ export class Simulation{
   this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options};this.prediction=new BallPrediction();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
   if(this.options.mode==='duel')this.cars.push(makeCar(1,1,true));
   if(this.options.mode==='doubles')this.cars.push(makeCar(1,0,true),makeCar(2,1,true),makeCar(3,1,true));
-  if(this.options.mode==='custom'&&Array.isArray(this.options.players)&&this.options.players.length)this.cars=this.options.players.slice(0,8).map(player=>makeCar(player.id,player.team));
+  if((this.options.mode==='custom'||this.options.dedicated)&&Array.isArray(this.options.players)&&this.options.players.length)this.cars=this.options.players.slice(0,8).map(player=>makeCar(player.id,player.team,player.bot===true));
   if(Array.isArray(this.options.humanIds))for(const car of this.cars)if(this.options.humanIds.includes(car.id))car.bot=false;
   this.ball={p:new V(0,C.ballRestHeight,0),v:new V(),spin:new V(),q:new Q()};this.pads=createPads();this.score=[0,0];this.remaining=this.options.duration;this.overtime=false;this.elapsed=0;this.phase='kickoff';this.phaseTime=3;this.clockStarted=false;this.lastTouch=-1;this.lastTouchTime=-99;this.replay=[];this.recordTime=0;this.trainingIndex=0;this.trainingHits=0;this.shotTime=15;
   if(this.options.mode==='training')this.loadDrill();else this.kickoff();
@@ -157,7 +157,7 @@ export class Simulation{
   if(Math.abs(this.ball.p.z)>C.goalScorePlane+C.ballRadius&&Math.abs(this.ball.p.x)<C.goalWidth-C.ballRadius&&this.ball.p.y<C.goalHeight-C.ballRadius){this.goal(this.ball.p.z>0?0:1);return;}
   if(this.options.mode==='training'){
    this.shotTime-=dt;
-   if(this.trainingIndex===4&&this.lastTouch===0&&this.ball.v.z>3){this.trainingHits++;this.cars[0].saves++;this.cars[0].score+=C.savePoints;this.emit('save');this.phase='goal';this.phaseTime=2;}
+   if(this.trainingIndex===4&&this.lastTouch===this.cars[0].id&&this.ball.v.z>3){this.trainingHits++;this.cars[0].saves++;this.cars[0].score+=C.savePoints;this.emit('save');this.phase='goal';this.phaseTime=2;}
    else if(this.shotTime<=0){this.emit('miss');this.phase='goal';this.phaseTime=1.4;}
   }else if(this.options.mode!=='free'&&this.clockStarted){
    if(this.overtime)this.remaining+=dt;else this.remaining=Math.max(0,this.remaining-dt);

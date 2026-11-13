@@ -1,0 +1,19 @@
+# Optional direct-TLS deployment. This is not run on the user's computer.
+services:
+  game:
+    build: .
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    ports: ["127.0.0.1:8787:8787"]
+    volumes:
+      - ${TLS_DIRECTORY:?Set TLS_DIRECTORY to an existing certificate directory}:/tls:ro
+    environment:
+      TLS_CERT_FILE: /tls/server.crt
+      TLS_KEY_FILE: /tls/server.key
+      MAX_ROOMS: "1"
+      SERVER_REGION: oceania
+      ALLOWED_ORIGINS: https://boost-circuit-arena.bobistheman2049.chatgpt.site
+    tmpfs: [/tmp]
+    stop_grace_period: 10s

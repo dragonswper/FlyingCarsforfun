@@ -1,0 +1,27 @@
+# A single FREE web service. No paid disk, database, cache or worker is created.
+# Keep your Render account without a payment method for suspend-on-quota behavior.
+services:
+  - type: web
+    name: flyingcarsforfun
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --ignore-scripts --omit=dev
+    startCommand: npm run server
+    healthCheckPath: /health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: BIND_ADDRESS
+        value: 0.0.0.0
+      - key: TLS_PROXY
+        value: render
+      - key: SERVER_REGION
+        value: singapore
+      - key: MAX_ROOMS
+        value: "1"
+      - key: ALLOWED_ORIGINS
+        value: https://boost-circuit-arena.bobistheman2049.chatgpt.site
