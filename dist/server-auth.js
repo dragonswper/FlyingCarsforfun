@@ -8,7 +8,9 @@ export class ServerCredentials {
     url.pathname = '/api/';
     url.search = '';
     this.base = url.href;
-    this.fetcher = fetcher;
+    // Window.fetch checks its receiver. Calling a stored native fetch as
+    // this.fetcher() otherwise passes ServerCredentials and throws in browsers.
+    this.fetcher = fetcher.bind(globalThis);
     this.session = null;
   }
   async post(path, token) {
