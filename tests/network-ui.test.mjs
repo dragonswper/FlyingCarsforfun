@@ -1,8 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {setupNetworkUI,postMatchState} from '../dist/network-ui.js';
+import {setupNetworkUI,postMatchState,connectionDetails} from '../dist/network-ui.js';
 import {ConnectionQuality,networkPreferences} from '../dist/network-quality.js';
 import {Simulation} from '../dist/physics.js';
+
+test('dedicated connection details distinguish input buffering from real high ping',()=>{
+ const room={dedicated:true,replica:{diagnostics:()=>({serverInputQueueMs:17})}};
+ const detail=connectionDetails(room,{ping:210});
+ assert.match(detail,/Game 210 ms/);assert.match(detail,/Server input buffer 17 ms/);
+ assert.match(detail,/server distance/);
+ const quality=new ConnectionQuality();for(let n=0;n<8;n++)quality.rtt(210);
+ assert.equal(quality.summary(0,0).status,'latency');
+});
 
 test('results offer both players rematch consent, cancellation, recovery and Find Next without hiding final scores',()=>{
  const sim=new Simulation({mode:'duel',humanIds:[0,1]});sim.phase='ended';sim.score=[2,1];sim.cars[0].networkRole='host';sim.cars[1].networkRole='guest';const room={rematchWanted:false,remoteRematch:false};

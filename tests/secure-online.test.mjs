@@ -143,6 +143,7 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
       assert.equal(session.sim.options.mode, mode);
       assert.equal(session.sim.localPlayerId, null);
       assert.equal(session.sim.cars.length, mode === 'doubles' ? 4 : mode === 'duel' ? 2 : 1);
+      assert.ok(Number.isFinite(owner.replica.diagnostics().serverInputQueueMs));
       const spectator = h.client('Spectator');
       spectator.join(owner.invite, spectator.testLook);
       await until(() => spectator.active, 'spectator');

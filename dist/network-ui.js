@@ -3,7 +3,9 @@ import {routeLabel} from './network-route.js';
 export function connectionDetails(room,quality){
  if(!room||room.closed)return 'No peer connected. During a match, compare network ping with game response here.';
  const info=room.connectionInfo,parts=[routeLabel(info),info?.networkPing==null?'Network ping unavailable':'Network '+info.networkPing+' ms',quality?.ping==null?'Measuring game response':'Game '+quality.ping+' ms'];
- let hint='';if(info?.networkPing!=null&&quality?.ping>info.networkPing+100)hint=' Game response adds delay beyond the network measurement. Try Low graphics and keep both game tabs visible.';else if(info?.route==='relay')hint=' This connection is using a relay. Its location and network routing can increase ping.';else if(quality?.ping>180)hint=' Try Ethernet or a stronger Wi-Fi signal, and check whether a VPN is routing the connection farther away.';
+ const buffer=room.replica?.diagnostics().serverInputQueueMs;
+ if(room.dedicated&&Number.isFinite(buffer))parts.push('Server input buffer '+buffer+' ms');
+ let hint='';if(info?.networkPing!=null&&quality?.ping>info.networkPing+100)hint=' Game response adds delay beyond the network measurement. Try Low graphics and keep both game tabs visible.';else if(info?.route==='relay')hint=' This connection is using a relay. Its location and network routing can increase ping.';else if(room.dedicated&&quality?.ping>180)hint=' Your driving and ball touches respond locally. Confirmed results and other players still depend on this ping; server distance and network routing can increase it.';else if(quality?.ping>180)hint=' Try Ethernet or a stronger Wi-Fi signal, and check whether a VPN is routing the connection farther away.';
  return parts.join(' · ')+'.'+hint;
 }
 export function postMatchState(room,sim){

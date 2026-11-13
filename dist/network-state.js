@@ -90,7 +90,9 @@ export function makeState(sim, n, ack, matchId) {
       p: sim.ball.p.toArray(),
       q: sim.ball.q.toArray(),
       v: sim.ball.v.toArray(),
-      spin: sim.ball.spin.toArray()
+      spin: sim.ball.spin.toArray(),
+      lastTouch: sim.lastTouch,
+      lastTouchTime: sim.lastTouchTime
     },
     cars: sim.cars.map(encodeCar),
     pads: sim.pads.map((p) => p.timer)
@@ -136,6 +138,11 @@ export function validState(value, sim) {
   )
     return false;
   if (!Array.isArray(value.cars) || value.cars.length !== sim.cars.length) return false;
+  if (
+    ('lastTouch' in value.ball || 'lastTouchTime' in value.ball) &&
+    (!Number.isInteger(value.ball.lastTouch) || value.ball.lastTouch < -1 ||
+      value.ball.lastTouch > 7 || !finite(value.ball.lastTouchTime, 86400))
+  ) return false;
   return value.cars.every(
     (car, index) =>
       car &&
@@ -170,6 +177,10 @@ export function applyState(sim, value) {
   sim.ball.q.fromArray(value.ball.q).normalize();
   sim.ball.v.fromArray(value.ball.v);
   sim.ball.spin.fromArray(value.ball.spin);
+  if (Number.isInteger(value.ball.lastTouch)) {
+    sim.lastTouch = value.ball.lastTouch;
+    sim.lastTouchTime = value.ball.lastTouchTime;
+  }
   for (let i = 0; i < sim.cars.length; i++) applyCar(sim.cars[i], value.cars[i]);
   for (let i = 0; i < sim.pads.length; i++) sim.pads[i].timer = value.pads[i];
 }
@@ -219,6 +230,11 @@ export class GuestReplica {
     this.latency = null;
     this.jitter = 0;
     this.timeline = null;
+    this.localTouch = null;
+    this.predictedEvents = [];
+    this.predictedFeedback = [];
+    this.feedbackCooldown = 0;
+    this.preservedBallSnapshots = 0;
     this.visualP = car.p.clone();
     this.visualQ = car.q.clone();
     this.positionError = new Vector3();
@@ -258,15 +274,23 @@ export class GuestReplica {
       reconciliations: this.reconciliations || 0,
       ignoredCorrections: this.ignoredCorrections || 0,
       correctionMetres: Math.round((this.lastCorrection || 0) * 1000) / 1000,
-      interpolationMs: Math.round(Math.min(0.22, 0.085 + 2 * this.jitter) * 1000)
+      interpolationMs: Math.round(Math.min(0.22, 0.085 + 2 * this.jitter) * 1000),
+      pendingBallContact: !!this.localTouch,
+      preservedBallSnapshots: this.preservedBallSnapshots,
+      serverInputQueueMs: this.serverInputQueueMs ?? null
     };
   }
   setLatency(ms) {
-    if (Number.isFinite(ms) && ms >= 0 && ms <= 5000) this.latency = ms / 2000;
+    if (!Number.isFinite(ms) || ms < 0 || ms > 5000) return;
+    const target = ms / 2000;
+    // Smooth the prediction horizon, not the measured ping shown in the HUD.
+    this.latency = this.latency === null ? target :
+      this.latency + Math.max(-0.025, Math.min(0.025, target - this.latency)) * 0.25;
   }
   step(input) {
     if (this.spectator) return null;
     const frame = {n: ++this.inputSequence, i: cleanInput(input)};
+    this.feedbackCooldown = Math.max(0, this.feedbackCooldown - C.step);
     this.pending.push(frame);
     if (this.pending.length > PREDICTION_WINDOW) this.pending.shift();
     if (this.sim.phase === 'playing') this.predict(frame.i);
@@ -279,15 +303,29 @@ export class GuestReplica {
     while (this.history.size > PREDICTION_WINDOW + 1)
       this.history.delete(this.history.keys().next().value);
   }
-  predict(input, worldDt = C.step) {
+  predict(input, worldDt = C.step, ballDt = worldDt) {
     stepCar(
       this.predicted,
       input,
       C.step,
       ['free', 'training'].includes(this.sim.options.mode) || this.sim.options.unlimited
     );
-    if (worldDt > 0) stepBall(this.predictedBall, worldDt);
-    collideCarBall(this.predicted, this.predictedBall);
+    if (ballDt > 0) stepBall(this.predictedBall, ballDt);
+    const hit = collideCarBall(this.predicted, this.predictedBall);
+    if (hit && !this.replaying && !this.spectator) {
+      // Keep the impulse through snapshots that predate this input. A fixed
+      // upper bound and acknowledged/new remote contacts always end protection.
+      this.localTouch ??= {n: this.inputSequence, authorityTouchTime: this.sim.lastTouchTime,
+        receivedAt: this.lastArrival};
+      if (this.feedbackCooldown <= 0) {
+        this.feedbackCooldown = 0.15;
+        this.predictedEvents.push({type: 'hit', car: this.localId,
+          speed: this.predictedBall.v.length(), p: this.predictedBall.p.toArray(), predicted: true});
+        this.predictedFeedback.push({n: this.inputSequence,
+          touches: this.sim.cars.find(car => car.id === this.localId)?.touches || 0});
+        if (this.predictedFeedback.length > 16) this.predictedFeedback.shift();
+      }
+    }
     for (const other of this.otherCars) {
       other.p.addScaledVector(other.v, worldDt);
       collideCars(this.predicted, other);
@@ -296,6 +334,37 @@ export class GuestReplica {
   }
   inputFrames() {
     return this.pending.slice(-4);
+  }
+  drainPredictedEvents() {
+    return this.predictedEvents.splice(0);
+  }
+  filterAuthoritativeEvents(events, state) {
+    this.predictedFeedback = this.predictedFeedback.filter(hit =>
+      this.inputSequence - hit.n < PREDICTION_WINDOW * 2);
+    const touches = state?.cars?.find(car => car.id === this.localId)?.touches || 0;
+    return events.filter(event => {
+      if (event.type !== 'hit' || event.car !== this.localId) return true;
+      const index = this.predictedFeedback.findIndex(hit =>
+        hit.n <= state.ack && touches > hit.touches);
+      if (index < 0) return true;
+      this.predictedFeedback.splice(index, 1);
+      return false;
+    });
+  }
+  protectLocalBall(value, now) {
+    const hit = this.localTouch;
+    if (!hit) return false;
+    const frames = Math.ceil(Math.min(0.75, Math.max(0.2,
+      (this.latency ?? 0.1) * 2 + 0.1)) / C.step);
+    const remoteHit = value.ball.lastTouch >= 0 && value.ball.lastTouch !== this.localId &&
+      value.ball.lastTouchTime > hit.authorityTouchTime;
+    if (value.phase !== 'playing' || value.ack >= hit.n ||
+      this.inputSequence - hit.n > frames ||
+      now - hit.receivedAt > frames * C.step * 1000 || remoteHit) {
+      this.localTouch = null;
+      return false;
+    }
+    return true;
   }
   receive(value, now) {
     if (value.n <= this.lastSequence || !validState(value, this.sim)) return false;
@@ -306,6 +375,13 @@ export class GuestReplica {
       oldBall = this.predictedBall.p.clone(),
       oldBallQ = this.predictedBall.q.clone(),
       wasDemo = this.predicted.demoTime > 0;
+    const preserveBall = this.protectLocalBall(value, now), heldBall = preserveBall ? {
+      p: this.predictedBall.p.clone(), q: this.predictedBall.q.clone(),
+      v: this.predictedBall.v.clone(), spin: this.predictedBall.spin.clone()
+    } : null;
+    if (Number.isFinite(value.net?.inputQueueMs) &&
+      value.net.inputQueueMs >= 0 && value.net.inputQueueMs <= 1000)
+      this.serverInputQueueMs = value.net.inputQueueMs;
     if (this.lastArrival !== undefined && !changed) {
       const arrival = (now - this.lastArrival) / 1000,
         interval = value.elapsed - this.lastElapsed;
@@ -339,6 +415,10 @@ export class GuestReplica {
         value.cars.find((car) => car.id === other.id)
       );
     if (changed) {
+      this.localTouch = null;
+      this.predictedEvents.length = 0;
+      this.feedbackCooldown = 0;
+      if (value.phase === 'kickoff') this.predictedFeedback.length = 0;
       this.pending.length = 0;
       this.frames.length = 0;
       this.timeline = null;
@@ -346,19 +426,40 @@ export class GuestReplica {
       // Input ACK age includes both directions. The remote world is only one-way
       // old; replaying it for the full input window used to double its motion.
       const age = Math.min(0.5, this.latency ?? (this.pending.length * C.step) / 2),
-        worldDt = this.pending.length ? Math.min(C.step, age / this.pending.length) : 0;
+        ownLead = value.ball.lastTouch === this.localId ?
+          Math.max(0, Math.min(1, (1 - (value.elapsed - value.ball.lastTouchTime)) / 0.5)) : 0,
+        // Our car is input-predicted ahead of authority by the uplink. After
+        // confirmation, carry our own ball forward by that lead as well as the
+        // snapshot's downlink age. Fade this extra lead over half a second so
+        // handing the ball back to the shared timeline cannot reverse a shot.
+        // Remote contacts retain one-way extrapolation.
+        ballAge = Math.min(0.5, age * (1 + ownLead)),
+        worldDt = this.pending.length ? Math.min(C.step, age / this.pending.length) : 0,
+        ballDt = this.pending.length ? Math.min(C.step, ballAge / this.pending.length) : 0;
       if (correct) {
-        for (const frame of this.pending) {
-          this.predict(frame.i, worldDt);
-          this.remember(frame.n);
+        this.replaying = true;
+        try {
+          for (const frame of this.pending) {
+            this.predict(frame.i, worldDt, ballDt);
+            this.remember(frame.n);
+          }
+        } finally {
+          this.replaying = false;
         }
+        if (!this.pending.length)
+          for (let left = ballAge; left > 1e-8; left -= C.step)
+            stepBall(this.predictedBall, Math.min(C.step, left));
       } else {
-        for (let left = age; left > 1e-8; left -= C.step) {
+        for (let left = ballAge; left > 1e-8; left -= C.step) {
           const dt = Math.min(C.step, left);
           stepBall(this.predictedBall, dt);
-          for (const other of this.otherCars) other.p.addScaledVector(other.v, dt);
         }
+        for (const other of this.otherCars) other.p.addScaledVector(other.v, age);
       }
+    }
+    if (heldBall) {
+      for (const key of ['p', 'q', 'v', 'spin']) this.predictedBall[key].copy(heldBall[key]);
+      this.preservedBallSnapshots++;
     }
     this.lastCorrection = oldP.distanceTo(this.predicted.p);
     this.lastReplay = correct ? this.pending.length : 0;

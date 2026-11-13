@@ -92,7 +92,7 @@ export class NetworkRoom{
    if(packet.t==='rematch'&&this.sim.phase==='ended'&&!this.pendingMatch){this.remoteRematch=packet.wanted===true;this.change();this.maybeRematch();}
    else if(packet.t==='input'&&this.role==='host')this.remote.receive(packet.frames,this.clock());
    else if(packet.t==='state'&&this.role==='guest')this.state(packet);
-   else if(packet.t==='events'&&this.role==='guest'&&packet.state?.matchId===this.matchId&&validState(packet.state,this.sim)){this.state(packet.state);this.onEvents(cleanEvents(packet.events));}
+   else if(packet.t==='events'&&this.role==='guest'&&packet.state?.matchId===this.matchId&&validState(packet.state,this.sim)){this.state(packet.state);this.onEvents(this.replica.filterAuthoritativeEvents(cleanEvents(packet.events),packet.state));}
    else if(packet.t==='skip'&&this.role==='host'&&this.sim.phase==='goal'){this.sim.skipReplay();this.publish(true);}
   }
  }
@@ -111,7 +111,7 @@ export class NetworkRoom{
  state(packet){if(packet?.matchId===this.matchId&&this.replica?.receive(packet,this.clock()))this.lastStateAt=this.clock();}
  inputs(){this.playerInputs.set(guestId(this.options),this.remote.next(this.clock()));return this.playerInputs;}
  hostStep(input,dt){if(this.role!=='host'||!this.active||this.recovering||this.hostPaused)return false;this.sim.step(input,dt,this.inputs());return true;}
- guestStep(input){if(this.active&&!this.hostPaused&&!this.recovering)this.replica.step(input);}
+ guestStep(input){if(this.active&&!this.hostPaused&&!this.recovering){this.replica.step(input);const events=this.replica.drainPredictedEvents();if(events.length)this.onEvents(events);}}
  sendInputs(force=false){const now=this.clock();if(this.role!=='guest'||!this.active||this.hostPaused||!force&&now-this.lastInput<1000/60)return;this.lastInput=now;const frames=packInputFrames(this.replica.inputFrames());if(frames.length)this.transport.send({t:'input',matchId:this.matchId,frames},true);}
  snapshot(){return makeState(this.sim,++this.sequence,this.remote.ack,this.matchId);}
  publish(force=false){const now=this.clock();if(this.role!=='host'||!this.active||!force&&(this.hostPaused||this.sim.phase==='ended'||now-this.lastPublish<STATE_INTERVAL))return;this.lastPublish=now;this.transport.send(this.snapshot(),true);}

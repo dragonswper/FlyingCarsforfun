@@ -6,6 +6,7 @@ import {NET_BUILD, appearance, MAX_PACKET} from '../dist/network-protocol.js';
 import {ConnectionQuality} from '../dist/network-quality.js';
 import {serverOptions, serverPlayers, modePlayers} from '../dist/server-options.js';
 import {ServerInputs} from './inputs.mjs';
+import {C} from '../dist/physics.js';
 
 class SocketLink {
   constructor(socket) {
@@ -166,6 +167,11 @@ export class ServerSession extends PartyRoom {
   makeSimulation(id, players) {
     super.makeSimulation(id, serverPlayers(this.options, players));
     for (const entry of this.entries.values()) entry.remote = new ServerInputs();
+  }
+  stateFor(entry) {
+    return {...super.stateFor(entry), net: {
+      inputQueueMs: Math.round(entry.remote.queue.length * C.step * 1000)
+    }};
   }
   config(entry, join = false) {
     return {...super.config(entry, join), matchmade: this.matchmade};
