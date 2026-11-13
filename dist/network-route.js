@@ -14,4 +14,4 @@ export function readConnectionInfo(report){
  const networkPing=Number.isFinite(pair.currentRoundTripTime)&&pair.currentRoundTripTime>=0&&pair.currentRoundTripTime<=60?Math.round(pair.currentRoundTripTime*1000):null;
  return {route:relay?'relay':known?'direct':'unknown',protocol,networkPing};
 }
-export function routeLabel(info){return (info?.route==='direct'?'DIRECT':info?.route==='relay'?'RELAYED':'ROUTE UNKNOWN')+(info?.protocol?' '+info.protocol.toUpperCase():'');}
+export function routeLabel(info){return (info?.route==='server'?'DEDICATED SERVER':info?.route==='direct'?'DIRECT':info?.route==='relay'?'RELAYED':'ROUTE UNKNOWN')+(info?.protocol?' '+info.protocol.toUpperCase():'');}

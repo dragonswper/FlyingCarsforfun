@@ -1,12 +1,14 @@
 # Boost Circuit — Car Soccer
 
-Complete standalone game source for **FlyingCarsforfun**, including Champions Field, 15 selectable vehicles, the supplied Rocket League ball, tests, model credits and research.
+Standalone browser game and optional dedicated-server source for **FlyingCarsforfun**, including Champions Field, 15 selectable vehicles, the supplied Rocket League ball, tests, model credits and research.
 
 An original browser-native 3D car-soccer recreation inspired by Rocket League, written from scratch with a custom fixed-step simulation and Three.js rendering.
 
 **Play:** https://boost-circuit-arena.bobistheman2049.chatgpt.site
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
+
+**1.14:** Guest movement replays the full 600 ms acknowledgement window, separates world extrapolation from input replay and smooths corrections without delaying new input. Custom BC2 join no longer crashes before room options arrive. Short front/back/side flips can finish through light ground scrapes, and collision impulses are followed by floor projection. **Private Match → Custom Lobby → Dedicated Server** adds an optional independent 120 Hz Node server; all players connect as clients using full BCS invites. [Movement/lobby details](docs/smooth-play.md) · [Server setup](docs/dedicated-server.md). All **246 automated tests pass**, plus real WebRTC checks. Reload every player and use matching server source.
 
 **1.13:** Online matches use **Warn and connect** by default so high ping does not repeatedly reject casual opponents. **Enforce Ping Limit** still honors either player's strict preference. Connections try a direct route before the shared relay, with a full direct window after signaling completes; the ping check warms up and uses seven spaced gameplay-channel samples instead of the slowest of three startup probes. **Options → Network → Connection Details** separates game response from native network ping and shows direct/relayed routing when available. Both Australian players can select **Oceania** to share a regional queue; this does not move a relay or guarantee 100 ms. [Routing, settings and verification](docs/ping-and-routing.md). All **224 automated tests pass**, plus actual direct/restart and four-client WebRTC checks. Reload all clients for this network build.
 

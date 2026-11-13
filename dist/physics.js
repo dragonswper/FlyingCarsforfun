@@ -12,11 +12,11 @@ const padLocations=[[0,-4240],[-1792,-4184],[1792,-4184],[-3072,-4096],[3072,-40
 export function createPads(){return padLocations.map(([x,z],id)=>({id,p:new V(x/100,big.has(id)?.73:.70,z/100),big:big.has(id),timer:0}));}
 
 export function makeCar(id,team,bot=false){
- return {id,team,bot,p:new V(0,C.carHeight,0),v:new V(),q:new Q(),omega:new V(),normal:UP.clone(),grounded:true,boost:C.boostSpawn,boosting:false,boostTime:0,drifting:false,handbrake:0,jumpHeld:false,jumpActive:false,hasJumped:false,jumpTime:0,jumpEndTime:0,airTime:0,canDouble:false,noContact:0,flipTime:0,flipAxis:new V(),selfRightTime:0,selfRightTarget:new Q(),demoTime:0,supersonic:false,supersonicTime:0,touches:0,goals:0,assists:0,saves:0,demos:0,score:0,hitCooldown:0,extraHitCooldown:0,recoverTime:0};
+ return {id,team,bot,p:new V(0,C.carHeight,0),v:new V(),q:new Q(),omega:new V(),normal:UP.clone(),grounded:true,boost:C.boostSpawn,boosting:false,boostTime:0,drifting:false,handbrake:0,jumpHeld:false,jumpActive:false,hasJumped:false,jumpTime:0,jumpEndTime:0,airTime:0,canDouble:false,noContact:0,flipTime:0,flipActive:false,flipRotation:0,flipAxis:new V(),selfRightTime:0,selfRightTarget:new Q(),demoTime:0,supersonic:false,supersonicTime:0,touches:0,goals:0,assists:0,saves:0,demos:0,score:0,hitCooldown:0,extraHitCooldown:0,recoverTime:0};
 }
 function spawnCar(c,x,z,yaw){
  c.p.set(x,C.carHeight,z);c.v.set(0,0,0);c.q.setFromAxisAngle(UP,yaw);c.omega.set(0,0,0);c.normal.copy(UP);c.selfRightTarget.identity();
- Object.assign(c,{grounded:true,boost:C.boostSpawn,boosting:false,boostTime:0,handbrake:0,jumpHeld:false,jumpActive:false,hasJumped:false,jumpTime:0,jumpEndTime:0,airTime:0,canDouble:false,noContact:0,flipTime:0,selfRightTime:0,demoTime:0,supersonic:false,supersonicTime:0,recoverTime:0,botState:undefined});
+ Object.assign(c,{grounded:true,boost:C.boostSpawn,boosting:false,boostTime:0,handbrake:0,jumpHeld:false,jumpActive:false,hasJumped:false,jumpTime:0,jumpEndTime:0,airTime:0,canDouble:false,noContact:0,flipTime:0,flipActive:false,flipRotation:0,selfRightTime:0,demoTime:0,supersonic:false,supersonicTime:0,recoverTime:0,botState:undefined});
 }
 function controls(i={}){return {throttle:clamp(Number(i.throttle)||0,-1,1),steer:clamp(Number(i.steer)||0,-1,1),pitch:clamp(Number(i.pitch)||0,-1,1),roll:clamp(Number(i.roll)||0,-1,1),jump:!!i.jump,boost:!!i.boost,drift:!!i.drift,dodgeThreshold:clamp(Number(i.dodgeDeadzone)||C.dodgeThreshold,.1,1)};}
 function startSelfRight(c){
@@ -26,7 +26,7 @@ function startSelfRight(c){
  const probe={...c,p:c.p.clone(),v:c.v.clone()},roof=collideArena(probe,C.carHeight,0,true).contacts.find(({normal})=>normal.y>.5&&up.dot(normal)<-.6);
  if(!roof)return false;const normal=roof.normal,axis=up.clone().cross(normal);if(axis.lengthSq()<1e-8)axis.copy(FWD).applyQuaternion(c.q);
  const correction=new Q().setFromAxisAngle(axis.normalize(),Math.acos(clamp(up.dot(normal),-1,1)));c.selfRightTarget.multiplyQuaternions(correction,c.q).normalize();c.selfRightTime=.75;
- c.v.addScaledVector(normal,Math.max(0,2-c.v.dot(normal)));c.omega.set(0,0,0);c.flipTime=0;c.jumpActive=false;c.canDouble=false;c.hasJumped=true;c.jumpEndTime=0;c.noContact=.075;c.normal.copy(UP);return true;
+ c.v.addScaledVector(normal,Math.max(0,2-c.v.dot(normal)));c.omega.set(0,0,0);c.flipTime=0;c.flipActive=false;c.flipRotation=0;c.jumpActive=false;c.canDouble=false;c.hasJumped=true;c.jumpEndTime=0;c.noContact=.075;c.normal.copy(UP);return true;
 }
 export function stepCar(c,input,dt,unlimited=false){
  if(c.demoTime>0){c.demoTime=Math.max(0,c.demoTime-dt);if(c.demoTime===0)spawnCar(c,c.id%2?23.04:-26.88,c.team?46.08:-46.08,c.team?Math.PI:0);return;}
@@ -46,9 +46,9 @@ export function stepCar(c,input,dt,unlimited=false){
   c.airTime+=dt;
   if(c.selfRightTime>0){c.selfRightTime=Math.max(0,c.selfRightTime-dt);c.q.rotateTowards(c.selfRightTarget,C.maxAngularSpeed*dt);c.omega.set(0,0,0);if(c.q.angleTo(c.selfRightTarget)<1e-6)c.selfRightTime=0;}
   else{
-   if(c.flipTime>0){c.flipTime=Math.max(0,c.flipTime-dt);if(c.flipAxis.x*i.pitch<-.25)c.flipAxis.x=0;if(c.flipAxis.x===0)c.omega.x*=Math.exp(-60*dt);else c.omega.x+=c.flipAxis.x*224*dt;c.omega.z+=c.flipAxis.z*260*dt;const elapsed=C.flipDuration-c.flipTime;if(elapsed>=.15&&(c.v.y<0||elapsed<.21))c.v.y*=Math.pow(.65,dt/C.step);}
+   if(c.flipTime>0||c.flipActive){c.flipTime=Math.max(0,c.flipTime-dt);if(c.flipAxis.x*i.pitch<-.25)c.flipAxis.x=0;if(c.flipAxis.lengthSq()<1e-8)c.flipActive=false;if(c.flipAxis.x===0)c.omega.x*=Math.exp(-60*dt);else c.omega.x+=c.flipAxis.x*224*dt;c.omega.z+=c.flipAxis.z*260*dt;const elapsed=C.flipDuration-c.flipTime;if(c.flipTime>0&&elapsed>=.15&&(c.v.y<0||elapsed<.21))c.v.y*=Math.pow(.65,dt/C.step);}
    else{const k=C.airTorqueScale;c.omega.x+=(i.pitch*130-c.omega.x*30*(1-Math.abs(i.pitch)))*k*dt;c.omega.y+=(i.steer*95-c.omega.y*20*(1-Math.abs(i.steer)))*k*dt;c.omega.z+=(-i.roll*400-c.omega.z*50)*k*dt;}
-   lengthClamp(c.omega,C.maxAngularSpeed);const spin=c.omega.length();if(spin>.001)c.q.multiply(new Q().setFromAxisAngle(c.omega.clone().divideScalar(spin),spin*dt)).normalize();
+   lengthClamp(c.omega,C.maxAngularSpeed);const spin=c.omega.length();if(c.flipActive){c.flipRotation+=Math.max(0,c.omega.dot(c.flipAxis.clone().normalize()))*dt;if(c.flipRotation>=Math.PI*2){c.flipActive=false;c.flipTime=0;}}if(spin>.001)c.q.multiply(new Q().setFromAxisAngle(c.omega.clone().divideScalar(spin),spin*dt)).normalize();
   }c.v.addScaledVector(f,i.throttle*C.airThrottleAccel*dt);
  }
  if(jumpPressed){
@@ -57,7 +57,7 @@ export function stepCar(c,input,dt,unlimited=false){
    c.canDouble=false;c.jumpActive=false;
    if(Math.abs(i.pitch)+Math.abs(i.steer)+Math.abs(i.roll)>=i.dodgeThreshold){
     const side=i.steer+i.roll,magnitude=Math.hypot(i.pitch,side)||1,along=i.pitch/magnitude,across=side/magnitude,flatForward=f.clone().setY(0).normalize(),flatRight=new V(flatForward.z,0,-flatForward.x),speed=c.v.dot(flatForward),ratio=Math.abs(speed)/C.maxSpeed,backward=Math.abs(speed)<1?along<0:along*speed<0;
-    c.v.addScaledVector(flatForward,along*C.flipImpulse*(backward?(16/15)*(1+1.5*ratio):1)).addScaledVector(flatRight,across*C.flipImpulse*(1+.9*ratio));c.flipAxis.set(along,0,-across);c.flipTime=C.flipDuration;
+    c.v.addScaledVector(flatForward,along*C.flipImpulse*(backward?(16/15)*(1+1.5*ratio):1)).addScaledVector(flatRight,across*C.flipImpulse*(1+.9*ratio));c.flipAxis.set(along,0,-across);c.flipTime=C.flipDuration;c.flipActive=true;c.flipRotation=0;
    }else c.v.addScaledVector(u,C.jump);
   }
  }
@@ -65,15 +65,15 @@ export function stepCar(c,input,dt,unlimited=false){
  if(c.hasJumped&&!c.jumpActive){c.jumpEndTime+=dt;if(c.jumpEndTime>=C.doubleJumpWindow)c.canDouble=false;}
  if(c.boosting){c.v.addScaledVector(f,(c.grounded?C.boostAccel:C.boostAirAccel)*dt);if(!unlimited){c.boost=Math.max(0,c.boost-C.boostBurn*dt);if(c.boost<1e-9)c.boost=0;}}
  c.jumpHeld=i.jump;c.v.y-=C.gravity*dt;lengthClamp(c.v,C.maxSpeed);c.p.addScaledVector(c.v,dt);
- const {contact,contacts}=collideArena(c,C.carHeight,0,true);
- if(contact&&c.noContact===0){const aligned=UP.clone().applyQuaternion(c.q).dot(contact);if(aligned>.55){c.grounded=true;c.normal.copy(contact);c.canDouble=false;c.hasJumped=false;c.jumpActive=false;c.airTime=0;c.recoverTime=0;c.flipTime=0;c.selfRightTime=0;}else{
-  c.grounded=false;c.recoverTime+=dt;c.flipTime=0;c.omega.multiplyScalar(Math.exp(-18*dt));
+ const {contact,contacts,impact}=collideArena(c,C.carHeight,0,true);
+ if(contact&&c.noContact===0){const aligned=UP.clone().applyQuaternion(c.q).dot(contact);if(aligned>.55&&(!c.flipActive||c.flipRotation>5.15)){c.grounded=true;c.normal.copy(contact);c.canDouble=false;c.hasJumped=false;c.jumpActive=false;c.airTime=0;c.recoverTime=0;c.flipTime=0;c.flipActive=false;c.selfRightTime=0;}else{
+  c.grounded=false;c.recoverTime+=dt;const slidingFlip=c.flipActive&&impact<8&&contacts.every(({normal})=>normal.y>.65);if(!slidingFlip){c.flipTime=0;c.flipActive=false;c.omega.multiplyScalar(Math.exp(-18*dt));}
   // A roof/bumper scrape absorbs spin; it does not turn into a wheel landing or
   // forcibly rotate the chassis upright and inject a new positional impulse.
   const inverse=c.q.clone().invert(),inertia=new V(3/(C.hitboxHalfHeight**2+C.hitboxHalfLength**2),3/(C.hitboxHalfWidth**2+C.hitboxHalfLength**2),3/(C.hitboxHalfWidth**2+C.hitboxHalfHeight**2));
-  for(const {normal}of contacts){const normalSpeed=c.v.dot(normal),tangent=c.v.clone().addScaledVector(normal,-normalSpeed);c.v.addScaledVector(tangent,-(1-Math.exp(-3*dt)));
+  for(const {normal}of contacts){const normalSpeed=c.v.dot(normal),tangent=c.v.clone().addScaledVector(normal,-normalSpeed);c.v.addScaledVector(tangent,-(1-Math.exp(-(slidingFlip?.6:3)*dt)));
    const local=normal.clone().applyQuaternion(inverse),point=new V(Math.abs(local.x)>1e-4?-Math.sign(local.x)*C.hitboxHalfWidth:0,Math.abs(local.y)>1e-4?C.hitboxOffsetUp-Math.sign(local.y)*C.hitboxHalfHeight:0,Math.abs(local.z)>1e-4?C.hitboxOffsetForward-Math.sign(local.z)*C.hitboxHalfLength:0);
-   c.omega.addScaledVector(point.cross(local).multiply(inertia),C.gravity*Math.max(0,normal.y)*dt/contacts.length);
+   if(!slidingFlip)c.omega.addScaledVector(point.cross(local).multiply(inertia),C.gravity*Math.max(0,normal.y)*dt/contacts.length);
   }
   if(aligned<-.9998&&!i.pitch&&!i.roll&&!i.steer&&c.v.lengthSq()<.04&&c.omega.lengthSq()<.16){const support=carSupport(c,contact),correction=new Q().setFromUnitVectors(UP.clone().applyQuaternion(c.q),contact.clone().negate()).multiply(c.q);c.q.rotateTowards(correction,C.maxAngularSpeed*dt);c.p.addScaledVector(contact,carSupport(c,contact)-support);c.omega.set(0,0,0);}
  }}else{c.grounded=false;c.recoverTime=0;}
@@ -152,7 +152,7 @@ export class Simulation{
    if(car.hitCooldown===0){car.touches++;car.hitCooldown=.15;this.emit('hit',{car:car.id,speed:this.ball.v.length(),p:this.ball.p.toArray()});}
   }}
   for(let a=0;a<this.cars.length;a++)for(let b=a+1;b<this.cars.length;b++)collideCars(this.cars[a],this.cars[b],(t,d)=>this.emit(t,d));
-  for(const car of this.cars){lengthClamp(car.v,C.maxSpeed);lengthClamp(car.omega,C.maxAngularSpeed);}
+  for(const car of this.cars){collideArena(car,C.carHeight,0,true);lengthClamp(car.v,C.maxSpeed);lengthClamp(car.omega,C.maxAngularSpeed);}
   lengthClamp(this.ball.v,C.ballMaxSpeed);lengthClamp(this.ball.spin,C.ballMaxSpin);
   if(Math.abs(this.ball.p.z)>C.goalScorePlane+C.ballRadius&&Math.abs(this.ball.p.x)<C.goalWidth-C.ballRadius&&this.ball.p.y<C.goalHeight-C.ballRadius){this.goal(this.ball.p.z>0?0:1);return;}
   if(this.options.mode==='training'){
