@@ -90,6 +90,22 @@ test('local contact feedback is immediate, not replayed, and its confirmed echo 
   assert.deepEqual(replica.filterAuthoritativeEvents([own], confirmed), [own]);
 });
 
+test('a contact with existing momentum deduplicates without waiting for its client input ACK', () => {
+  const {sim, replica} = contact();
+  replica.step({throttle: 1});
+  replica.drainPredictedEvents();
+  const momentumHit = makeState(sim, 2, 0, 'test');
+  momentumHit.cars[1].touches = 1;
+  const effect = {type: 'hit', car: 1};
+  assert.deepEqual(replica.filterAuthoritativeEvents([effect], momentumHit), []);
+
+  const missed = contact();
+  missed.replica.step({throttle: 1});
+  for (let n = 0; n < 130; n++) missed.replica.step({});
+  assert.deepEqual(missed.replica.filterAuthoritativeEvents([effect], momentumHit), [effect],
+    'An expired speculative miss must not suppress a later genuine hit');
+});
+
 for (const Room of [PartyRoom, NetworkRoom])
   test(Room.name + ' sends local impact feedback to the game during the same input step', () => {
     const {sim, replica} = contact(), events = [];

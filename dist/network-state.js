@@ -321,7 +321,7 @@ export class GuestReplica {
         this.feedbackCooldown = 0.15;
         this.predictedEvents.push({type: 'hit', car: this.localId,
           speed: this.predictedBall.v.length(), p: this.predictedBall.p.toArray(), predicted: true});
-        this.predictedFeedback.push({n: this.inputSequence,
+        this.predictedFeedback.push({n: this.inputSequence, receivedAt: this.lastArrival,
           touches: this.sim.cars.find(car => car.id === this.localId)?.touches || 0});
         if (this.predictedFeedback.length > 16) this.predictedFeedback.shift();
       }
@@ -339,13 +339,18 @@ export class GuestReplica {
     return this.predictedEvents.splice(0);
   }
   filterAuthoritativeEvents(events, state) {
+    const frames = Math.ceil(Math.min(1, Math.max(0.35,
+      (this.latency ?? 0.1) * 2 + 0.15)) / C.step);
     this.predictedFeedback = this.predictedFeedback.filter(hit =>
-      this.inputSequence - hit.n < PREDICTION_WINDOW * 2);
+      this.inputSequence - hit.n <= frames &&
+      this.lastArrival - hit.receivedAt <= frames * C.step * 1000);
     const touches = state?.cars?.find(car => car.id === this.localId)?.touches || 0;
     return events.filter(event => {
       if (event.type !== 'hit' || event.car !== this.localId) return true;
-      const index = this.predictedFeedback.findIndex(hit =>
-        hit.n <= state.ack && touches > hit.touches);
+      // A car can collide using held controls before the server receives the
+      // numbered input at which we predicted contact. An ACK is not a contact
+      // ID; match a recent own effect against the authoritative touch counter.
+      const index = this.predictedFeedback.findIndex(hit => touches > hit.touches);
       if (index < 0) return true;
       this.predictedFeedback.splice(index, 1);
       return false;
