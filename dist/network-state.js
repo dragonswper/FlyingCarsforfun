@@ -237,6 +237,8 @@ export class GuestReplica {
     this.preservedBallSnapshots = 0;
     this.visualP = car.p.clone();
     this.visualQ = car.q.clone();
+    this.previousPrediction = {p: car.p.clone(), q: car.q.clone()};
+    this.presentationAlpha = 1;
     this.positionError = new Vector3();
     this.rotationError = new Quaternion();
     this.ballError = new Vector3();
@@ -254,6 +256,7 @@ export class GuestReplica {
     };
     this.visualBall = sim.ball.p.clone();
     this.visualBallQ = sim.ball.q.clone();
+    this.previousBall = {p: sim.ball.p.clone(), q: sim.ball.q.clone()};
     this.otherCars = sim.cars
       .filter((c) => c.id !== localId)
       .map((car) => {
@@ -277,7 +280,9 @@ export class GuestReplica {
       interpolationMs: Math.round(Math.min(0.22, 0.085 + 2 * this.jitter) * 1000),
       pendingBallContact: !!this.localTouch,
       preservedBallSnapshots: this.preservedBallSnapshots,
-      serverInputQueueMs: this.serverInputQueueMs ?? null
+      serverInputQueueMs: this.serverInputQueueMs ?? null,
+      serverInputTick: this.serverInputTick ?? null,
+      serverHeldSteps: this.serverHeldSteps ?? 0
     };
   }
   setLatency(ms) {
@@ -304,6 +309,10 @@ export class GuestReplica {
       this.history.delete(this.history.keys().next().value);
   }
   predict(input, worldDt = C.step, ballDt = worldDt) {
+    this.previousPrediction.p.copy(this.predicted.p);
+    this.previousPrediction.q.copy(this.predicted.q);
+    this.previousBall.p.copy(this.predictedBall.p);
+    this.previousBall.q.copy(this.predictedBall.q);
     stepCar(
       this.predicted,
       input,
@@ -380,9 +389,15 @@ export class GuestReplica {
       oldBall = this.predictedBall.p.clone(),
       oldBallQ = this.predictedBall.q.clone(),
       wasDemo = this.predicted.demoTime > 0;
+    const alpha = this.presentationAlpha,
+      oldRenderP = this.previousPrediction.p.clone().lerp(oldP, alpha),
+      oldRenderQ = this.previousPrediction.q.clone().slerp(oldQ, alpha),
+      oldRenderBall = this.previousBall.p.clone().lerp(oldBall, alpha),
+      oldRenderBallQ = this.previousBall.q.clone().slerp(oldBallQ, alpha);
     const preserveBall = this.protectLocalBall(value, now), heldBall = preserveBall ? {
       p: this.predictedBall.p.clone(), q: this.predictedBall.q.clone(),
-      v: this.predictedBall.v.clone(), spin: this.predictedBall.spin.clone()
+      v: this.predictedBall.v.clone(), spin: this.predictedBall.spin.clone(),
+      previousP: this.previousBall.p.clone(), previousQ: this.previousBall.q.clone()
     } : null;
     if (Number.isFinite(value.net?.inputQueueMs) &&
       value.net.inputQueueMs >= 0 && value.net.inputQueueMs <= 1000)
@@ -397,23 +412,35 @@ export class GuestReplica {
     this.lastSequence = value.n;
     this.lastPhase = value.phase;
     applyState(this.sim, value);
+    // ACK identifies a received control, not every physics tick for which it
+    // was held. Compare/replay at authority's actual input timeline, otherwise
+    // a packet gap makes us advance the car a second time during correction.
+    const through = validCounter(value.net?.inputTick) && value.net.inputTick >= value.ack
+      ? value.net.inputTick : value.ack;
+    this.serverInputTick = through;
+    this.serverHeldSteps = through - value.ack;
     const local = value.cars.find((car) => car.id === this.localId) || value.cars[0],
       correct =
-        first || changed || this.spectator || !closePrediction(this.history?.get(value.ack), local);
+        first || changed || this.spectator || !closePrediction(this.history?.get(through), local);
     this.pending = this.pending.filter((frame) => frame.n > value.ack);
+    const replay = this.pending.filter(frame => frame.n > through);
     if (correct) {
       applyCar(this.predicted, local);
+      this.previousPrediction.p.copy(this.predicted.p);
+      this.previousPrediction.q.copy(this.predicted.q);
       this.history?.clear();
-      this.remember(value.ack);
+      this.remember(through);
     } else {
       for (const key of ['score', 'goals', 'assists', 'saves', 'touches', 'demos'])
         this.predicted[key] = local[key];
-      for (const n of this.history.keys()) if (n < value.ack) this.history.delete(n);
+      for (const n of this.history.keys()) if (n < through) this.history.delete(n);
     }
     this.predictedBall.p.fromArray(value.ball.p);
     this.predictedBall.q.fromArray(value.ball.q);
     this.predictedBall.v.fromArray(value.ball.v);
     this.predictedBall.spin.fromArray(value.ball.spin);
+    this.previousBall.p.copy(this.predictedBall.p);
+    this.previousBall.q.copy(this.predictedBall.q);
     for (const other of this.otherCars)
       applyCar(
         other,
@@ -439,24 +466,29 @@ export class GuestReplica {
         // handing the ball back to the shared timeline cannot reverse a shot.
         // Remote contacts retain one-way extrapolation.
         ballAge = Math.min(0.5, age * (1 + ownLead)),
-        worldDt = this.pending.length ? Math.min(C.step, age / this.pending.length) : 0,
-        ballDt = this.pending.length ? Math.min(C.step, ballAge / this.pending.length) : 0;
+        worldDt = replay.length ? Math.min(C.step, age / replay.length) : 0,
+        ballDt = replay.length ? Math.min(C.step, ballAge / replay.length) : 0;
       if (correct) {
         this.replaying = true;
         try {
-          for (const frame of this.pending) {
+          for (const frame of replay) {
             this.predict(frame.i, worldDt, ballDt);
             this.remember(frame.n);
           }
         } finally {
           this.replaying = false;
         }
-        if (!this.pending.length)
-          for (let left = ballAge; left > 1e-8; left -= C.step)
+        if (!replay.length)
+          for (let left = ballAge; left > 1e-8; left -= C.step) {
+            this.previousBall.p.copy(this.predictedBall.p);
+            this.previousBall.q.copy(this.predictedBall.q);
             stepBall(this.predictedBall, Math.min(C.step, left));
+          }
       } else {
         for (let left = ballAge; left > 1e-8; left -= C.step) {
           const dt = Math.min(C.step, left);
+          this.previousBall.p.copy(this.predictedBall.p);
+          this.previousBall.q.copy(this.predictedBall.q);
           stepBall(this.predictedBall, dt);
         }
         for (const other of this.otherCars) other.p.addScaledVector(other.v, age);
@@ -464,10 +496,12 @@ export class GuestReplica {
     }
     if (heldBall) {
       for (const key of ['p', 'q', 'v', 'spin']) this.predictedBall[key].copy(heldBall[key]);
+      this.previousBall.p.copy(heldBall.previousP);
+      this.previousBall.q.copy(heldBall.previousQ);
       this.preservedBallSnapshots++;
     }
     this.lastCorrection = oldP.distanceTo(this.predicted.p);
-    this.lastReplay = correct ? this.pending.length : 0;
+    this.lastReplay = correct && !changed ? replay.length : 0;
     if (correct) this.reconciliations = (this.reconciliations || 0) + 1;
     else this.ignoredCorrections = (this.ignoredCorrections || 0) + 1;
     const teleport =
@@ -476,24 +510,31 @@ export class GuestReplica {
       (wasDemo && local.demoTime === 0) ||
       oldP.distanceToSquared(this.predicted.p) > 900;
     if (teleport) {
+      this.previousPrediction.p.copy(this.predicted.p);
+      this.previousPrediction.q.copy(this.predicted.q);
       this.positionError.set(0, 0, 0);
       this.rotationError.identity();
       this.visualP.copy(this.predicted.p);
       this.visualQ.copy(this.predicted.q);
     } else {
-      this.positionError.add(oldP).sub(this.predicted.p);
-      this.rotationError.multiply(oldQ).multiply(this.predicted.q.clone().invert()).normalize();
+      this.positionError.add(oldRenderP).sub(
+        this.previousPrediction.p.clone().lerp(this.predicted.p, alpha));
+      this.rotationError.multiply(oldRenderQ).multiply(
+        this.previousPrediction.q.clone().slerp(this.predicted.q, alpha).invert()).normalize();
     }
     if (first || changed || oldBall.distanceToSquared(this.predictedBall.p) > 900) {
+      this.previousBall.p.copy(this.predictedBall.p);
+      this.previousBall.q.copy(this.predictedBall.q);
       this.ballError.set(0, 0, 0);
       this.ballRotationError.identity();
       this.visualBall.copy(this.predictedBall.p);
       this.visualBallQ.copy(this.predictedBall.q);
     } else {
-      this.ballError.add(oldBall).sub(this.predictedBall.p);
+      this.ballError.add(oldRenderBall).sub(
+        this.previousBall.p.clone().lerp(this.predictedBall.p, alpha));
       this.ballRotationError
-        .multiply(oldBallQ)
-        .multiply(this.predictedBall.q.clone().invert())
+        .multiply(oldRenderBallQ)
+        .multiply(this.previousBall.q.clone().slerp(this.predictedBall.q, alpha).invert())
         .normalize();
     }
     const offset = value.elapsed - now / 1000;
@@ -509,8 +550,9 @@ export class GuestReplica {
     }
     return true;
   }
-  sample(now, dt) {
+  sample(now, dt, alpha = this.presentationAlpha) {
     if (!this.frames.length) return null;
+    this.presentationAlpha = Math.max(0, Math.min(1, Number.isFinite(alpha) ? alpha : 1));
     const delay = Math.min(0.22, 0.085 + 2 * this.jitter),
       desired = now / 1000 + this.offset - delay;
     if (this.timeline === null || this.paused || Math.abs(desired - this.timeline) > 0.5)
@@ -524,17 +566,17 @@ export class GuestReplica {
       if (b.elapsed >= time) break;
       a = b;
     }
-    let alpha =
+    let remoteAlpha =
       b.elapsed > a.elapsed
         ? Math.max(0, Math.min(1, (time - a.elapsed) / (b.elapsed - a.elapsed)))
         : 1;
-    if (a.phase !== b.phase) alpha = 1;
+    if (a.phase !== b.phase) remoteAlpha = 1;
     const extrapolate =
       !this.paused && b.phase === 'playing' ? Math.max(0, Math.min(0.12, time - b.elapsed)) : 0;
     const blend = (out, from, to) => {
       let snap = false;
       for (let i = 0; i < 3; i++) if (Math.abs(from.p[i] - to.p[i]) > 20) snap = true;
-      const mix = snap ? 1 : alpha;
+      const mix = snap ? 1 : remoteAlpha;
       for (let i = 0; i < 3; i++)
         out.p[i] = from.p[i] + (to.p[i] - from.p[i]) * mix + (to.v?.[i] || 0) * extrapolate;
       this.qA.fromArray(from.q);
@@ -546,9 +588,11 @@ export class GuestReplica {
     if (!this.paused && !this.spectator) {
       this.ballError.multiplyScalar(decay);
       this.ballRotationError.slerp(this.identity, 1 - decay);
-      this.visualBall.copy(this.predictedBall.p).add(this.ballError);
+      this.visualBall.lerpVectors(this.previousBall.p, this.predictedBall.p,
+        this.presentationAlpha).add(this.ballError);
       this.visualBall.y = Math.max(C.ballRestHeight, this.visualBall.y);
-      this.visualBallQ.copy(this.ballRotationError).multiply(this.predictedBall.q);
+      this.visualBallQ.slerpQuaternions(this.previousBall.q, this.predictedBall.q,
+        this.presentationAlpha).premultiply(this.ballRotationError);
       this.visualBall.toArray(this.output.ball.p);
       this.visualBallQ.toArray(this.output.ball.q);
     }
@@ -568,8 +612,10 @@ export class GuestReplica {
       if (out.id === this.localId && !this.paused) {
         this.positionError.multiplyScalar(decay);
         this.rotationError.slerp(this.identity, 1 - decay);
-        this.visualP.copy(this.predicted.p).add(this.positionError);
-        this.visualQ.copy(this.rotationError).multiply(this.predicted.q);
+        this.visualP.lerpVectors(this.previousPrediction.p, this.predicted.p,
+          this.presentationAlpha).add(this.positionError);
+        this.visualQ.slerpQuaternions(this.previousPrediction.q, this.predicted.q,
+          this.presentationAlpha).premultiply(this.rotationError);
         this.visualP.y = Math.max(this.visualP.y, carSupport({q: this.visualQ}, this.up));
         this.visualP.toArray(out.p);
         this.visualQ.toArray(out.q);

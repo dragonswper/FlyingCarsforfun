@@ -57,7 +57,8 @@ export function trial(rtt, loss = 0.03, changing = false) {
     if (tick % 4 === 0 && rand() >= loss)
       states.push({
         at: now + rtt / 2 + (rand() - 0.5) * 16,
-        state: makeState(host, ++seq, remote.ack, 'test')
+        state: {...makeState(host, ++seq, remote.ack, 'test'),
+          net: {inputTick: remote.inputTick ?? remote.ack}}
       });
     states.sort((a, b) => a.at - b.at);
     while (states[0]?.at <= now) {

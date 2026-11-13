@@ -10,6 +10,8 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.17 — smoother server driving:** Reconciliation now accounts for physics steps the server simulated while holding controls between packets, preventing movement from being replayed twice. Online cars and the ball also interpolate between fixed physics steps at the display’s frame timing. **305 automated tests pass**, including uneven 30–240 FPS timing and missing packets at 200 ms. [Driving fixes and verification](docs/driving-smoothness.md). Reload both players for the matching client/server build.
+
 **1.16 — local ball response:** Your own ball touches survive older snapshots until the server acknowledges the input, with immediate impact feedback and a gradual handoff to authoritative motion. The server discards stale movement backlogs while preserving jump presses. Connection Details reports the server input buffer. **295 automated tests pass**, including 180–220 ms contact tests with missing/reordered snapshots. [What changed and how to test](docs/ball-response.md). Reload both players after deployment. This improves local response; genuine server ping still applies to confirmed results and other players.
 
 **Browser authentication fix:** The client now calls native browser fetch with its correct receiver. This fixes “Could not authenticate with the secure server” before a search can begin. Refresh the game after deployment. A Chromium regression check reproduces the old failure and verifies the fix; all **280 automated tests pass**.

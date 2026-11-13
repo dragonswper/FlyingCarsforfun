@@ -72,6 +72,7 @@ test('Cloudflare guests drive and chat over verified WSS, then reconnect to the 
   assert.ok(guest.replica.lastSequence > 20);
   assert.ok(Number.isFinite(guest.replica.diagnostics().serverInputQueueMs));
   assert.ok(guest.replica.diagnostics().serverInputQueueMs <= 34);
+  assert.ok(guest.replica.diagnostics().serverInputTick > 50);
   guest.sendChat('Hello from the Worker');
   await until(() => h.messages.length === 2, 'chat reaches both');
   const elapsed = owner.sim.elapsed;

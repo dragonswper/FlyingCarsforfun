@@ -170,7 +170,8 @@ export class ServerSession extends PartyRoom {
   }
   stateFor(entry) {
     return {...super.stateFor(entry), net: {
-      inputQueueMs: Math.round(entry.remote.queue.length * C.step * 1000)
+      inputQueueMs: Math.round(entry.remote.queue.length * C.step * 1000),
+      inputTick: entry.remote.inputTick ?? entry.remote.ack
     }};
   }
   config(entry, join = false) {

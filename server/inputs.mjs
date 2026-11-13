@@ -1,8 +1,8 @@
 import {RemoteInputs, cleanInput, validCounter, INPUT_TIMEOUT} from '../dist/network-protocol.js';
 export const MAX_INPUT_BUFFER = 4, RECENT_INPUT_BUFFER = 2;
 
-// At most one queued input is simulated at the server's fixed 120 Hz. ACKs
-// describe simulated inputs, rather than the most recently received packet.
+// Physics advances once per fixed 120 Hz tick. ACKs describe the latest control
+// actually consumed, rather than the most recently received packet.
 // No client time delta or client position is ever used to advance the game.
 export class ServerInputs extends RemoteInputs {
   receive(frames, now) {
@@ -19,6 +19,7 @@ export class ServerInputs extends RemoteInputs {
       if (n - this.ack > 120 || now - this.lastAt > INPUT_TIMEOUT) {
         this.queue.length = 0;
         this.received = n - 1;
+        this.inputTick = null;
         this.carriedJumps = 0;
         if (now - this.lastAt > INPUT_TIMEOUT) this.receivedJump = false;
       }
@@ -46,6 +47,12 @@ export class ServerInputs extends RemoteInputs {
     return accepted;
   }
   next(now) {
+    // Authority also advances while controls are held between packets. Keep
+    // that timeline separate from ACK (which only names a consumed input).
+    // Late frames replace held controls; they must not simulate old time twice.
+    let tick = this.inputTick == null ? this.queue[0]?.n ?? this.ack : this.inputTick + 1;
+    if (this.queue.length) tick = Math.max(tick, this.queue[0].n);
+    this.inputTick = tick;
     if (now - this.lastAt > INPUT_TIMEOUT) {
       this.queue.length = 0;
       this.current = cleanInput();
@@ -54,8 +61,9 @@ export class ServerInputs extends RemoteInputs {
       this.receivedJump = false;
       return this.current;
     }
-    const previousJump = this.current.jump, frame = this.queue.shift();
-    if (frame) {
+    const previousJump = this.current.jump;
+    while (this.queue.length && this.queue[0].n <= tick) {
+      const frame = this.queue.shift();
       this.ack = frame.n;
       this.heldInput = frame.input;
       if (frame.press) this.carriedJumps = Math.min(2, (this.carriedJumps || 0) + 1);

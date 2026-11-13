@@ -214,7 +214,8 @@ for (const rtt of [180, 200, 220])
       host.step({}, C.step, new Map([[1, inputs.next(now)]]));
       if (tick % 4 === 0 && tick % 124 !== 0)
         packets.push({at: now + rtt / 2 + [2, 45, 0][seq % 3],
-          state: makeState(host, ++seq, inputs.ack, 'test')});
+          state: {...makeState(host, ++seq, inputs.ack, 'test'),
+            net: {inputTick: inputs.inputTick ?? inputs.ack}}});
       const ballZ = replica.sample(now, C.step).ball.p[2];
       if (contactAt !== null && lastBallZ !== null) {
         minBallStep = Math.min(minBallStep, ballZ - lastBallZ);
