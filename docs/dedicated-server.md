@@ -4,7 +4,7 @@ The Node.js 22+ service runs authoritative physics at **120 Hz** independently o
 
 ## Recommended no-card option: Cloudflare
 
-[Cloudflare deployment instructions](cloudflare-free.md) use Workers Free, a SQLite-backed Durable Object and an Oceania placement hint. This serves the same updated client and authoritative gameplay without a card or PC installation. Public deployment still requires your account.
+[Cloudflare deployment instructions](cloudflare-free.md) use Workers Free, a SQLite-backed Durable Object and an Oceania placement hint. This serves the same updated client and authoritative gameplay without a card or PC installation. The current public deployment is **https://flyingcarsforfun.connstors.workers.dev**; creating another deployment still requires your account.
 
 ## Optional Render Singapore deployment
 

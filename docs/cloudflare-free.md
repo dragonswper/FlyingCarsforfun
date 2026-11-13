@@ -1,5 +1,7 @@
 # No-card hosting with Cloudflare Workers
 
+**Current live game:** https://flyingcarsforfun.connstors.workers.dev — public HTTPS/WSS checks passed on 13 November 2026. [Verification and joining instructions](live-server.md). The steps below describe deploying the same source in a Cloudflare account.
+
 Render may request billing verification even when **Free** is selected. Do not add payment details to get past that prompt. The alternative prepared here uses **Cloudflare Workers Free + SQLite-backed Durable Objects**, which Cloudflare advertises as available without a credit card. It needs a free Cloudflare account and access to this GitHub repository. No server installation, firewall change or router configuration is needed on your PC.
 
 ## Deploy from the existing GitHub repository
