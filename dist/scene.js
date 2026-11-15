@@ -7,6 +7,7 @@ import { loadChampionsField,loadChampionsInner, setStadiumQuality, disposeStadiu
 import { batchStaticPitch, freezeStaticTransforms, BoostPadView, ParticlePool } from './rendering.js';
 import { AdaptiveGraphics } from './performance.js';
 import { ChaseCamera } from './camera.js';
+import { VehicleCameraGuard } from './camera-vehicle.js';
 import {CUSTOM_BODY_FILES} from './bodies.js';
 import {isNoveltyABody,loadNoveltyABody,makeNoveltyAModel,animateNoveltyAModel,disposeNoveltyAModel,disposeNoveltyATemplates} from './novelty-assets-a.js';
 const disposeModel=model=>{if(!disposeNoveltyAModel(model))disposeVehicle(model);};
@@ -124,7 +125,7 @@ export class GameView{
  async ensureBody(body,onProgress){
   if(body!=='bottled'&&!Object.hasOwn(CUSTOM_BODY_FILES,body)&&!isNoveltyABody(body))return;
   const template=await(body==='bottled'?loadBottled(onProgress):isNoveltyABody(body)?loadNoveltyABody(body,onProgress):loadCustomBody(body,onProgress));this.bodyWarmups||=new Map();
-  if(!this.bodyWarmups.has(body))this.bodyWarmups.set(body,(async()=>{const model=body==='bottled'?makeBottledModel('#299bff',template):isNoveltyABody(body)?makeNoveltyAModel(body,'#299bff',template):makeCustomModel(body,'#299bff',template);try{const textures=new Set();model.visual.traverse(object=>{for(const material of Array.isArray(object.material)?object.material:[object.material])if(material)for(const value of Object.values(material))if(value?.isTexture)textures.add(value);});for(const texture of textures)this.renderer.initTexture(texture);await this.renderer.compileAsync(model.root,this.camera,this.scene);}finally{disposeModel(model);}})().catch(error=>{this.bodyWarmups.delete(body);throw error;}));
+  if(!this.bodyWarmups.has(body))this.bodyWarmups.set(body,(async()=>{const model=body==='bottled'?makeBottledModel('#299bff',template):isNoveltyABody(body)?makeNoveltyAModel(body,'#299bff',template):makeCustomModel(body,'#299bff',template);try{const textures=new Set();model.visual.traverse(object=>{for(const material of Array.isArray(object.material)?object.material:[object.material])if(material)for(const value of Object.values(material))if(value?.isTexture)textures.add(value);});for(const texture of textures)this.renderer.initTexture(texture);await this.warmCameraMaterials(model.root,[new VehicleCameraGuard(model)]);}finally{disposeModel(model);}})().catch(error=>{this.bodyWarmups.delete(body);throw error;}));
   return this.bodyWarmups.get(body);
  }
  quality(level){this.qualityLevel=level;this.graphics.setMode(level);this.applyGraphics();if(this.stadium)this.ensureStadiumDetail(level==='high'?'high':'balanced');}
@@ -138,14 +139,21 @@ export class GameView{
   const request=++this.stadiumRequest;if(detail===this.stadiumDetail)return;
   try{const next=await loadChampionsField(undefined,detail);if(request!==this.stadiumRequest){disposeStadium(next);return;}this.scene.remove(this.stadium);disposeStadium(this.stadium);this.stadium=next;this.stadiumDetail=detail;this.scene.add(next);setStadiumQuality(next,this.graphics.profile.seats?'high':'low');}catch(error){console.warn('Keeping the loaded stadium detail.',error);}
  }
- async prepare(){await this.renderer.compileAsync(this.scene,this.camera);}
- diagnostics(){return {mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail,camera:this.chase.diagnostics()};}
+ async warmCameraMaterials(root,guards){
+  await this.renderer.compileAsync(root,this.camera,this.scene);
+  // Prepare the faded material variant while loading, so the first close
+  // ball contact does not trigger fresh shader compilation during driving.
+  try{for(const guard of guards)guard.setOpacity(.18);await this.renderer.compileAsync(root,this.camera,this.scene);}
+  finally{for(const guard of guards)guard.restore();}
+ }
+ async prepare(){await this.warmCameraMaterials(this.scene,[...this.cars.values()].map(model=>model.cameraGuard));}
+ diagnostics(){const guard=this.cars.get(this.localPlayerId)?.cameraGuard;return {mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail,camera:{...this.chase.diagnostics(),vehicleOpacity:guard?.opacity??1,vehicleClearance:guard?.radius??0}};}
  sync(sim,paint='#299bff',body='fennec'){
   this.chase.reset();
   this.cameraHasAnchor=false;this.cameraPhase=null;
   for(const c of this.cars.values()){this.scene.remove(c.root);disposeModel(c);}this.cars.clear();
   this.localPlayerId=sim.localPlayerId===null?null:sim.localPlayerId??0;for(const car of sim.cars){const chosen=car.appearance?.body||(car.id===this.localPlayerId?body:'fennec'),color=car.appearance?.color||(car.id===this.localPlayerId?paint:teamColors[car.team]);const model=chosen==='fennec'?makeFennecModel(color):chosen==='bottled'?makeBottledModel(color):isNoveltyABody(chosen)?makeNoveltyAModel(chosen,color):Object.hasOwn(CUSTOM_BODY_FILES,chosen)?makeCustomModel(chosen,color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
-   model.simCar=car;this.cars.set(car.id,model);this.scene.add(model.root);}this.carShadows.count=sim.cars.length;this.update(sim,0,true);
+   model.cameraGuard=new VehicleCameraGuard(model,glow);model.simCar=car;this.cars.set(car.id,model);this.scene.add(model.root);}this.carShadows.count=sim.cars.length;this.update(sim,0,true);
  }
  burst(position,color='#ffc478',count=25){this.particles.spawn(position,color,count);}
  update(sim,dt,menu=false,snapshot=null,replay=false){
@@ -170,8 +178,9 @@ export class GameView{
   else{
    const state=snapshot?.cars.find(car=>car.id===this.localPlayerId),speed=state?.speed??player.simCar.v.dot(this.forward);
    this.cameraVelocity.set(0,0,0);if(this.cameraHasAnchor&&!resetCamera&&dt>0){this.cameraVelocity.copy(p).sub(this.cameraAnchor).divideScalar(dt);if(this.cameraVelocity.length()>C.maxSpeed)this.cameraVelocity.setLength(C.maxSpeed);}
-   this.chase.sample(p,player.root.quaternion,this.ball.position,this.cameraSettings,this.cameraMode,dt,{speed,velocity:this.cameraVelocity,grounded:state?.grounded??player.simCar.grounded});desired.copy(this.chase.position);target.copy(this.chase.look);driverRig=true;
+   this.chase.sample(p,player.root.quaternion,this.ball.position,this.cameraSettings,this.cameraMode,dt,{speed,velocity:this.cameraVelocity,grounded:state?.grounded??player.simCar.grounded,cameraRadius:player.cameraGuard.radius});desired.copy(this.chase.position);target.copy(this.chase.look);driverRig=true;
   }
+  for(const model of this.cars.values()){if(driverRig&&model===player)model.cameraGuard.update(desired,this.ball.position,p,player.root.quaternion,this.cameraMode,dt);else model.cameraGuard.restore();}
   this.cameraAnchor.copy(p);this.cameraHasAnchor=true;
   let shadow=0;for(const model of this.cars.values()){this.shadowPosition.set(model.root.position.x,.018,model.root.position.z);const visible=model.root.visible&&model.root.position.y<8;this.shadowScale.set(visible?.65:0,visible?1.1:0,1);this.shadowMatrix.compose(this.shadowPosition,this.shadowRotation,this.shadowScale);this.carShadows.setMatrixAt(shadow++,this.shadowMatrix);}this.carShadows.instanceMatrix.needsUpdate=true;
   const smooth=dt===0?1:1-Math.exp(-8*dt);if(driverRig){this.camera.position.copy(desired);this.look.copy(target);}else{this.camera.position.lerp(desired,smooth);this.look.lerp(target,smooth);}this.camera.up.set(0,1,0);this.camera.lookAt(this.look);this.camera.fov=driverRig?verticalFov(this.chase.fov,this.camera.aspect):T.MathUtils.lerp(this.camera.fov,menu?45:verticalFov(this.cameraSettings.fov,this.camera.aspect),dt===0?1:Math.min(1,dt*8));this.camera.updateProjectionMatrix();this.renderer.render(this.scene,this.camera);

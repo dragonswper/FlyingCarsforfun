@@ -7,6 +7,20 @@ const blend = (rate, dt) => 1 - Math.exp(-rate * dt);
 const smoothstep = t => t * t * (3 - 2 * t);
 const skin = 0.22;
 const sweepPoint = new Vector3(), safeAnchor = new Vector3();
+const requestedArm = new Vector3(), clearanceArm = new Vector3(), candidateArm = new Vector3(),
+  candidate = new Vector3(), candidateOut = new Vector3(), bestArm = new Vector3();
+
+// Interpolate the orbit, not a chord through the car. Opposite camera modes
+// must keep their distance even halfway through a transition.
+function orbitArm(from, to, t, out) {
+  const a = from.length(), b = to.length(), radius = a + (b - a) * t,
+    yaw = Math.atan2(from.x, from.z), endYaw = Math.atan2(to.x, to.z),
+    bearing = yaw + wrap(endYaw - yaw) * t,
+    elevation = Math.atan2(from.y, Math.hypot(from.x, from.z)) * (1 - t) +
+      Math.atan2(to.y, Math.hypot(to.x, to.z)) * t;
+  return out.set(Math.sin(bearing) * Math.cos(elevation), Math.sin(elevation),
+    Math.cos(bearing) * Math.cos(elevation)).multiplyScalar(radius);
+}
 
 // A small analytic camera volume, independent of the stadium's render meshes.
 // This includes the pitch ramps/corners, the goal portal, net roof and posts.
@@ -44,7 +58,8 @@ export function constrainCamera(anchor, desired, out) {
   if (!cameraInsideArena(safeAnchor)) {
     // A car's origin can rest lower than a camera sphere on a ramp/roof.
     // Use a safe nearby pivot without changing the car or its collision state.
-    clampToPitch(safeAnchor, skin + 0.05);
+    // Include the post/crossbar radius as well as the camera sphere.
+    clampToPitch(safeAnchor, skin + 0.15);
     safeAnchor.y = clamp(Math.max(safeAnchor.y, C.ramp + skin), skin, C.height - skin);
   }
   let free = 0;
@@ -61,6 +76,48 @@ export function constrainCamera(anchor, desired, out) {
     return out.lerpVectors(safeAnchor, desired, free);
   }
   return out.copy(desired);
+}
+
+// Arena retraction can otherwise push the eye back inside the player's mesh.
+// When an arm is blocked, slide around the vehicle's clearance sphere to a
+// nearby available view. The arena remains the final constraint if a vehicle
+// is in an impossible pose; the rendering guard then hides obstructing parts.
+function constrainVehicleCamera(anchor, desired, out, radius) {
+  requestedArm.copy(desired).sub(anchor);
+  if (requestedArm.length() < radius) {
+    if (requestedArm.lengthSq() < 1e-8) requestedArm.set(0, 1, -1);
+    requestedArm.setLength(radius);
+    desired.copy(anchor).add(requestedArm);
+  }
+  constrainCamera(anchor, desired, out);
+  if (radius <= 0 || out.distanceToSquared(anchor) >= radius * radius - 1e-8) return out;
+  requestedArm.setLength(radius);
+  let score = Infinity;
+  for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) {
+    if (!x && !y && !z) continue;
+    candidateArm.set(x, y, z).setLength(radius);
+    candidate.copy(anchor).add(candidateArm);
+    if (!cameraInsideArena(candidate)) continue;
+    constrainCamera(anchor, candidate, candidateOut);
+    if (candidateOut.distanceToSquared(anchor) < radius * radius - 1e-8) continue;
+    const cost = candidateArm.distanceToSquared(requestedArm);
+    if (cost < score) { score = cost; bestArm.copy(candidateArm); }
+  }
+  if (!Number.isFinite(score)) return out;
+  // Refine the selected direction to the obstruction boundary, avoiding the
+  // visible angular steps of a discrete set of fallback views.
+  let blocked = 0, free = 1;
+  clearanceArm.copy(bestArm);
+  for (let i = 0; i < 12; i++) {
+    const mid = (blocked + free) / 2;
+    orbitArm(requestedArm, bestArm, mid, candidateArm);
+    candidate.copy(anchor).add(candidateArm);
+    constrainCamera(anchor, candidate, candidateOut);
+    if (cameraInsideArena(candidate) && candidateOut.distanceToSquared(anchor) >= radius * radius - 1e-8) {
+      free = mid; clearanceArm.copy(candidateArm);
+    } else blocked = mid;
+  }
+  return out.copy(anchor).add(clearanceArm);
 }
 
 // The logical targets (desired/target) are separate from the displayed rig
@@ -183,12 +240,13 @@ export class ChaseCamera {
     }
     this.goalArm.copy(this.desired).sub(p);
     if (!this.initialized) this.arm.copy(this.goalArm);
-    else if (this.transition) this.arm.lerpVectors(this.fromArm, this.goalArm,
-      smoothstep(clamp(this.transition.elapsed / this.transition.duration, 0, 1)));
+    else if (this.transition) orbitArm(this.fromArm, this.goalArm,
+      smoothstep(clamp(this.transition.elapsed / this.transition.duration, 0, 1)), this.arm);
     else if (settings.stiffness >= 1) this.arm.copy(this.goalArm);
-    else this.arm.lerp(this.goalArm, blend(3 + 14 * settings.stiffness, seconds));
+    else orbitArm(this.arm, this.goalArm, blend(3 + 14 * settings.stiffness, seconds), this.arm);
     this.position.copy(p).add(this.arm);
-    constrainCamera(p, this.position, this.position);
+    constrainVehicleCamera(p, this.position, this.position,
+      Number.isFinite(motion.cameraRadius) ? Math.max(0, motion.cameraRadius) : 0);
     this.arm.copy(this.position).sub(p);
     this.direction.copy(this.target).sub(this.position);
     const flat = Math.hypot(this.direction.x, this.direction.z),

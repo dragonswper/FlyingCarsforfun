@@ -1,4 +1,4 @@
-# Camera gameplay update — 1.18
+# Camera gameplay update — 1.18 / 1.18.1
 
 This release applies the [camera research](camera-research.md) to driving in every local and multiplayer mode. It preserves the 1.17.1 prediction/input-timing changes and uses the same rendered car/ball poses. No simulation constants, server hosting resources or PC settings are changed.
 
@@ -40,10 +40,22 @@ The camera sweeps a small analytic volume from a safe pivot to its desired posit
 
 This uses the game's calibrated collision dimensions rather than raycasting every stadium triangle each frame. It is an efficient approximation for the adapted Champions Field, not a full arbitrary-mesh camera solver. Spectator and replay framing remain separate from the driving camera.
 
+## 1.18.1 close-ball camera hotfix
+
+Close ball contact exposed two missing protections: the arena solver could retract the camera inside the player's visual model, and a straight position blend could cut across the car during opposite-facing camera transitions. The ball sightline could also run through the body when the car was over or beside the ball. The shared physics hitbox is smaller than several supplied vehicle models, so it cannot determine visual camera clearance.
+
+The follow arm now blends its bearing, elevation and radius along an orbit. Each selected vehicle supplies cached visual bounds, including a small suspension margin, and a minimum arm radius adds near-plane clearance. Short distance settings are extended only as required for safety. If a wall or goal blocks that radius, the camera searches nearby available directions and refines the result against the arena boundary. The fallback pivot also includes the goal-post/crossbar thickness.
+
+Only the local driver's vehicle fades briefly when it blocks a nearby ball. If an impossible trapped pose still places the eye inside the body, that local visual is hidden until the camera clears it. Normal opacity returns when the sightline clears; menus, replays and spectator views restore the vehicle's original material settings. Transparent custom finishes retain their original opacity and depth settings. This changes presentation, not car/ball collisions, handling or multiplayer prediction.
+
+Bounds and material lists are cached when a vehicle is created. Per-frame obstruction checks use an oriented box rather than triangle raycasts. Opaque and faded shader variants warm up during loading to avoid adding a first-contact shader compilation hitch. Ball-cam manual input lock and the level horizon remain in place.
+
 ## Verification
 
-**322 automated tests pass**, including speed effects and their off switch, maximum stiffness, refresh-rate independence at 30–240 Hz, smooth/rapid mode toggles, independent swivel/transition settings, controller/mouse release, persistent Free Look/recentring, roll-independent ball cam, angle wrapping, close-ball crossings, wall/goal/post/roof clearance, reset state, saved-binding migration and Escape handling. The suite retains all driving-timing, ball-response, physics, controller, matchmaking, private-lobby, all-mode secure server and reconnect regressions.
+**332 automated tests pass**, including the actual Fennec obstructing the ball, flipping/close-range near-plane clearance, opposite-facing transitions at 30–240 Hz, wall/goal/ceiling retraction, all selectable vehicle bounds, local-only fading and transparent-material restoration. They also cover speed effects and their off switch, maximum stiffness, smooth/rapid mode toggles, independent swivel/transition settings, controller/mouse release, persistent Free Look/recentring, roll-independent ball cam, angle wrapping, reset state, saved-binding migration and Escape handling. The suite retains all driving-timing, ball-response, physics, controller, matchmaking, private-lobby, all-mode secure server and reconnect regressions.
 
 A rendered Chromium check also exercised the actual Options and gameplay flow: legacy camera values survived, controller look returned, Free Look held direction, simulated R3 and keyboard recenter worked, ball cam rejected manual look, driving increased FOV, the speed-effects off switch worked, settings survived reload, and lower camera controls remained reachable at a smaller viewport. Camera settings were tested in a software-rendered cloud browser; this does not measure a player's GPU FPS or physically connected Xbox/PlayStation controller.
 
-Use the [live game](https://flyingcarsforfun.connstors.workers.dev), hard refresh all players, and start a fresh match with **boost-circuit-1.18.0**. Test steady driving, reversing, wall transitions, an overhead ball, rapid toggles and a reset. Saved classic look behaviour and the optional persistent mode should be evaluated separately.
+The hotfix also has a deterministic rendered fixture using the actual stadium, vehicle and ball: car over a nearby ball, directly above the ball, short-distance/tilted contact and normal driving. The fixture is test tooling outside the shipped client; it does not expose a gameplay state editor.
+
+Use the [live game](https://flyingcarsforfun.connstors.workers.dev), hard refresh all players, and start a fresh match with **boost-circuit-1.18.1**. Test steady driving, reversing, wall transitions, a close/overhead ball, rapid toggles and a reset. Saved classic look behaviour and the optional persistent mode should be evaluated separately.
