@@ -1,5 +1,6 @@
 import {Vector3} from './vendor/three.module.js';
 import {C, clamp, CORNER_PLANES, clampToPitch} from './constants.js';
+import {arenaCeiling,collideArena} from './arena.js';
 
 const wrap = angle => Math.atan2(Math.sin(angle), Math.cos(angle));
 const turn = (from, to, limit) => from + clamp(wrap(to - from), -limit, limit);
@@ -7,6 +8,7 @@ const blend = (rate, dt) => 1 - Math.exp(-rate * dt);
 const smoothstep = t => t * t * (3 - 2 * t);
 const skin = 0.22;
 const sweepPoint = new Vector3(), safeAnchor = new Vector3();
+const pivotProbe={p:safeAnchor,v:new Vector3()};
 const requestedArm = new Vector3(), clearanceArm = new Vector3(), candidateArm = new Vector3(),
   candidate = new Vector3(), candidateOut = new Vector3(), bestArm = new Vector3();
 
@@ -26,12 +28,13 @@ function orbitArm(from, to, t, out) {
 // This includes the pitch ramps/corners, the goal portal, net roof and posts.
 export function cameraInsideArena(p, radius = skin) {
   const x = Math.abs(p.x), z = Math.abs(p.z), y = p.y;
-  const opening = x < C.goalWidth - radius && y < C.goalHeight - radius;
-  if (x > C.halfWidth - radius || y < radius || y > C.height - radius) return false;
+  const opening = x < C.goalWidth + .2 && y < C.goalHeight + .2,
+    inNet=z>C.halfLength+.15&&x<C.goalWidth+.2,ceiling=inNet?C.goalHeight:C.height;
+  if (x > C.halfWidth - radius || y < radius || y > ceiling - radius) return false;
   if (z > C.halfLength - radius && !opening) return false;
   if (z > C.halfLength && (z > C.halfLength + C.goalDepth - radius ||
       x > C.goalWidth - radius || y > C.goalHeight - radius)) return false;
-  let gap = C.halfWidth - x;
+  let gap = inNet?Math.min(C.goalWidth-x,C.halfLength+C.goalDepth-z):C.halfWidth-x;
   if (!opening) gap = Math.min(gap, C.halfLength - z);
   if (x > C.cornerX && z > C.cornerZ && z <= C.halfLength) {
     for (const plane of CORNER_PLANES) {
@@ -40,8 +43,10 @@ export function cameraInsideArena(p, radius = skin) {
       gap = Math.min(gap, d);
     }
   }
-  if (z < C.halfLength && gap < C.ramp && y < C.ramp &&
-      Math.hypot(C.ramp - gap, C.ramp - y) > C.ramp - radius) return false;
+  const lower=inNet?C.goalRamp:C.ramp,upper=inNet?C.goalRamp:C.ceilingRamp;
+  if ((inNet||z<C.halfLength+.1) && gap < lower && y < lower &&
+      Math.hypot(lower - gap, lower - y) > lower - radius) return false;
+  if(gap<upper&&y>ceiling-upper&&Math.hypot(upper-gap,y-(ceiling-upper))>upper-radius)return false;
   if (Math.abs(z - C.halfLength) < radius + 0.12) {
     const r2 = (radius + 0.12) ** 2, dz = z - C.halfLength;
     if ((x - C.goalWidth) ** 2 + dz * dz +
@@ -54,26 +59,31 @@ export function cameraInsideArena(p, radius = skin) {
 
 export function constrainCamera(anchor, desired, out) {
   safeAnchor.copy(anchor);
-  safeAnchor.y = clamp(safeAnchor.y + 0.35, skin, C.height - skin);
+  safeAnchor.y = clamp(safeAnchor.y + 0.35, skin+.015, arenaCeiling(anchor) - skin-.015);
   if (!cameraInsideArena(safeAnchor)) {
-    // A car's origin can rest lower than a camera sphere on a ramp/roof.
-    // Use a safe nearby pivot without changing the car or its collision state.
-    // Include the post/crossbar radius as well as the camera sphere.
-    clampToPitch(safeAnchor, skin + 0.15);
-    safeAnchor.y = clamp(Math.max(safeAnchor.y, C.ramp + skin), skin, C.height - skin);
+    // Project locally using the same curved surfaces as the simulation. A goal
+    // roof pivot must stay inside the goal rather than teleporting to the field.
+    for(let i=0;i<4;i++){pivotProbe.v.set(0,0,0);collideArena(pivotProbe,skin+.015,0);}
+    if(!cameraInsideArena(safeAnchor)){
+      clampToPitch(safeAnchor,skin+.15);safeAnchor.y=clamp(safeAnchor.y,skin+.015,C.height-skin-.015);
+      for(let i=0;i<4;i++){pivotProbe.v.set(0,0,0);collideArena(pivotProbe,skin+.015,0);}
+    }
   }
+  return sweepCamera(safeAnchor,desired,out);
+}
+function sweepCamera(from,desired,out){
   let free = 0;
   for (let step = 1; step <= 20; step++) {
     const t = step / 20;
-    sweepPoint.lerpVectors(safeAnchor, desired, t);
+    sweepPoint.lerpVectors(from, desired, t);
     if (cameraInsideArena(sweepPoint)) { free = t; continue; }
     let blocked = t;
     for (let n = 0; n < 10; n++) {
       const mid = (free + blocked) / 2;
-      sweepPoint.lerpVectors(safeAnchor, desired, mid);
+      sweepPoint.lerpVectors(from, desired, mid);
       if (cameraInsideArena(sweepPoint)) free = mid; else blocked = mid;
     }
-    return out.lerpVectors(safeAnchor, desired, free);
+    return out.lerpVectors(from, desired, free);
   }
   return out.copy(desired);
 }
@@ -129,7 +139,7 @@ export class ChaseCamera {
     this.position = new Vector3(); this.look = new Vector3();
     this.forward = new Vector3(); this.arm = new Vector3();
     this.goalArm = new Vector3(); this.fromArm = new Vector3();
-    this.direction = new Vector3();
+    this.direction = new Vector3();this.resolvedArm=new Vector3();this.safeArm=new Vector3();this.previousPosition=new Vector3();this.rawPosition=new Vector3();
     this.reset();
   }
   reset() {
@@ -140,6 +150,7 @@ export class ChaseCamera {
     this.initialized = false; this.transition = null; this.recenterRequested = false;
     this.speedBlend = 0; this.superBlend = 0; this.flightPitch = 0;
     this.fov = 110; this.distance = 2.7; this.aimYaw = 0; this.aimPitch = 0;
+    this.reverse=false;this.resolvedArm.set(0,0,0);this.obstructionActive=false;
   }
   stick(x, y, ballCam) {
     this.lookX = ballCam ? 0 : clamp(Number(x) || 0, -1, 1);
@@ -171,6 +182,7 @@ export class ChaseCamera {
       lookOffset: [this.orbitYaw + this.stickYaw, this.orbitPitch + this.stickPitch]};
   }
   sample(p, rotation, ball, settings, ballCam, dt, motion = {}) {
+    if(this.initialized)this.previousPosition.copy(this.position);
     const seconds = clamp(Number(dt) || 0, 0, 0.1),
       swivel = settings.swivelSpeed ?? 5, transitionSpeed = settings.transitionSpeed ?? 1.2,
       returnRate = 3.2 * (settings.returnSpeed ?? 5), effect = settings.speedEffect ?? 1,
@@ -179,22 +191,26 @@ export class ChaseCamera {
     const dx = ball.x - p.x, dz = ball.z - p.z;
     const ballHeading = Math.hypot(dx, dz) > 0.85 ? Math.atan2(dx, dz) : this.ballYaw;
     this.forward.set(0, 0, 1).applyQuaternion(rotation);
-    const heading = Math.hypot(this.forward.x, this.forward.z) > 0.35 ?
+    let heading = Math.hypot(this.forward.x, this.forward.z) > 0.35 ?
       Math.atan2(this.forward.x, this.forward.z) : this.carYaw;
+    const airborne=motion.grounded===false,flatVelocity=Math.hypot(Number(motion.velocity?.x)||0,Number(motion.velocity?.z)||0);
+    if(airborne)heading=flatVelocity>2?Math.atan2(motion.velocity.x,motion.velocity.z):this.carYaw;
+    else{if(speed< -2)this.reverse=true;else if(speed>-.3)this.reverse=false;}
     if (!this.initialized) {
       this.ballYaw = ballHeading; this.carYaw = heading; this.freeYaw = heading;
     }
     this.ballYaw = turn(this.ballYaw, ballHeading, 4 * seconds);
-    this.carYaw = turn(this.carYaw, heading + (speed < -1 ? Math.PI : 0),
+    const followHeading=airborne?heading:heading+(this.reverse?Math.PI:0);
+    this.carYaw = turn(this.carYaw, followHeading,
       (2 + 6 * settings.stiffness) * seconds);
-    if (!ballCam && settings.stiffness >= 1) this.carYaw = wrap(heading + (speed < -1 ? Math.PI : 0));
+    if (!ballCam && settings.stiffness >= 1) this.carYaw = wrap(followHeading);
     const changed = this.mode !== null && this.mode !== mode;
     if (changed || this.recenterRequested) {
       this.transition = {elapsed: 0, duration: 0.32 / transitionSpeed,
         yaw: this.aimYaw, pitch: this.aimPitch};
-      this.fromArm.copy(this.arm);
+      this.fromArm.copy(this.resolvedArm);
       this.orbitYaw = this.orbitPitch = this.stickYaw = this.stickPitch = 0;
-      this.freeYaw = wrap(heading + (speed < -1 ? Math.PI : 0)); this.freePitch = 0;
+      this.freeYaw = wrap(followHeading); this.freePitch = 0;
       this.recenterRequested = false;
     } else if (this.transition) this.transition.elapsed += seconds;
     this.mode = mode;
@@ -245,9 +261,30 @@ export class ChaseCamera {
     else if (settings.stiffness >= 1) this.arm.copy(this.goalArm);
     else orbitArm(this.arm, this.goalArm, blend(3 + 14 * settings.stiffness, seconds), this.arm);
     this.position.copy(p).add(this.arm);
-    constrainVehicleCamera(p, this.position, this.position,
-      Number.isFinite(motion.cameraRadius) ? Math.max(0, motion.cameraRadius) : 0);
-    this.arm.copy(this.position).sub(p);
+    const radius=Number.isFinite(motion.cameraRadius)?Math.max(0,motion.cameraRadius):0;
+    this.rawPosition.copy(this.arm);
+    if(this.rawPosition.length()<radius)this.rawPosition.setLength(radius);
+    this.rawPosition.add(p);
+    constrainVehicleCamera(p, this.position, this.position,radius);
+    const obstructed=this.rawPosition.distanceToSquared(this.position)>1e-8;
+    this.safeArm.copy(this.position).sub(p);
+    if(this.initialized&&(obstructed||this.obstructionActive)){
+      const angle=this.resolvedArm.angleTo(this.safeArm),lengthChange=Math.abs(this.resolvedArm.length()-this.safeArm.length()),
+        amount=Math.min(1,angle>1e-6?6*seconds/angle:1,lengthChange>1e-6?6*seconds/lengthChange:1);
+      // A Cartesian blend between resolved views stays against a flat wall;
+      // another spherical blend bows through it and triggers a second retraction.
+      if(amount<1){this.safeArm.lerpVectors(this.resolvedArm,this.safeArm,amount);this.position.copy(p).add(this.safeArm);}
+    }
+    if(this.initialized)sweepCamera(this.previousPosition,this.position,this.position);
+    // Keep logical follow state independent of the collision correction. Feeding
+    // a wall-shortened arm back into the follower produced oscillating views.
+    this.resolvedArm.copy(this.position).sub(p);
+    this.obstructionActive=obstructed||this.position.distanceToSquared(this.rawPosition)>.0004;
+    if(mode==='free'){
+      const lookPitch=settings.angle*Math.PI/180-pitch;
+      this.direction.set(Math.sin(yaw)*Math.cos(lookPitch),Math.sin(lookPitch),Math.cos(yaw)*Math.cos(lookPitch));
+      this.target.copy(this.position).addScaledVector(this.direction,6);
+    }
     this.direction.copy(this.target).sub(this.position);
     const flat = Math.hypot(this.direction.x, this.direction.z),
       aimYaw = flat > 1e-6 ? Math.atan2(this.direction.x, this.direction.z) : this.aimYaw,

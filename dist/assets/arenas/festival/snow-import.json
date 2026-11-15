@@ -1,0 +1,6 @@
+{
+  "source": "falling-snow-loop.zip",
+  "texture": "textures/Snowflake.png",
+  "source_sha256": "569e2ba18cc64f6e652b80298b0e7eb2c07d85f4a4e22112bbb432094225e592",
+  "adaptation": "GPU point-sprite snowfall uses the supplied snowflake artwork. The Blender particle system is represented by a bounded browser shader rather than evaluated on players\u2019 PCs."
+}

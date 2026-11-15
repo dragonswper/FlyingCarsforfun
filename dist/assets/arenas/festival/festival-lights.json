@@ -1,0 +1,37 @@
+{
+  "kind": "lights",
+  "source": "Christmas Light.fbx",
+  "source_sha256": "b2a82e982d9ffd1e7ec1dcffbb36b1ab676bfab54c80b620da122497472f8558",
+  "file": "festival-lights.glb",
+  "bytes": 467640,
+  "sha256": "d14ab41a21c325bb7eb59e52561c3865d44c22972e75fb04cfb0f750e0208c22",
+  "source_triangles": 72660,
+  "triangles": 17986,
+  "bounds_blender_z_up": [
+    [
+      -2.5544416904449463,
+      -9.000958442687988,
+      -0.0002501534472685307
+    ],
+    [
+      2.5548763275146484,
+      9.0,
+      6.546841144561768
+    ]
+  ],
+  "materials": [
+    "RS Material_1_2",
+    "RS Material_1_0",
+    "RS Material_1_1",
+    "RS Material_1",
+    "RS Material_1_3"
+  ],
+  "credit": "User-supplied artwork. The archive did not include creator/license notices; source artwork remains separate from the original game code.",
+  "modifications": [
+    "Baked supplied transforms at the initial pose; no archive scripts executed",
+    "Normalized metres, ground at zero, glTF Y-up",
+    "Joined static scenery; retained source materials and UVs",
+    "Bounded large geometry and embedded WebP textures up to 768 pixels"
+  ],
+  "source_metadata": {}
+}

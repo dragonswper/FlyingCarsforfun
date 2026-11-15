@@ -1,0 +1,58 @@
+{
+  "kind": "mountains",
+  "source": "snowy_mountain_road_scene.glb",
+  "source_sha256": "d088369c71ba8207b2c8fa0e5ae320d7b8d7bce5dfc8226824a91c359ca01fe0",
+  "file": "festival-mountains.glb",
+  "bytes": 3674392,
+  "sha256": "97e94d461e730ecee6ae2e9359260601fca2296e6defbb5ae7685203a220cc76",
+  "source_triangles": 34771,
+  "triangles": 34771,
+  "bounds_blender_z_up": [
+    [
+      -46.98255920410156,
+      -75.0,
+      0.0
+    ],
+    [
+      46.982566833496094,
+      75.0,
+      33.9518928527832
+    ]
+  ],
+  "materials": [
+    "MESSY_SNOW_DECAL",
+    "SNOW_EDGE",
+    "ROAD_MARKING",
+    "SNOWY_ROAD",
+    "SNOW_FLOOR",
+    "ROAD_SNOW_OVERLAY_TILING",
+    "DIRTY_SNOW_DECAL",
+    "BACKGROUND_TREES",
+    "CLIFF",
+    "ROAD_POLE",
+    "MOUNTAIN",
+    "MIST"
+  ],
+  "credit": {
+    "author": "99.Miles (https://sketchfab.com/99.Miles)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/snowy-mountain-road-scene-504729dd1afc4ff0a7dd17687ccd71a1",
+    "title": "Snowy Mountain Road Scene"
+  },
+  "modifications": [
+    "Baked supplied transforms at the initial pose; no archive scripts executed",
+    "Normalized metres, ground at zero, glTF Y-up",
+    "Joined static scenery; retained source materials and UVs",
+    "Bounded large geometry and embedded WebP textures up to 512 pixels"
+  ],
+  "source_metadata": {
+    "extras": {
+      "author": "99.Miles (https://sketchfab.com/99.Miles)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/snowy-mountain-road-scene-504729dd1afc4ff0a7dd17687ccd71a1",
+      "title": "Snowy Mountain Road Scene"
+    },
+    "generator": "Sketchfab-16.59.0",
+    "version": "2.0"
+  }
+}

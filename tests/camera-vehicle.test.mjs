@@ -96,3 +96,16 @@ test('trapped-camera protection and menu/spectator restoration preserve a transp
  guard.update(new T.Vector3(0,3,-2.7),new T.Vector3(0,1,10),p,q,false,1/60);
  assert.equal(guard.opacity,1);assert.deepEqual(values(model),original);
 });
+
+test('a continuous camera near walls and roofs hides the local body whenever its near plane cannot clear it',()=>{
+ const guard=new VehicleCameraGuard(makeFennecModel('#299bff',fennec)),camera=new ChaseCamera();
+ for(const position of [new T.Vector3(40.4,5,0),new T.Vector3(0,20.1,0),new T.Vector3(0,6.1,56)]){
+  camera.reset();
+  for(let frame=0;frame<260;frame++){
+   camera.stick(.5,Math.sin(frame*.03)*.3,false);
+   camera.sample(position,q,ball,{...CAMERA_DEFAULTS,lookStyle:'free',distance:100,height:40},false,1/120,{cameraRadius:guard.radius});
+   const opacity=guard.update(camera.position,ball,position,q,false,1/120),eye=camera.position.clone().sub(position);
+   if(guard.nearBounds.containsPoint(eye))assert.equal(opacity,0,'The local body covers a trapped camera');
+  }
+ }
+});

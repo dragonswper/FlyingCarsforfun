@@ -6,6 +6,7 @@ export function curve(points,x){for(let i=1;i<points.length;i++)if(x<=points[i][
 export const C=Object.freeze({
  halfWidth:40.96,halfLength:51.2,height:20.48,cornerX:25.6,cornerZ:35.84,ramp:2.56,
  goalWidth:8.92755,goalHeight:6.42775,goalDepth:8.8,goalScorePlane:51.2425,
+ ceilingRamp:2.56,goalRamp:2,
  ballRadius:.9125,ballVisualRadius:.95,ballRestHeight:.9315,ballMargin:.019,ballMass:30,ballMaxSpeed:60,ballMaxSpin:6,ballDrag:.03,ballFriction:.35,ballRestitution:.6,
  carMass:180,carHeight:.17,maxSpeed:23,maxAngularSpeed:5.5,carRestitution:.1,
  hitboxHalfWidth:.421,hitboxHalfHeight:.1808,hitboxHalfLength:.59005,hitboxOffsetUp:.2075,hitboxOffsetForward:.1388,

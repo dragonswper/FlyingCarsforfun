@@ -1,0 +1,24 @@
+{
+  "tracks": [
+    {
+      "file": "rapp-snitch-knishes.mp3",
+      "source": "Rapp Snitch Knishes (feat. Mr. Fantastik).mp3",
+      "source_sha256": "63085a9d41368294e24833c670ed0ce25eceed515c13c439e4f2cdcb53a91ae2",
+      "sha256": "53e721e3a848d5a51571d5c8fd261ccb11223e53bf5b6df418c993ed20b1649b",
+      "bytes": 2768239,
+      "duration_seconds": 172.982857,
+      "provenance": "Full track supplied by the project owner; original media rights remain separate from the MIT game code.",
+      "modifications": "Browser MP3 derivative: stereo, 44.1 kHz, 128 kbps, metadata stripped except supplied title. No lyrics or artist metadata were inferred."
+    },
+    {
+      "file": "palm-street.mp3",
+      "source": "Palm Street.mp3",
+      "source_sha256": "02eb3615a073e192282509d24e1113700fae624b0405841f833191eb1ef51d2d",
+      "sha256": "85ca8ac8c137da5238ab2a42a3d177a1baabac93ed11be7b866e774b9d53d9a3",
+      "bytes": 3841110,
+      "duration_seconds": 240.039184,
+      "provenance": "Full track supplied by the project owner; original media rights remain separate from the MIT game code.",
+      "modifications": "Browser MP3 derivative: stereo, 44.1 kHz, 128 kbps, metadata stripped except supplied title. No lyrics or artist metadata were inferred."
+    }
+  ]
+}

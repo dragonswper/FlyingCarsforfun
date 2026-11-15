@@ -1,0 +1,48 @@
+import * as T from './vendor/three.module.js';
+import {C,CORNER_PLANES} from './constants.js';
+
+// One bounded GPU draw around the player. Blades stay 3–6 cm high and wrap only
+// beyond the faded edge of the patch; they do not move the ball or car contacts.
+export class ShortGrass{
+ constructor(scene,capacity=90000){
+  const geometry=this.geometry=new T.InstancedBufferGeometry();
+  geometry.setAttribute('position',new T.Float32BufferAttribute([-.012,0,0,.012,0,0,0,1,0, 0,0,-.012,0,0,.012,0,1,0],3));
+  geometry.setAttribute('normal',new T.Float32BufferAttribute([0,.9,.3,0,.9,.3,0,.9,.3, .3,.9,0,.3,.9,0,.3,.9,0],3));
+  geometry.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,.5,1,0,0,1,0,.5,1],2));
+  const offsets=new Float32Array(capacity*2),variation=new Float32Array(capacity*3);let seed=1202026;
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  for(let i=0;i<capacity;i++){offsets.set([(random()-.5)*44,(random()-.5)*44],i*2);variation.set([.032+random()*.03,random(),random()*Math.PI*2],i*3);}
+  geometry.setAttribute('grassOffset',new T.InstancedBufferAttribute(offsets,2));geometry.setAttribute('grassVariation',new T.InstancedBufferAttribute(variation,3));geometry.instanceCount=0;
+  const center=this.center=new T.Vector2(),material=this.material=new T.MeshStandardMaterial({color:'#ffffff',roughness:.95,metalness:0,side:T.DoubleSide});
+  const cornerMask=CORNER_PLANES.map(p=>`if(abs(bladeWorld.x)>${C.cornerX.toFixed(3)}&&abs(bladeWorld.y)>${C.cornerZ.toFixed(3)})inside=min(inside,(${p.nx.toFixed(7)})*abs(bladeWorld.x)+(${p.nz.toFixed(7)})*abs(bladeWorld.y)-(${p.boundary.toFixed(7)})-${(C.ramp+.15).toFixed(3)});`).join('\n');
+  material.onBeforeCompile=shader=>{
+   shader.uniforms.grassCenter={value:center};
+   shader.vertexShader='attribute vec2 grassOffset;\nattribute vec3 grassVariation;\nuniform vec2 grassCenter;\nvarying vec3 vGrassData;\n'+shader.vertexShader;
+   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
+    vec2 bladeWorld=mod(grassOffset-grassCenter+22.0,44.0)-22.0+grassCenter;
+    float c=cos(grassVariation.z),s=sin(grassVariation.z);
+    transformed.xz=mat2(c,-s,s,c)*position.xz+bladeWorld;
+    transformed.y=.008+position.y*grassVariation.x;
+    float inside=min(${(C.halfWidth-C.ramp-.15).toFixed(3)}-abs(bladeWorld.x),${(C.halfLength-C.ramp-.15).toFixed(3)}-abs(bladeWorld.y));
+    ${cornerMask}
+    if(inside<0.0)transformed.y=-.2;
+    #ifdef USE_MAP
+      vMapUv=vec2((bladeWorld.x+${C.halfWidth.toFixed(3)})/${(2*C.halfWidth).toFixed(3)},(${C.halfLength.toFixed(3)}-bladeWorld.y)/${(2*C.halfLength).toFixed(3)});
+    #endif
+    vGrassData=vec3(1.0-smoothstep(14.0,20.0,distance(bladeWorld,grassCenter)),grassVariation.y,grassVariation.x);`);
+   shader.fragmentShader='varying vec3 vGrassData;\n'+shader.fragmentShader;
+   // Blades approximate a soft turf canopy. Keep upward lighting on both
+   // faces; flipping the back-face normals made half the blades black.
+   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_begin>','#include <normal_fragment_begin>\nnormal=normalize(vNormal);');
+   shader.fragmentShader=shader.fragmentShader.replace('#include <alphatest_fragment>','#include <alphatest_fragment>\nif(vGrassData.y>vGrassData.x)discard;\ndiffuseColor.rgb*=.82+.3*vGrassData.y;');
+  };
+  material.customProgramCacheKey=()=> 'short-grass-v1';
+  this.mesh=new T.Mesh(geometry,material);this.mesh.name='Short_Field_Grass';this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;this.mesh.visible=false;scene.add(this.mesh);
+ }
+ configure(count,field){
+  const map=field?.material?.map||null;if(this.material.map!==map){this.material.map=map;this.material.needsUpdate=true;}
+  this.geometry.instanceCount=Math.max(0,Math.min(90000,count));this.mesh.visible=count>0&&!!map;
+ }
+ update(position){this.center.set(position.x,position.z);}
+ dispose(){this.geometry.dispose();this.material.dispose();}
+}

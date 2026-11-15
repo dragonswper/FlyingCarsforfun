@@ -1,10 +1,20 @@
 import * as T from './vendor/three.module.js';
 import {ARENAS,normalizeArena} from './arenas.js';
 import {freezeStaticTransforms} from './rendering.js';
+import {makeFestivalEnvironment} from './festival-assets.js';
 
 // Small, deterministic original scenes. Repeated scenery uses GPU instancing;
 // decorative solids stay outside the playing enclosure and never affect physics.
 export function createArenaEnvironment(value) {
+  if(value==='festival'){
+    const forest=createArenaEnvironment('snow'),festival=makeFestivalEnvironment();
+    // Keep the instanced forest and light strings around the supplied scenery;
+    // the festival's own snow shader and imported village replace these pieces.
+    for(const child of [...forest.root.children])if(['Soft_Snowfall','Village_Cabins','Cabin_Snow_Roofs','Warm_Cabin_Windows','Tree_Stars','Tree_Lights','Christmas_Presents'].includes(child.name)){
+      forest.root.remove(child);child.geometry?.dispose();child.material?.dispose();
+    }
+    forest.root.name='Festival_Instanced_Forest';festival.root.add(forest.root);return festival;
+  }
   const id=normalizeArena(value),theme=ARENAS[id],root=new T.Group();
   root.name='Environment_'+id;root.userData.arena=id;
   let seed={snow:1901,city:1902,woods:1903}[id]||1900;

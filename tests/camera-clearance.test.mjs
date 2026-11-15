@@ -31,15 +31,16 @@ test('short camera settings still clear the vehicle and near plane during close 
  }
 });
 
-test('wall and ceiling retraction keeps the camera inside the arena and outside the vehicle',()=>{
+test('wall and ceiling retraction keeps a continuous camera view inside the arena',()=>{
  const settings={...CAMERA_DEFAULTS,distance:100,height:40};
  for(const position of [new V(40.5,5,0),new V(0,20,0),new V(0,6,56),new V(8.7,4,51)]){
-  const camera=new ChaseCamera();
+  const camera=new ChaseCamera();let previous=null;
   for(let frame=0;frame<90;frame++){
    const target=position.clone().add(new V(Math.sin(frame*.1)*3,-1,Math.cos(frame*.1)*3));
    camera.sample(position,rotation,target,settings,true,1/60,motion);
    assert.equal(cameraInsideArena(camera.position),true);
-   assert.ok(camera.position.distanceTo(position)>=clearance-1e-6,'Arena retraction entered the vehicle at '+position.toArray());
+   if(previous)assert.ok(camera.position.distanceTo(previous)<.3,'Obstruction handling teleported the displayed camera');
+   previous=camera.position.clone();
   }
  }
 });

@@ -27,7 +27,7 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
   test('Cloudflare runs ' + mode + ' on the shared authority with late spectators', async (t) => {
     const h = await cloudflareServer(t),
       owner = h.client('Owner');
-    owner.create({mode, maxPeople: 4}, owner.testLook);
+    owner.create({mode, maxPeople: 4, arena: 'festival'}, owner.testLook);
     await until(() => owner.admitted, 'owner');
     owner.chooseTeam(0);
     owner.setReady(true);
@@ -35,6 +35,7 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
     owner.startMatch();
     await until(() => owner.active, 'match');
     assert.equal(owner.sim.options.mode, mode);
+    assert.equal(owner.sim.options.arena, 'festival');
     assert.equal(owner.sim.cars.length, mode === 'doubles' ? 4 : mode === 'duel' ? 2 : 1);
     assert.equal(
       owner.sim.cars.filter((car) => car.bot).length,
@@ -45,6 +46,7 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
     await until(() => watcher.active, 'watcher');
     assert.equal(watcher.sim.localPlayerId, null);
     assert.equal(watcher.sim.options.mode, mode);
+    assert.equal(watcher.sim.options.arena, 'festival');
     if (mode === 'training') {
       owner.practice('next');
       await until(

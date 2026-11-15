@@ -1,0 +1,68 @@
+{
+  "kind": "village",
+  "source": "Somethingnigng.fbx",
+  "source_sha256": "ff5c191d46ab89a4f23acf9b690ba3f3d3b06d87d7984c4e743ddc3fc9d23184",
+  "file": "festival-village.glb",
+  "bytes": 3521872,
+  "sha256": "95ccb03a410ad41842a71f5afb053523abd98b59857193baa8369fd44a8fe01e",
+  "source_triangles": 153736,
+  "triangles": 51282,
+  "bounds_blender_z_up": [
+    [
+      -21.910619735717773,
+      -22.019569396972656,
+      0.0
+    ],
+    [
+      21.95871925354004,
+      21.995195388793945,
+      18.037879943847656
+    ]
+  ],
+  "materials": [
+    "Deco1",
+    "Brass",
+    "Deco2",
+    "Deco3",
+    "Deco4",
+    "Star_Mat",
+    "blinn1",
+    "Star_Glowey",
+    "Tree_1",
+    "Snow",
+    "Wood_2",
+    "Rock",
+    "Smoke",
+    "lambert1",
+    "Wood_1",
+    "Brick_2",
+    "Window_Light",
+    "Brick_1",
+    "phong2",
+    "Bulb_Yeller1",
+    "Lamp_Metal",
+    "Bulb_Blue",
+    "Bulb_Green1",
+    "Bulb_Green",
+    "Bulb_red",
+    "Bulb_Yeller",
+    "Cable",
+    "Bulb_Blue1",
+    "Bulb_red1",
+    "Stone_2",
+    "Bare_Metal",
+    "Wrapping_Red",
+    "Ribbon_white",
+    "Wrapping_Green",
+    "Wrapping_Blue",
+    "Wrapping_Purple"
+  ],
+  "credit": "User-supplied artwork. The archive did not include creator/license notices; source artwork remains separate from the original game code.",
+  "modifications": [
+    "Baked supplied transforms at the initial pose; no archive scripts executed",
+    "Normalized metres, ground at zero, glTF Y-up",
+    "Joined static scenery; retained source materials and UVs",
+    "Bounded large geometry and embedded WebP textures up to 512 pixels"
+  ],
+  "source_metadata": {}
+}

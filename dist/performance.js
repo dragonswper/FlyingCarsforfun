@@ -1,5 +1,6 @@
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 export function graphicsProfile(mode='auto',scale=1){
+ if(mode==='ultra')return {tier:'ultra',scale:1.5,shadows:true,seats:true};
  if(mode==='high')return {tier:'high',scale:1.5,shadows:true,seats:true};
  if(mode==='low')return {tier:'low',scale:.75,shadows:false,seats:false};
  if(mode==='balanced')return {tier:'balanced',scale:1,shadows:false,seats:true};

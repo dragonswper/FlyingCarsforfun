@@ -42,7 +42,13 @@ export function stepCar(c,input,dt,unlimited=false){
   else acceleration=throttle*curve(THROTTLE_CURVE,Math.abs(speed));
   c.v.addScaledVector(forward,acceleration*dt);c.v.addScaledVector(right,-lateral*(1-Math.exp(-(18-16*c.handbrake)*dt)));
   const yaw=i.steer*speed*curve(CURVATURE_CURVE,Math.abs(speed))*(1+c.handbrake*.55);c.q.premultiply(new Q().setFromAxisAngle(c.normal,yaw*dt));const correction=new Q().setFromUnitVectors(UP.clone().applyQuaternion(c.q),c.normal).multiply(c.q),angle=c.q.angleTo(correction);c.q.rotateTowards(correction,Math.min(angle*(1-Math.exp(-18*dt)),C.maxAngularSpeed*dt));c.omega.multiplyScalar(.1);
-  if(c.normal.y<.99&&c.normal.y>=0)c.v.addScaledVector(c.normal,-3*dt);
+  if(c.normal.y<.99){
+   // Moving wheels retain contact around upper curves and under ceilings.
+   // With no drive input, a stopped inverted car can still fall naturally.
+   const driving=Math.abs(throttle)>.05||Math.abs(speed)>2.5;
+   const adhesion=c.normal.y<0?(driving?3+C.gravity*-c.normal.y:0):3;
+   c.v.addScaledVector(c.normal,-adhesion*dt);
+  }
  }else{
   c.airTime+=dt;
   if(c.selfRightTime>0){c.selfRightTime=Math.max(0,c.selfRightTime-dt);c.q.rotateTowards(c.selfRightTarget,C.maxAngularSpeed*dt);c.omega.set(0,0,0);if(c.q.angleTo(c.selfRightTarget)<1e-6)c.selfRightTime=0;}

@@ -1,0 +1,36 @@
+{
+  "kind": "tree",
+  "source": "christmas tree.fbx",
+  "source_sha256": "459e1baafe82fba59f209b515f3e0a345702a2c08cdc906dd064078f6bca71bc",
+  "file": "festival-tree.glb",
+  "bytes": 3334916,
+  "sha256": "0eb01ddec3d0b3fc12163af5b8f41daf5a49ef87455ff0a9f00a262e1bd18e7f",
+  "source_triangles": 78361,
+  "triangles": 61096,
+  "bounds_blender_z_up": [
+    [
+      -5.189394474029541,
+      -5.169260025024414,
+      -0.00047003457439132035
+    ],
+    [
+      5.1923394203186035,
+      5.175439834594727,
+      18.0
+    ]
+  ],
+  "materials": [
+    "decorations",
+    "gifts",
+    "ig\u0142y",
+    "pie\u0144.002"
+  ],
+  "credit": "User-supplied artwork. The archive did not include creator/license notices; source artwork remains separate from the original game code.",
+  "modifications": [
+    "Baked supplied transforms at the initial pose; no archive scripts executed",
+    "Normalized metres, ground at zero, glTF Y-up",
+    "Joined static scenery; retained source materials and UVs",
+    "Bounded large geometry and embedded WebP textures up to 768 pixels"
+  ],
+  "source_metadata": {}
+}
