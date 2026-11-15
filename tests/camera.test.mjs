@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Vector3 as V,Quaternion as Q} from '../dist/vendor/three.module.js';
-import {ChaseCamera} from '../dist/camera.js';
+import {ChaseCamera,cameraInsideArena} from '../dist/camera.js';
 import {CAMERA_DEFAULTS} from '../dist/preferences.js';
 
 test('ball camera tracks the exact ball position independently of car flips, wall orientation and orbit input',()=>{
@@ -18,11 +18,11 @@ test('a ball passing overhead retains a stable heading and passing behind has a 
 
 test('free camera accepts orbit, clamps vertical look and returns to unchanged ball tracking',()=>{
  const camera=new ChaseCamera(),p=new V(),q=new Q(),ball=new V(0,1,10);camera.sample(p,q,ball,CAMERA_DEFAULTS,false,1/60);const original=camera.desired.clone();
- assert.equal(camera.orbit(Math.PI/2,20,false),true);camera.sample(p,q,ball,CAMERA_DEFAULTS,false,1/60);assert.ok(camera.desired.distanceTo(original)>2);assert.equal(camera.orbitPitch,.9);assert.equal(camera.orbit(NaN,0,false),false);
+ camera.drag(true,false);assert.equal(camera.orbit(Math.PI/2,20,false),true);camera.sample(p,q,ball,CAMERA_DEFAULTS,false,1/60);assert.ok(camera.desired.distanceTo(original)>2);assert.equal(camera.orbitPitch,.9);assert.equal(camera.orbit(NaN,0,false),false);
  camera.sample(p,q,ball,CAMERA_DEFAULTS,true,1/60);assert.ok(Math.abs(camera.desired.x)<1e-9);assert.ok(camera.target.equals(ball));
 });
 
 test('camera remains finite around walls, corners and nearly vertical car orientations',()=>{
  const camera=new ChaseCamera(),q=new Q().setFromAxisAngle(new V(1,0,0),Math.PI/2);
- for(const p of [new V(40.7,19,48),new V(-40.7,.17,-48),new V(0,20,0)])for(const ballCam of [true,false]){camera.sample(p,q,p.clone(),CAMERA_DEFAULTS,ballCam,1/60);assert.ok(Number.isFinite(camera.desired.lengthSq()));assert.ok(Number.isFinite(camera.target.lengthSq()));assert.ok(camera.desired.y>=.4&&camera.desired.y<=20.0800001);}
+ for(const p of [new V(40.7,19,48),new V(-40.7,.17,-48),new V(0,20,0)])for(const ballCam of [true,false]){camera.sample(p,q,p.clone(),CAMERA_DEFAULTS,ballCam,1/60);assert.ok(Number.isFinite(camera.desired.lengthSq()));assert.ok(Number.isFinite(camera.target.lengthSq()));assert.ok(cameraInsideArena(camera.position),JSON.stringify(camera.position));}
 });

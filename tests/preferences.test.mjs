@@ -19,6 +19,10 @@ test('rebinding updates keyboard and mouse input immediately without keeping the
 test('controller deadzones, sensitivity, inversion and dodge deadzone reach the actual controls',t=>{
  const {input}=harness(t,{controls:{deadzone:.2,steeringSensitivity:1.5,aerialSensitivity:1.5,invertPitch:true,dodgeDeadzone:.7}}),buttons=Array.from({length:16},()=>({value:0}));buttons[7].value=1;navigator.getGamepads=()=>[{connected:true,axes:[.15,-.15],buttons}];assert.equal(input.read().steer,0);navigator.getGamepads=()=>[{connected:true,axes:[.5,-.4],buttons}];const controls=input.read();near(controls.steer,-.75);near(controls.pitch,-.6);near(controls.dodgeDeadzone,.7);assert.equal(controls.throttle,1);
 });
+test('Escape prevents the browser from immediately cancelling the pause dialog it opens',t=>{
+ const {actions}=harness(t),escape=event('keydown',{code:'Escape'});window.dispatchEvent(escape);
+ assert.equal(escape.defaultPrevented,true);assert.deepEqual(actions,['pause']);
+});
 test('settings tabs, panels, range containers and capture cancellation have complete accessible links',()=>{
  const html=fs.readFileSync(new URL('../dist/index.html',import.meta.url),'utf8');for(const id of ['display','camera','controls','audio']){assert.ok(html.includes(`id="tab-${id}"`));assert.ok(html.includes(`aria-controls="panel-${id}"`));assert.ok(html.includes(`id="panel-${id}"`));assert.ok(html.includes(`aria-labelledby="tab-${id}"`));}for(const id of ['camera-ranges','control-ranges','keybind-list','binding-capture','cancel-binding','master-volume','settings-status'])assert.ok(html.includes(`id="${id}"`));assert.ok(html.includes('role="tablist"'));assert.ok(html.includes('aria-live="polite"'));
 });

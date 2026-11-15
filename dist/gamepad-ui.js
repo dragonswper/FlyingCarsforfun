@@ -5,7 +5,7 @@ export function setupGamepadBindings(settings,{save,apply},root=document){
  for(const key of ['steerAxis','pitchAxis','lookX','lookY'])node('pad-'+key).addEventListener('change',()=>{settings.gamepad[key]=Number(node('pad-'+key).value);apply();save();});
  for(const key of ['invertSteering','invertLookY'])node('pad-'+key).addEventListener('change',()=>{settings.gamepad[key]=node('pad-'+key).checked;apply();save();});
  node('reset-gamepad').addEventListener('click',()=>{settings.gamepad=gamepadPreferences();sync();apply();save();node('settings-status').textContent='Controller defaults restored.';});
- function sync(){for(const [action,select]of fields)select.value=String(settings.gamepad.buttons[action]);for(const key of ['steerAxis','pitchAxis','lookX','lookY'])node('pad-'+key).value=String(settings.gamepad[key]);for(const key of ['invertSteering','invertLookY'])node('pad-'+key).checked=settings.gamepad[key];}sync();return {sync};
+ function sync(){if(node('camera-recenter-pad'))node('camera-recenter-pad').textContent=PAD_BUTTONS[settings.gamepad.buttons.recenter]||'UNBOUND';for(const [action,select]of fields)select.value=String(settings.gamepad.buttons[action]);for(const key of ['steerAxis','pitchAxis','lookX','lookY'])node('pad-'+key).value=String(settings.gamepad[key]);for(const key of ['invertSteering','invertLookY'])node('pad-'+key).checked=settings.gamepad[key];}sync();return {sync};
 }
 
 // Controller navigation acts on the current dialog only. Native selects/ranges

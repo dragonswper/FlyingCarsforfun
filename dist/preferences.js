@@ -5,10 +5,14 @@ export const CAMERA_FIELDS=Object.freeze([
  {key:'distance',label:'Distance',min:100,max:400,step:10,value:270,unit:'cm'},
  {key:'height',label:'Height',min:40,max:200,step:10,value:100,unit:'cm'},
  {key:'angle',label:'Camera angle',min:-15,max:0,step:1,value:-3,unit:'°'},
- {key:'stiffness',label:'Stiffness',min:0,max:1,step:.05,value:.45,unit:''}
+ {key:'stiffness',label:'Stiffness',min:0,max:1,step:.05,value:.45,unit:''},
+ {key:'swivelSpeed',label:'Look / swivel speed',min:1,max:10,step:.1,value:5,unit:''},
+ {key:'transitionSpeed',label:'Camera switch speed',min:.5,max:2,step:.1,value:1.2,unit:''},
+ {key:'returnSpeed',label:'Look return speed',min:1,max:10,step:.1,value:5,unit:''},
+ {key:'speedEffect',label:'Speed effects',min:0,max:1,step:.05,value:1,unit:''}
 ]);
-export const CAMERA_DEFAULTS=Object.freeze(Object.fromEntries(CAMERA_FIELDS.map(f=>[f.key,f.value])));
-export function normalizeCamera(value={}){return Object.fromEntries(CAMERA_FIELDS.map(f=>[f.key,bounded(value?.[f.key],f.min,f.max,f.value)]));}
+export const CAMERA_DEFAULTS=Object.freeze({...Object.fromEntries(CAMERA_FIELDS.map(f=>[f.key,f.value])),lookStyle:'classic'});
+export function normalizeCamera(value={}){return {...Object.fromEntries(CAMERA_FIELDS.map(f=>[f.key,bounded(value?.[f.key],f.min,f.max,f.value)])),lookStyle:value?.lookStyle==='free'?'free':'classic'};}
 export function verticalFov(horizontal,aspect){return 2*Math.atan(Math.tan(horizontal*Math.PI/360)/Math.max(.1,aspect))*180/Math.PI;}
 export const CONTROL_FIELDS=Object.freeze([
  {key:'steeringSensitivity',label:'Steering sensitivity',min:.5,max:2,step:.05,value:1,unit:'×'},
@@ -18,11 +22,11 @@ export const CONTROL_FIELDS=Object.freeze([
 ]);
 export const CONTROL_DEFAULTS=Object.freeze({...Object.fromEntries(CONTROL_FIELDS.map(f=>[f.key,f.value])),invertPitch:false});
 export function normalizeControls(value={}){return {...Object.fromEntries(CONTROL_FIELDS.map(f=>[f.key,bounded(value?.[f.key],f.min,f.max,f.value)])),invertPitch:value?.invertPitch===true};}
-export const BINDING_LABELS=Object.freeze({forward:'Drive forward / pitch down',reverse:'Brake, reverse / pitch up',left:'Steer / yaw left',right:'Steer / yaw right',jump:'Jump / dodge / recover',boost:'Boost',drift:'Powerslide',rollLeft:'Air roll left',rollRight:'Air roll right',camera:'Toggle ball camera',scoreboard:'Scoreboard',reset:'Reset practice',next:'Next training shot',quickchat:'Quick chat',chat:'Text chat'});
-export const DEFAULT_BINDINGS=Object.freeze({forward:'KeyW',reverse:'KeyS',left:'KeyA',right:'KeyD',jump:'Space',boost:'ShiftLeft',drift:'ControlLeft',rollLeft:'KeyQ',rollRight:'KeyE',camera:'KeyC',scoreboard:'Tab',reset:'KeyR',next:'KeyT',quickchat:'KeyG',chat:'KeyY'});
+export const BINDING_LABELS=Object.freeze({forward:'Drive forward / pitch down',reverse:'Brake, reverse / pitch up',left:'Steer / yaw left',right:'Steer / yaw right',jump:'Jump / dodge / recover',boost:'Boost',drift:'Powerslide',rollLeft:'Air roll left',rollRight:'Air roll right',camera:'Toggle ball camera',recenter:'Recenter camera',scoreboard:'Scoreboard',reset:'Reset practice',next:'Next training shot',quickchat:'Quick chat',chat:'Text chat'});
+export const DEFAULT_BINDINGS=Object.freeze({forward:'KeyW',reverse:'KeyS',left:'KeyA',right:'KeyD',jump:'Space',boost:'ShiftLeft',drift:'ControlLeft',rollLeft:'KeyQ',rollRight:'KeyE',camera:'KeyC',recenter:'KeyV',scoreboard:'Tab',reset:'KeyR',next:'KeyT',quickchat:'KeyG',chat:'KeyY'});
 const ALIASES={forward:['ArrowUp'],reverse:['ArrowDown'],left:['ArrowLeft'],right:['ArrowRight'],jump:['Mouse2'],boost:['ShiftRight','Mouse0'],drift:['ControlRight']};
 export const validBinding=code=>typeof code==='string'&&/^(Key[A-Z]|Digit[0-9]|Arrow(Up|Down|Left|Right)|Space|Shift(Left|Right)|Control(Left|Right)|Tab|Backquote|Minus|Equal|Bracket(Left|Right)|Backslash|Semicolon|Quote|Comma|Period|Slash|Mouse[012])$/.test(code);
 export function bindingCodes(bindings,action){const primary=bindings[action]||DEFAULT_BINDINGS[action];return [primary,...(primary===DEFAULT_BINDINGS[action]?ALIASES[action]||[]:[])];}
 export function bindingConflict(bindings,action,code){return Object.keys(DEFAULT_BINDINGS).find(other=>other!==action&&bindingCodes(bindings,other).includes(code));}
-export function normalizeBindings(value={}){const bindings=Object.fromEntries(Object.keys(DEFAULT_BINDINGS).map(action=>[action,validBinding(value?.[action])?value[action]:DEFAULT_BINDINGS[action]]));for(const action of ['quickchat','chat'])if(!validBinding(value?.[action])&&bindingConflict(bindings,action,bindings[action])){const replacement=['KeyU','KeyH','KeyJ','KeyK','KeyL','KeyI','KeyO','KeyP','KeyN','KeyM'].find(code=>!bindingConflict(bindings,action,code));if(replacement)bindings[action]=replacement;}for(const action of Object.keys(bindings))if(bindingConflict(bindings,action,bindings[action]))return {...DEFAULT_BINDINGS};return bindings;}
+export function normalizeBindings(value={}){const bindings=Object.fromEntries(Object.keys(DEFAULT_BINDINGS).map(action=>[action,validBinding(value?.[action])?value[action]:DEFAULT_BINDINGS[action]]));for(const action of ['quickchat','chat','recenter'])if((!validBinding(value?.[action])||action==='recenter'&&value[action]===DEFAULT_BINDINGS[action])&&bindingConflict(bindings,action,bindings[action])){const replacement=['KeyU','KeyH','KeyJ','KeyK','KeyL','KeyI','KeyO','KeyP','KeyN','KeyM','KeyB'].find(code=>!bindingConflict(bindings,action,code));if(replacement)bindings[action]=replacement;}for(const action of Object.keys(bindings))if(bindingConflict(bindings,action,bindings[action]))return {...DEFAULT_BINDINGS};return bindings;}
 export function bindingName(code){const special={Space:'Space',Tab:'Tab',Mouse0:'Left mouse',Mouse1:'Middle mouse',Mouse2:'Right mouse',ShiftLeft:'Left Shift',ShiftRight:'Right Shift',ControlLeft:'Left Ctrl',ControlRight:'Right Ctrl'};return special[code]||code.replace(/^Key|^Digit/,'').replace(/^Arrow/,'Arrow ');}
