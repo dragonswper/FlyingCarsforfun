@@ -5,6 +5,11 @@ class FakeAudio extends EventTarget{
  async play(){this.paused=false;}pause(){this.paused=true;}load(){this.loads++;this.currentTime=0;}removeAttribute(key){delete this[key];}
 }
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
+test('load-time autoplay waits for a browser gesture when blocked and explicit Pause cancels that intent',async()=>{
+ class GestureAudio extends FakeAudio{async play(){if(!this.allowed)throw Object.assign(new Error('gesture required'),{name:'NotAllowedError'});this.paused=false;}}
+ const player=new LobbyMusic({...musicPreferences(),volume:80},{AudioClass:GestureAudio});player.autoStart();await flush();assert.equal(player.wanted,true);assert.equal(player.waitingForGesture,true);assert.equal(player.audio.paused,true);assert.ok(player.audio.volume>0);
+ player.audio.allowed=true;player.unlock();await flush();assert.equal(player.audio.paused,false);assert.equal(player.waitingForGesture,false);player.pause();player.unlock();await flush();assert.equal(player.audio.paused,true);player.dispose();
+});
 test('music preferences migrate locally saved settings and reject unknown tracks',()=>{
  assert.deepEqual(musicPreferences(),{lobbyTrack:'snitch',musicVolume:25});
  assert.deepEqual(musicPreferences({lobbyTrack:'palm',musicVolume:900}),{lobbyTrack:'palm',musicVolume:100});

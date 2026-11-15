@@ -1,0 +1,15 @@
+{
+  "file": "reference-van.glb",
+  "bytes": 1130104,
+  "sha256": "a304618745c4f526b51398ab8dddcc4f155100a5b4d6fd1e3a375ad284a63bfe",
+  "reference": "User-provided left-side turquoise van image",
+  "wrap": "AI-assisted wrap adaptation of the supplied reference; decorative QR-style mark has no supplied destination",
+  "modifications": [
+    "Original modeled shell, wheel arches, glass, bumpers, grille, mirrors, door seams, lamps, steel wheels and procedural wheel/steering rig",
+    "Same shared gameplay hitbox; visual dimensions adapted for the game",
+    "Front, rear and hidden side inferred from one image; not a certified 1:1 scan",
+    "Batched static details within the body and each animated wheel; preserved the named wrap UV map"
+  ],
+  "credit": "Reference branding/artwork remains separate from the original MIT game code.",
+  "material_batches": 18
+}

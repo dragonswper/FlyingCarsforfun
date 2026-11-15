@@ -7,6 +7,8 @@ import {fileURLToPath} from 'node:url';
 import {WebSocketServer} from 'ws';
 import {NET_BUILD, MAX_PACKET} from '../dist/network-protocol.js';
 import {GameService} from './game-service.mjs';
+import {SocialService} from './social-service.mjs';
+import {FileProfileStore} from './profile-store.mjs';
 export {ServerSession} from './session.mjs';
 const ROOT = fileURLToPath(new URL('../dist/', import.meta.url));
 const MIME = {
@@ -20,7 +22,8 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
-  '.txt': 'text/plain; charset=utf-8'
+  '.txt': 'text/plain; charset=utf-8',
+  '.mp3':'audio/mpeg','.wav':'audio/wav'
 };
 
 export function createGameServer({
@@ -32,7 +35,8 @@ export function createGameServer({
   publicOrigin = null,
   tick = true,
   region = 'singapore',
-  queueClock
+  queueClock,
+  socialStore=null
 } = {}) {
   if (!tls && !tlsProxy)
     throw Error(
@@ -42,6 +46,7 @@ export function createGameServer({
     throw Error('A trusted TLS proxy requires an explicit HTTPS PUBLIC_ORIGIN.');
   const service = new GameService({maxRooms, region, queueClock, autostart: tick});
   const {rooms, bindings, sockets, auth, queue} = service;
+  const social=new SocialService({store:socialStore,room:code=>rooms.get(code)});
   let closed = false;
   const secure = (request) =>
     !!request.socket.encrypted || (tlsProxy && request.headers['x-forwarded-proto'] === 'https');
@@ -87,7 +92,7 @@ export function createGameServer({
       json(response, 200, {
         build: NET_BUILD,
         server: publicOrigin || 'https://' + request.headers.host,
-        region
+        region,social:true
       });
       return;
     }
@@ -112,11 +117,11 @@ export function createGameServer({
         json(response, 405, {error: 'Use POST.'}, origin);
         return;
       }
-      if (!auth.permit(request.socket.remoteAddress)) {
+      if (url.pathname!=='/api/social'&&!auth.permit(request.socket.remoteAddress)) {
         json(response, 429, {error: 'Too many authentication requests. Wait a minute.'}, origin);
         return;
       }
-      let size = 0;
+      let size = 0,raw='';const decoder=new TextDecoder();
       try {
         for await (const chunk of request) {
           size += chunk.length;
@@ -124,9 +129,15 @@ export function createGameServer({
             json(response, 413, {error: 'Request too large.'}, origin);
             return;
           }
+          raw+=decoder.decode(chunk,{stream:true});
         }
       } catch {
         return;
+      }
+      if(url.pathname==='/api/social'){
+        let body;try{body=JSON.parse(raw+decoder.decode());}catch{json(response,400,{error:'Invalid request body.'},origin);return;}
+        const header=request.headers.authorization||'',secret=header.startsWith('Bearer ')?header.slice(7):'';
+        const result=await social.handle(body,secret,request.socket.remoteAddress||'unknown');json(response,result.status,result.data,origin);return;
       }
       if (url.pathname === '/api/session') {
         try {
@@ -260,6 +271,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       tlsProxy,
       publicOrigin: process.env.PUBLIC_ORIGIN || process.env.RENDER_EXTERNAL_URL || null,
       region: process.env.SERVER_REGION || 'singapore',
+      socialStore:new FileProfileStore(process.env.SOCIAL_DATA_DIR||resolve('.social-data')),
       maxRooms: Math.max(1, Math.min(64, Number(process.env.MAX_ROOMS) || 8)),
       allowedOrigins: (
         process.env.ALLOWED_ORIGINS || 'https://boost-circuit-arena.bobistheman2049.chatgpt.site'

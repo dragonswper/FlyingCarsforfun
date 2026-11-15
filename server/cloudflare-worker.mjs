@@ -1,5 +1,6 @@
 import {DurableObject} from 'cloudflare:workers';
 import {GameService} from './game-service.mjs';
+import {SocialService} from './social-service.mjs';
 import {NET_BUILD} from '../dist/network-protocol.js';
 
 const dynamicPath = (path) =>
@@ -44,6 +45,7 @@ export class ArenaService extends DurableObject {
       maxRooms: Math.max(1, Math.min(8, Number(env.MAX_ROOMS) || 1)),
       region: 'oceania (location requested)'
     });
+    this.social = new SocialService({store:ctx.storage,room:code=>this.service.rooms.get(code)});
   }
   async fetch(request) {
     const url = new URL(request.url),
@@ -59,7 +61,7 @@ export class ArenaService extends DurableObject {
         queued: this.service.queue.waiting.size
       });
     if (url.pathname === '/server-config.json' && request.method === 'GET')
-      return json(200, {build: NET_BUILD, server: url.origin, region: this.service.region});
+      return json(200, {build: NET_BUILD, server: url.origin, region: this.service.region, social:true});
     if (!originOK) return json(403, {error: 'Origin is not allowed.'});
     if (url.pathname.startsWith('/api/')) return this.authRequest(request, url, origin);
     if (url.pathname === '/multiplayer') {
@@ -92,10 +94,10 @@ export class ArenaService extends DurableObject {
     if (request.method !== 'POST') return json(405, {error: 'Use POST.'}, origin);
     // Cloudflare supplies this address. It is a short-lived in-memory rate-limit
     // key only: never an identity credential, log entry or persisted profile.
-    if (!this.service.auth.permit(request.headers.get('CF-Connecting-IP') || 'unknown'))
+    if (url.pathname!=='/api/social'&&!this.service.auth.permit(request.headers.get('CF-Connecting-IP') || 'unknown'))
       return json(429, {error: 'Too many authentication requests. Wait a minute.'}, origin);
     const reader = request.body?.getReader();
-    let size = 0;
+    let size = 0,raw='';const decoder=new TextDecoder();
     if (reader)
       try {
         while (true) {
@@ -106,10 +108,16 @@ export class ArenaService extends DurableObject {
             await reader.cancel();
             return json(413, {error: 'Request too large.'}, origin);
           }
+          raw+=decoder.decode(value,{stream:true});
         }
       } catch {
         return json(400, {error: 'Invalid request body.'}, origin);
       }
+    if(url.pathname==='/api/social'){
+      let body;try{body=JSON.parse(raw+decoder.decode());}catch{return json(400,{error:'Invalid request body.'},origin);}
+      const header=request.headers.get('Authorization')||'',secret=header.startsWith('Bearer ')?header.slice(7):'';
+      const result=await this.social.handle(body,secret,request.headers.get('CF-Connecting-IP')||'unknown');return json(result.status,result.data,origin);
+    }
     if (url.pathname === '/api/session') {
       try {
         return json(201, this.service.auth.issue(), origin);

@@ -4,6 +4,15 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {cloudflareServer, until, twoPlayers, config} from './helpers/cloudflare-server.mjs';
 import {TrustedSocket} from './helpers/secure-server.mjs';
 import {NET_BUILD} from '../dist/network-protocol.js';
+import {randomBytes,randomUUID} from 'node:crypto';
+
+test('Cloudflare serves authenticated friends, duplicate-name IDs and presence over HTTPS with strict origins',async t=>{
+ const h=await cloudflareServer(t),one=randomBytes(32).toString('hex'),two=randomBytes(32).toString('hex');
+ const call=async(secret,body)=>{const r=await h.request('/api/social',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+secret},body:JSON.stringify(body)});return {status:r.status,value:await r.json()};};
+ const a=await call(one,{op:'sync',name:'Test Driver',tab:randomUUID()}),b=await call(two,{op:'sync',name:'Test Driver',tab:randomUUID()});assert.equal(a.status,200);assert.equal(b.value.online,2);assert.notEqual(a.value.self.id,b.value.self.id);
+ await call(one,{op:'request',peer:b.value.self.id});const accepted=await call(two,{op:'accept',peer:a.value.self.id});assert.equal(accepted.value.friends[0].id,a.value.self.id);assert.ok(!JSON.stringify(accepted.value).includes(one));
+ assert.equal((await call('guessed',{op:'search',query:'Test'})).status,401);assert.equal((await h.request('/api/social',{method:'POST',headers:{Origin:'https://unrelated.example',Authorization:'Bearer '+one},body:'{}'})).status,403);
+});
 
 test('the no-card configuration uses Free-compatible SQLite Durable Objects and an HTTPS game on the same origin', async (t) => {
   assert.deepEqual(config.migrations, [{tag: 'v1', new_sqlite_classes: ['ArenaService']}]);
