@@ -1,3 +1,4 @@
+import {normalizeArena} from './arenas.js';
 // This contract is shared by the headless server and the browser. Private
 // rooms may contain spectators; competitive/practice modes cap active drivers.
 export const SERVER_MODES = Object.freeze(['duel', 'doubles', 'free', 'training', 'custom']);
@@ -8,6 +9,7 @@ export function serverOptions(value = {}) {
   const mode = SERVER_MODES.includes(value.mode) ? value.mode : 'custom';
   return {
     dedicated: true,
+    arena: normalizeArena(value.arena),
     mode,
     duration: Math.max(60, Math.min(1800, Math.round(Number(value.duration) || 300))),
     maxPeople: Math.max(2, Math.min(8, Math.round(Number(value.maxPeople) || 4))),

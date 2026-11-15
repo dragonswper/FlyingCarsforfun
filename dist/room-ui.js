@@ -1,9 +1,10 @@
 import {displayCode} from './network-protocol.js';
+import {normalizeArena,arenaName} from './arenas.js';
 export function setupRoomUI({host,join,ready,start,leave},root=document){
  const node=id=>root.getElementById(id);let current=null;
  const show=(id,on)=>{node(id).hidden=!on;};
  const botOptions=()=>{node('room-difficulty').disabled=node('room-mode').value==='duel';};node('room-mode').addEventListener('change',botOptions);botOptions();
- node('room-host').addEventListener('click',()=>{const mode=node('room-mode').value;host({mode:mode==='duel'?'duel':'doubles',coop:mode==='coop',duration:Number(node('room-duration').value),difficulty:node('room-difficulty').value});});
+ node('room-host').addEventListener('click',()=>{const mode=node('room-mode').value;host({mode:mode==='duel'?'duel':'doubles',coop:mode==='coop',duration:Number(node('room-duration').value),difficulty:node('room-difficulty').value,arena:normalizeArena(node('room-arena')?.value)});});
  node('room-join-form').addEventListener('submit',event=>{event.preventDefault();join(node('room-join-code').value);});
  node('room-ready').addEventListener('click',()=>ready(!current?.ready));node('room-start').addEventListener('click',start);node('room-leave').addEventListener('click',leave);
  node('multiplayer-dialog').addEventListener('cancel',event=>{event.preventDefault();leave();});
@@ -12,7 +13,7 @@ export function setupRoomUI({host,join,ready,start,leave},root=document){
   current=room;const active=room&&!room.closed,host=room?.role==='host',connected=!!room?.connected,lobby=active&&!!room.code;show('room-setup',!lobby);show('room-lobby',lobby);node('room-status').classList.toggle('room-error',!!error||!!room?.error||!!room?.assetsError);
   if(lobby){
    node('room-code').textContent=displayCode(room.code);node('room-copy').disabled=room.status==='connecting';node('room-role').textContent=host?'YOUR ROOM CODE':'JOINED ROOM';
-   const options=room.options;node('room-details').textContent=options?`${options.mode==='duel'?'1v1 · HEAD TO HEAD':options.coop?'2v2 · TEAMMATES VS BOTS':'2v2 · OPPOSING TEAMS + BOTS'}  ·  ${options.duration/60} MINUTES${options.mode==='doubles'?'  ·  '+options.difficulty.toUpperCase()+' BOTS':''}`:'CONNECTING TO HOST…';
+   const options=room.options;node('room-details').textContent=options?`${options.mode==='duel'?'1v1 · HEAD TO HEAD':options.coop?'2v2 · TEAMMATES VS BOTS':'2v2 · OPPOSING TEAMS + BOTS'}  ·  ${options.duration/60} MINUTES${options.mode==='doubles'?'  ·  '+options.difficulty.toUpperCase()+' BOTS':''} · ${arenaName(options.arena)}`:'CONNECTING TO HOST…';
    node('room-host-label').textContent=host?'HOST · YOU':'HOST';node('room-guest-label').textContent=connected?(host?'GUEST':'GUEST · YOU'):'WAITING FOR PLAYER';const isReady=host?room.remoteReady:room.ready;node('room-guest-state').textContent=connected?(isReady?'READY':'NOT READY'):'—';node('room-guest-dot').classList.toggle('waiting-dot',!connected);
    show('room-ready',!host&&connected);node('room-ready').disabled=!options||!!room.loadingAssets;node('room-ready').textContent=room.ready?'READY ✓ · CLICK TO UNREADY':'READY';node('room-ready').setAttribute('aria-pressed',String(!!room.ready));
    show('room-start',host);node('room-start').disabled=!connected||!room.remoteReady||room.status==='starting'||!!room.loadingAssets;node('room-start').textContent=room.status==='starting'?'STARTING…':'START MATCH';

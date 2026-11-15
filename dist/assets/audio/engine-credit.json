@@ -1,0 +1,12 @@
+{
+  "title": "racing car engine sound loops",
+  "author": "domasx2",
+  "source_page": "https://opengameart.org/content/racing-car-engine-sound-loops",
+  "source_file": "https://opengameart.org/sites/default/files/loop_0.wav",
+  "license": "CC0 1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "original_sha256": "69d74b106509037ce547429e4c3f9ae906b0fffe88d0bb8b3b5a8b0cfc239048",
+  "adaptation": "Removed DC offset; 24 ms equal-angle crossfade around the wrap; normalized to 82% peak. Mono 44.1 kHz PCM16 WAV.",
+  "sha256": "fdcf945053fb83b5c7552cc5f558b02ef2586059aaf4434d734c7b0daaf3d1da",
+  "duration_seconds": 0.8400907029478458
+}

@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.18.1**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.19.0**, and its public client protocol matches the tested source.
+
+Version 1.19 adds Winterlight Park, Neon City and Evergreen Grove. Set the field in a private lobby's Arena/Host Options; the server sends the same field to drivers and spectators. Online arena preferences share one matchmaking pool. See [the field and engine-audio controls](release-1.19.md).
 
 ## Join with a friend
 

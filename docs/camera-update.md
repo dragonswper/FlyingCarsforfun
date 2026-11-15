@@ -1,5 +1,7 @@
 # Camera gameplay update — 1.18 / 1.18.1
 
+These controls and camera fixes are retained in [version 1.19](release-1.19.md) on all four fields.
+
 This release applies the [camera research](camera-research.md) to driving in every local and multiplayer mode. It preserves the 1.17.1 prediction/input-timing changes and uses the same rendered car/ball poses. No simulation constants, server hosting resources or PC settings are changed.
 
 ## Playing and settings
@@ -58,4 +60,4 @@ A rendered Chromium check also exercised the actual Options and gameplay flow: l
 
 The hotfix also has a deterministic rendered fixture using the actual stadium, vehicle and ball: car over a nearby ball, directly above the ball, short-distance/tilted contact and normal driving. The fixture is test tooling outside the shipped client; it does not expose a gameplay state editor.
 
-Use the [live game](https://flyingcarsforfun.connstors.workers.dev), hard refresh all players, and start a fresh match with **boost-circuit-1.18.1**. Test steady driving, reversing, wall transitions, a close/overhead ball, rapid toggles and a reset. Saved classic look behaviour and the optional persistent mode should be evaluated separately.
+Use the [live game](https://flyingcarsforfun.connstors.workers.dev), hard refresh all players, and start a fresh match with **boost-circuit-1.19.0**. Test steady driving, reversing, wall transitions, a close/overhead ball, rapid toggles and a reset. Saved classic look behaviour and the optional persistent mode should be evaluated separately.

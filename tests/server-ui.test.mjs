@@ -39,10 +39,11 @@ test('the online menu lets users choose secure server and mode before searching,
       'search-connection',
       'search-server-url',
       'search-server-field',
-      'search-mode'
+      'search-mode',
+      'search-arena'
     ],
     nodes = Object.fromEntries(ids.map((id) => [id, new Element()])),
-    fields = ['search-connection', 'search-mode', 'search-server-url'].map((id) => nodes[id]);
+    fields = ['search-connection', 'search-mode', 'search-server-url','search-arena'].map((id) => nodes[id]);
   nodes['matchmaking-preferences'].querySelectorAll = () => fields;
   const preferences = {serverURL: 'https://arena.example'},
     root = {getElementById: (id) => nodes[id]};
@@ -54,13 +55,17 @@ test('the online menu lets users choose secure server and mode before searching,
   change(nodes['search-connection'], 'server');
   assert.equal(nodes['search-mode'].disabled, false);
   change(nodes['search-mode'], 'doubles');
+  assert.equal(ui.selection().arena,'champions');
+  change(nodes['search-arena'],'snow');
   assert.deepEqual(ui.selection(), {
     kind: 'server',
     mode: 'doubles',
-    address: 'https://arena.example'
+    address: 'https://arena.example',
+    arena: 'snow'
   });
   assert.equal(preferences.onlineMode, 'doubles');
-  assert.equal(saves, 2);
+  assert.equal(saves, 3);
+  assert.equal(preferences.onlineArena,'snow');
   assert.equal(searches, 0);
   nodes['matchmaking-search'].click();
   assert.equal(searches, 1);
@@ -79,6 +84,8 @@ test('private server mode selectors reach create/configure callbacks without cha
       'party-server-field',
       'party-mode-field',
       'party-mode',
+      'party-arena',
+      'party-live-arena',
       'party-create',
       'party-size',
       'party-time',
@@ -107,13 +114,15 @@ test('private server mode selectors reach create/configure callbacks without cha
   nodes['party-mode'].value = 'training';
   nodes['party-size'].value = '4';
   nodes['party-time'].value = '5';
+  nodes['party-arena'].value = 'city';
   nodes['party-create'].click();
-  assert.deepEqual(created, {mode: 'training', maxPeople: 4, duration: 300});
+  assert.deepEqual(created, {mode: 'training', maxPeople: 4, duration: 300,arena:'city'});
   nodes['party-live-mode'].value = 'duel';
   nodes['party-live-size'].value = '2';
   nodes['party-live-time'].value = '2';
+  nodes['party-live-arena'].value = 'woods';
   nodes['party-configure'].click();
-  assert.deepEqual(configured, {mode: 'duel', maxPeople: 2, duration: 120});
+  assert.deepEqual(configured, {mode: 'duel', maxPeople: 2, duration: 120,arena:'woods'});
   ui.useConnection('peer');
   assert.equal(nodes['party-mode-field'].hidden, true);
 });

@@ -155,11 +155,14 @@ export class ServerSession extends PartyRoom {
       this.sendLobby();
       return false;
     }
+    const modeChanged=this.options.mode!==next.mode;
     this.options = next;
     this.options.maxPeople = Math.max(this.options.maxPeople, this.members.length);
     for (const member of this.members) {
-      member.team = null;
-      member.ready = true;
+      if(modeChanged){member.team = null;member.ready = true;}
+      // New host settings require fresh rematch consent, while an arena or
+      // duration change alone should preserve everyone's chosen team.
+      member.rematch = false;
     }
     this.sendLobby();
     return true;

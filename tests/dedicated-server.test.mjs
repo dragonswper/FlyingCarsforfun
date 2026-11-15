@@ -9,12 +9,25 @@ import {NET_BUILD} from '../dist/network-protocol.js';
 import {C} from '../dist/physics.js';
 
 async function until(check,label,timeout=5000){const started=performance.now();while(!check()){if(performance.now()-started>timeout)throw Error('Timed out: '+label);await delay(10);}}
-async function lobby(t,{people=2,maxPeople=4}={}){
+async function lobby(t,{people=2,maxPeople=4,arena='champions'}={}){
  const app=createGameServer({tls}),address=await app.listen(0),base='https://127.0.0.1:'+address.port,url=base.replace('https:','wss:')+'/multiplayer',clients=[],chat=[],errors=[];
  function make(name){const room=new DedicatedRoom({address:url,Link,credentials:credentials(url),onChat:message=>chat.push({recipient:name,...message}),onDisconnect:message=>errors.push({name,message})});clients.push(room);return room;}
- t.after(async()=>{for(const room of clients)room.close();await app.close();});const owner=make('Owner');owner.create({maxPeople,duration:120},{name:'Owner'});await until(()=>owner.admitted,'owner admission');for(let n=1;n<people;n++){const guest=make('Player '+n);guest.join(owner.invite,{name:'Player '+n});await until(()=>guest.admitted,'guest admission');}await until(()=>owner.members.length===people,'roster');return {app,base,url,clients,owner,make,chat,errors};
+ t.after(async()=>{for(const room of clients)room.close();await app.close();});const owner=make('Owner');owner.create({maxPeople,duration:120,arena},{name:'Owner'});await until(()=>owner.admitted,'owner admission');for(let n=1;n<people;n++){const guest=make('Player '+n);guest.join(owner.invite,{name:'Player '+n});await until(()=>guest.admitted,'guest admission');}await until(()=>owner.members.length===people,'roster');return {app,base,url,clients,owner,make,chat,errors};
 }
 async function start(h){for(let n=0;n<h.clients.length;n++){h.clients[n].chooseTeam(n%2);h.clients[n].setReady(true);}await until(()=>h.owner.members.every(member=>member.team!==null&&member.ready),'ready');assert.equal(h.owner.startMatch(),true);await until(()=>h.clients.every(room=>room.active),'match');return h.app.rooms.get(h.owner.code);}
+
+for(const [arena,next]of [['snow','city'],['city','woods'],['woods','snow']])test(arena+' field reaches both players, late spectators and the next configured rematch',async t=>{
+ const h=await lobby(t,{arena}),session=await start(h);
+ assert.equal(session.sim.options.arena,arena);assert.ok(h.clients.every(room=>room.sim.options.arena===arena));
+ assert.equal(session.configure({...session.options,arena:next}),false);
+ const watcher=h.make('Map spectator');watcher.join(h.owner.invite,{name:'Map spectator'});await until(()=>watcher.active,'spectator field');
+ assert.equal(watcher.sim.options.arena,arena);assert.equal(watcher.sim.localPlayerId,null);
+ const match=session.matchId;session.sim.phase='ended';session.events([{type:'end'}]);await until(()=>h.clients.every(room=>room.sim.phase==='ended'),'field results');
+ h.owner.configure({...h.owner.options,arena:next});await until(()=>session.options.arena===next,'next field selection');
+ assert.equal(session.sim.options.arena,arena,'Changing the next field must not mutate the existing simulation');
+ h.clients[0].requestRematch();h.clients[1].requestRematch();await until(()=>h.clients.every(room=>room.active&&room.matchId!==match),'next field match');
+ assert.equal(session.sim.options.arena,next);assert.ok(h.clients.every(room=>room.sim.options.arena===next));
+});
 
 test('dedicated invitations include the endpoint and all participants use client-owned cars',async t=>{
  const h=await lobby(t),session=await start(h);assert.equal(h.owner.canManage,true);assert.equal(h.clients[1].canManage,false);assert.equal(session.sim.localPlayerId,null);assert.deepEqual(h.clients.map(room=>room.sim.localPlayerId),[0,1]);assert.ok(h.clients.every(room=>room.role==='guest'));assert.equal(h.clients[0].matchId,h.clients[1].matchId);assert.deepEqual(parseServerInvite(h.owner.invite),{code:h.owner.code,address:h.url});assert.equal(h.errors.length,0);
@@ -29,7 +42,7 @@ test('the headless simulation acknowledges both clients and runs while their men
  const h=await lobby(t),session=await start(h);session.sim.phase='playing';session.publish(true);await until(()=>h.clients.every(room=>room.sim.phase==='playing'),'playing');for(let n=0;n<100;n++){h.clients[0].guestStep({throttle:1});h.clients[1].guestStep({throttle:-1});for(const room of h.clients)room.sendInputs(true);await delay(1000/120);}await until(()=>[...session.entries.values()].every(entry=>entry.remote.ack>90),'both acknowledgements');const elapsed=session.sim.elapsed;await delay(80);assert.ok(session.sim.elapsed>elapsed+.04);assert.ok(h.clients.every(room=>room.replica.lastSequence>10));
 });
 test('one socket reconnects to the same car and match while the other client keeps playing',async t=>{
- const h=await lobby(t),session=await start(h),guest=h.clients[1],match=guest.matchId,sim=guest.sim;session.sim.phase='playing';session.publish(true);await until(()=>guest.sim.phase==='playing','playing');const before=session.sim.elapsed;guest.link.socket.terminate();await until(()=>guest.recovering,'recovery begins');await until(()=>!guest.recovering&&guest.active,'recovery ends');assert.equal(guest.matchId,match);assert.equal(guest.sim,sim);assert.ok(session.sim.elapsed>before+.3);assert.equal(session.entries.get(guest.id).member.connected,true);guest.guestStep({throttle:1});guest.sendInputs(true);await until(()=>session.entries.get(guest.id).remote.ack>=1,'post-recovery input');assert.equal(h.errors.length,0);
+ const h=await lobby(t,{arena:'woods'}),session=await start(h),guest=h.clients[1],match=guest.matchId,sim=guest.sim;session.sim.phase='playing';session.publish(true);await until(()=>guest.sim.phase==='playing','playing');const before=session.sim.elapsed;guest.link.socket.terminate();await until(()=>guest.recovering,'recovery begins');await until(()=>!guest.recovering&&guest.active,'recovery ends');assert.equal(guest.matchId,match);assert.equal(guest.sim,sim);assert.equal(guest.sim.options.arena,'woods');assert.ok(session.sim.elapsed>before+.3);assert.equal(session.entries.get(guest.id).member.connected,true);guest.guestStep({throttle:1});guest.sendInputs(true);await until(()=>session.entries.get(guest.id).remote.ack>=1,'post-recovery input');assert.equal(h.errors.length,0);
 });
 test('shared chat reaches everyone and a late spectator receives the current feed and running match',async t=>{
  const h=await lobby(t),session=await start(h);assert.equal(h.clients[1].sendChat('Hello from the server'),true);await until(()=>h.chat.length===2,'chat');const watcher=h.make('Watcher');watcher.join(h.owner.invite,{name:'Watcher'});await until(()=>watcher.active,'late spectator');assert.equal(watcher.sim.localPlayerId,null);assert.equal(watcher.chat.state().messages.at(-1).text,'Hello from the server');assert.equal(watcher.matchId,session.matchId);

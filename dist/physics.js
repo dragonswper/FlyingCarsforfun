@@ -1,3 +1,4 @@
+import {normalizeArena} from './arenas.js';
 /* Browser-native car soccer. Verified values are separate from analytic contact approximations. */
 import {Vector3 as V,Quaternion as Q} from './vendor/three.module.js';
 import {C,clamp,curve,THROTTLE_CURVE,CURVATURE_CURVE,BALL_HIT_CURVE} from './constants.js';
@@ -102,7 +103,7 @@ export function collideCars(a,b,emit=()=>{}){
 const drills=[{name:'Straight shot',car:[0,-32],ball:[0,.913,-20],v:[0,0,0]},{name:'Left angle',car:[-18,-30],ball:[-10,.913,-12],v:[0,0,0]},{name:'Right angle',car:[18,-30],ball:[10,.913,-12],v:[0,0,0]},{name:'First aerial',car:[0,-18],ball:[0,3.8,-7],v:[0,0,1.5]},{name:'Make the save',car:[0,-40],ball:[2,2,-8],v:[-1.2,1,-15]}];
 export class Simulation{
  constructor(options={}){
-  this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options};this.prediction=new BallPrediction();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
+  this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options,arena:normalizeArena(options?.arena)};this.prediction=new BallPrediction();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
   if(this.options.mode==='duel')this.cars.push(makeCar(1,1,true));
   if(this.options.mode==='doubles')this.cars.push(makeCar(1,0,true),makeCar(2,1,true),makeCar(3,1,true));
   if((this.options.mode==='custom'||this.options.dedicated)&&Array.isArray(this.options.players)&&this.options.players.length)this.cars=this.options.players.slice(0,8).map(player=>makeCar(player.id,player.team,player.bot===true));
