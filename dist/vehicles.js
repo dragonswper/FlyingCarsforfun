@@ -15,8 +15,8 @@ export function loadCustomBody(id,onProgress){
  if(!Object.hasOwn(CUSTOM_BODY_FILES,id))return Promise.reject(new Error('Unknown vehicle.'));
  if(!customPromises.has(id))customPromises.set(id,new GLTFLoader().loadAsync('./assets/models/'+CUSTOM_BODY_FILES[id],onProgress).then(gltf=>{validateCustomRig(gltf.scene);customTemplates.set(id,gltf.scene);return gltf.scene;}).catch(error=>{customPromises.delete(id);throw error;}));return customPromises.get(id);
 }
-export async function loadFennec(onProgress){
- if(!fennecPromise)fennecPromise=new GLTFLoader().loadAsync('./assets/models/fennec.glb',onProgress).then(gltf=>{validateFennecRig(gltf.scene);fennecTemplate=gltf.scene;return gltf.scene;});
+export async function loadFennec(onProgress,detail='standard'){
+ if(!fennecPromise)fennecPromise=new GLTFLoader().loadAsync('./assets/models/'+(detail==='mobile'?'fennec-mobile.glb':'fennec.glb'),onProgress).then(gltf=>{validateFennecRig(gltf.scene);fennecTemplate=gltf.scene;return gltf.scene;}).catch(error=>{fennecPromise=null;throw error;});
  return fennecPromise;
 }
 export function loadBottled(onProgress){

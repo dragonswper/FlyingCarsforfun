@@ -1,0 +1,39 @@
+{
+  "file": "champions-field-mobile.glb",
+  "source": "champions-field-performance.glb",
+  "source_sha256": "27274529973bd927c47ad626533e999765152acd24114ef819488313df46ddd1",
+  "sha256": "b2b60754781836a9f99445660cc99a6ac2aaf508d2eff8de25f52dbcbe879e7d",
+  "source_bytes": 12472508,
+  "bytes": 2751492,
+  "source_triangles": 268285,
+  "triangles": 42084,
+  "removed_seat_batches": 12,
+  "credit": {
+    "id": "champions-field",
+    "name": "Champions Field - Rocket League Stadium",
+    "file": "champions-field.glb",
+    "creator": "Prabhu Ram / virtualmakes",
+    "creatorUrl": "https://sketchfab.com/virtualmakes",
+    "sourceUrl": "https://sketchfab.com/3d-models/champions-field-rocket-league-stadium-6ea5ee0502ae432fbac3a4f8aaab61a5",
+    "license": "CC-BY-4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "providedBy": "User upload",
+    "sha256": "6e21b6b96663d30f0d16292cbbb92b831c6c7ecced40af4bf186de63beae2621",
+    "bytes": 21003868,
+    "modifications": [
+      "Baked scene transforms and adapted orientation and proportions to the game arena",
+      "Retained stadium architecture, trophy displays and eight embedded banner textures",
+      "Replaced cinematic inner pitch and its outer shell with collision-aligned turf, ramps, walls, goals and boost pads",
+      "Reassigned placeholder colors to steel, concrete, gold and blue/orange stadium materials",
+      "Removed coincident duplicate and underground stray parts",
+      "Merged static meshes by material and spatial sector; quantized geometry without external decoders",
+      "Added reduced seat detail in low graphics mode",
+      "Updated ceiling calibration to the verified 20.48 metre arena height"
+    ]
+  },
+  "modifications": [
+    "Reduced large geometry and removed distant seat meshes for mobile",
+    "Embedded WebP textures up to 384 pixels",
+    "Preserved source names, UVs, materials, rig metadata and calibration markers; no animations or embedded scripts executed"
+  ]
+}

@@ -23,7 +23,7 @@ const MIME = {
   '.svg': 'image/svg+xml',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
-  '.mp3':'audio/mpeg','.wav':'audio/wav'
+  '.webmanifest':'application/manifest+json', '.mp3':'audio/mpeg','.wav':'audio/wav'
 };
 
 export function createGameServer({

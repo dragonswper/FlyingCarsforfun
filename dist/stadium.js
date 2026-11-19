@@ -14,7 +14,7 @@ export function validateStadium(root){
  let parts=0;root.traverse(o=>{if(o.isMesh)parts++;});if(parts<10)throw new Error('Stadium geometry is incomplete.');return true;
 }
 export async function loadChampionsField(onProgress,detail='balanced'){
- const file=detail==='high'?'champions-field.glb':'champions-field-performance.glb';
+ const file=detail==='mobile'?'champions-field-mobile.glb':detail==='high'?'champions-field.glb':'champions-field-performance.glb';
  const gltf=await new GLTFLoader().loadAsync('./assets/models/'+file,onProgress),root=gltf.scene;validateStadium(root);
  root.traverse(o=>{if(!o.isMesh)return;o.castShadow=false;o.receiveShadow=false;const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats)if(m.map)m.map.anisotropy=2;});freezeStaticTransforms(root);
  return root;

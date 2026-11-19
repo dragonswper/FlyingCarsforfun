@@ -109,10 +109,10 @@ export function buildArena(parent,{native=false,theme=ARENAS.champions}={}){
  return {pads,root:scene,field:floor,padView};
 }
 export class GameView{
- constructor(canvas){
+ constructor(canvas,{mobile=false}={}){
   this.chase=new ChaseCamera();
   this.cameraAnchor=new T.Vector3();this.cameraVelocity=new T.Vector3();this.cameraPhase=null;this.cameraWasDemo=false;this.cameraHasAnchor=false;
-  this.renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});this.graphics=new AdaptiveGraphics();this.renderer.setPixelRatio(1);this.renderer.shadowMap.enabled=false;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
+  this.renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});this.graphics=new AdaptiveGraphics('auto',{mobile});this.renderer.setPixelRatio(1);this.renderer.shadowMap.enabled=false;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
   this.scene=new T.Scene();this.scene.background=new T.Color('#192e49');this.scene.fog=new T.Fog('#293e56',140,310);
   this.cameraSettings=normalizeCamera();this.camera=new T.PerspectiveCamera(85,1,.08,360);this.camera.position.set(4,4,-12);this.hemisphere=new T.HemisphereLight('#c2e9ff','#192c35',2.0);this.scene.add(this.hemisphere);
   const sun=new T.DirectionalLight('#dcecff',2.1);sun.position.set(-35,65,-20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-64,right:64,top:70,bottom:-70,near:1,far:155});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;this.scene.add(sun);this.sun=sun;
@@ -124,7 +124,12 @@ export class GameView{
  resize(){const w=window.innerWidth,h=window.innerHeight;this.viewport||={width:w,height:h};this.viewport.width=w;this.viewport.height=h;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.updateProjectionMatrix();}
  setCamera(settings){this.cameraSettings=normalizeCamera(settings);}
  setRendering(settings){this.renderSettings=renderingPreferences(settings);this.applyGraphics();}
- async ensureArena(value,onProgress){if(normalizeArena(value)==='festival')await loadFestivalAssets(onProgress);}
+ nativeDetail(){return this.graphics.profile.mobile?'mobile':['high','ultra'].includes(this.qualityLevel)?'high':'balanced';}
+ async ensureArena(value,onProgress){
+  const id=normalizeArena(value);
+  if(id==='festival')await loadFestivalAssets(onProgress);
+  if(id==='champions'){await this.loadNativeArena(onProgress);await this.ensureStadiumDetail(this.nativeDetail());}
+ }
  orbitCamera(yaw,pitch){return this.chase.orbit(yaw,pitch,this.cameraMode);}
  stickCamera(x,y){this.chase.stick(x,y,this.cameraMode);}
  dragCamera(active){this.chase.drag(active,this.cameraMode);}
@@ -140,7 +145,7 @@ export class GameView{
   if(!this.arena.root.getObjectByName('Driveable_Roof_And_Goal_Transitions'))buildDriveSurfaces(this.arena.root);
   for(const [key,arena]of this.arenaCache)arena.root.visible=key===id;
   for(const [key,environment]of this.environments){environment.root.visible=key===id;environment.setQuality(this.graphics.profile.tier);}
-  if(this.stadium)this.stadium.visible=id==='champions';if(this.innerField)this.innerField.visible=id==='champions';if(id==='champions'&&this.stadium)this.ensureStadiumDetail((this.qualityLevel==='high'||this.qualityLevel==='ultra')?'high':'balanced');
+  if(this.stadium)this.stadium.visible=id==='champions';if(this.innerField)this.innerField.visible=id==='champions';if(id==='champions'&&this.stadium)this.ensureStadiumDetail(this.nativeDetail());
   this.scene.background.set(theme.sky);this.scene.fog.color.set(theme.fog);this.sun.color.set(theme.sun);this.hemisphere.color.set(theme.ambient);this.hemisphere.groundColor.set(theme.ground);
   this.scene.fog.near=id==='champions'?140:95;this.scene.fog.far=id==='champions'?310:300;
   this.applyGraphics();
@@ -151,7 +156,7 @@ export class GameView{
   if(!this.bodyWarmups.has(body))this.bodyWarmups.set(body,(async()=>{const model=body==='bottled'?makeBottledModel('#299bff',template):isNoveltyABody(body)?makeNoveltyAModel(body,'#299bff',template):makeCustomModel(body,'#299bff',template);try{const textures=new Set();model.visual.traverse(object=>{for(const material of Array.isArray(object.material)?object.material:[object.material])if(material)for(const value of Object.values(material))if(value?.isTexture)textures.add(value);});for(const texture of textures)this.renderer.initTexture(texture);await this.warmCameraMaterials(model.root,[new VehicleCameraGuard(model)]);}finally{disposeModel(model);}})().catch(error=>{this.bodyWarmups.delete(body);throw error;}));
   return this.bodyWarmups.get(body);
  }
- quality(level){this.qualityLevel=level;this.graphics.setMode(level);this.applyGraphics();if(this.stadium&&this.arenaId==='champions')this.ensureStadiumDetail((level==='high'||level==='ultra')?'high':'balanced');}
+ quality(level){this.qualityLevel=level;this.graphics.setMode(level);this.applyGraphics();if(this.stadium&&this.arenaId==='champions')this.ensureStadiumDetail(this.nativeDetail());}
  applyGraphics(){
   const profile=this.graphics.profile,render=resolveRendering(profile,this.renderSettings||{});this.resolvedRendering=render;
   setStadiumQuality(this.stadium,profile.seats?'high':'low');for(const environment of this.environments.values())environment.setQuality(profile.tier);
@@ -170,13 +175,36 @@ export class GameView{
  }
 
  monitorFrame(dt){if(this.graphics.observe(dt))this.applyGraphics();}
- async loadAssets(onProgress){
-  const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total}),detail=(this.qualityLevel==='high'||this.qualityLevel==='ultra')?'high':'balanced';
-  const [,stadium,,inner]=await Promise.all([loadFennec(progress('vehicle')),loadChampionsField(progress('stadium'),detail),loadRocketBall(progress('ball')),loadChampionsInner(progress('inner'))]);this.scene.remove(this.ball);this.ball=makeRocketBall();this.scene.add(this.ball);this.stadium=stadium;this.stadiumDetail=detail;this.scene.add(stadium);this.innerField=inner;this.scene.add(inner);this.arena.field=inner.getObjectByName('Champions_Inner_turf');const field=this.arena.field,position=field.geometry.attributes.position,uv=new Float32Array(position.count*2),point=new T.Vector3();inner.updateMatrixWorld(true);for(let i=0;i<position.count;i++){point.fromBufferAttribute(position,i).applyMatrix4(field.matrixWorld);uv[i*2]=(point.x+C.halfWidth)/(2*C.halfWidth);uv[i*2+1]=(C.halfLength-point.z)/(2*C.halfLength);}field.geometry.setAttribute('uv',new T.BufferAttribute(uv,2));field.material.dispose();field.material=material('#ffffff',{map:fieldTexture(),roughness:.95,metalness:0,side:T.DoubleSide});this.applyGraphics();
+ async loadAssets(onProgress,arena='champions'){
+  const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total});
+  await Promise.all([loadFennec(progress('vehicle'),this.graphics.profile.mobile?'mobile':'standard'),loadRocketBall(progress('ball')),this.ensureArena(arena,onProgress)]);
+  this.scene.remove(this.ball);this.ball=makeRocketBall();this.scene.add(this.ball);this.applyGraphics();
+ }
+ async loadNativeArena(onProgress){
+  if(this.nativePromise)return this.nativePromise;
+  const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total}),detail=this.nativeDetail();
+  this.nativePromise=(async()=>{
+   const results=await Promise.allSettled([loadChampionsField(progress('stadium'),detail),loadChampionsInner(progress('inner'))]);
+   if(results.some(result=>result.status==='rejected')){for(const result of results)if(result.status==='fulfilled')disposeStadium(result.value);throw results.find(result=>result.status==='rejected').reason;}
+   const [stadium,inner]=results.map(result=>result.value);this.stadium=stadium;this.stadiumDetail=detail;this.innerField=inner;
+   stadium.visible=inner.visible=this.arenaId==='champions';this.scene.add(stadium,inner);
+   const field=inner.getObjectByName('Champions_Inner_turf'),position=field.geometry.attributes.position,uv=new Float32Array(position.count*2),point=new T.Vector3();
+   inner.updateMatrixWorld(true);
+   for(let i=0;i<position.count;i++){point.fromBufferAttribute(position,i).applyMatrix4(field.matrixWorld);uv[i*2]=(point.x+C.halfWidth)/(2*C.halfWidth);uv[i*2+1]=(C.halfLength-point.z)/(2*C.halfLength);}
+   field.geometry.setAttribute('uv',new T.BufferAttribute(uv,2));field.material.dispose();field.material=material('#ffffff',{map:fieldTexture(),roughness:.95,metalness:0,side:T.DoubleSide});
+   this.arenaCache.get('champions').field=field;this.applyGraphics();
+  })().catch(error=>{this.nativePromise=null;throw error;});
+  return this.nativePromise;
  }
  async ensureStadiumDetail(detail){
-  const request=++this.stadiumRequest;if(detail===this.stadiumDetail)return;
-  try{const next=await loadChampionsField(undefined,detail);if(request!==this.stadiumRequest){disposeStadium(next);return;}this.scene.remove(this.stadium);disposeStadium(this.stadium);this.stadium=next;this.stadiumDetail=detail;next.visible=this.arenaId==='champions';this.scene.add(next);this.applyGraphics();}catch(error){console.warn('Keeping the loaded stadium detail.',error);}
+  if(this.stadiumPending?.detail===detail)return this.stadiumPending.promise;
+  const request=++this.stadiumRequest;this.stadiumPending=null;
+  if(detail===this.stadiumDetail)return;
+  const promise=(async()=>{
+   try{const next=await loadChampionsField(undefined,detail);if(request!==this.stadiumRequest){disposeStadium(next);return;}this.scene.remove(this.stadium);disposeStadium(this.stadium);this.stadium=next;this.stadiumDetail=detail;next.visible=this.arenaId==='champions';this.scene.add(next);this.applyGraphics();}
+   catch(error){console.warn('Keeping the loaded stadium detail.',error);}
+   finally{if(this.stadiumPending?.request===request)this.stadiumPending=null;}
+  })();this.stadiumPending={detail,request,promise};return promise;
  }
  async warmCameraMaterials(root,guards){
   await this.renderer.compileAsync(root,this.camera,this.scene);

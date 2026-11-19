@@ -7,11 +7,12 @@ import {GuestReplica,makeState,validState,cleanEvents} from './network-state.js'
 import {ConnectionQuality} from './network-quality.js';
 import {playerName,chatText} from './social.js';
 import {ChatHistory} from './chat-history.js';
+import {compactSnapshot} from './snapshot.js';
 
 const colors={blue:'#299bff',ivory:'#e8efec',violet:'#a985fc',mint:'#53dbbd'},validToken=value=>typeof value==='string'&&/^[a-f0-9]{32}$/.test(value);
 export function partyOptions(value={}){value||={};return {mode:'custom',duration:Math.max(60,Math.min(1800,Math.round(Number(value.duration)||300))),maxPeople:Math.max(2,Math.min(8,Math.round(Number(value.maxPeople)||4))),arena:normalizeArena(value.arena)};}
 const publicMember=member=>({id:member.id,name:member.look.name,look:member.look,team:member.team,ready:member.ready,connected:member.connected,rematch:!!member.rematch});
-const compact=state=>JSON.parse(JSON.stringify(state,(_,value)=>typeof value==='number'?Math.round(value*1000)/1000:value));
+const compact=compactSnapshot;
 
 export class PartyRoom{
  normalizeOptions(value){return partyOptions(value);}
@@ -43,7 +44,7 @@ export class PartyRoom{
  players(){return this.members.filter(member=>member.team!==null&&member.connected).map(member=>({id:member.id,team:member.team,look:member.look,token:member.token}));}
  async startMatch(){if(this.role!=='host'||this.closed||this.pendingMatch)return false;const players=this.players();if(this.sim?.phase==='ended'&&players.some(player=>!this.members.find(member=>member.id===player.id).rematch))return false;if(this.members.some(member=>member.team!==null&&!member.connected))return false;if(!players.length||players.some(player=>!this.members.find(member=>member.id===player.id).ready))return false;const id=crypto.randomUUID();this.pendingMatch=id;this.hostLoaded=false;this.change('starting');this.sendLobby();try{await this.prepare(players.map(player=>player.look.body),this.options);if(this.closed||this.pendingMatch!==id)return false;if(players.some(player=>!this.members.some(member=>member.id===player.id&&member.token===player.token&&member.connected&&member.team===player.team))){this.pendingMatch=null;this.notice='A player left during preparation. Ready up and start again.';this.change('lobby');this.sendLobby();return false;}this.makeSimulation(id,players);this.startWaiting=new Set([...this.entries.values()].filter(entry=>entry.link?.open&&!entry.recovering).map(entry=>entry.id));this.hostLoaded=true;for(const entry of this.entries.values())if(this.startWaiting.has(entry.id))this.sendConfig(entry,false);this.maybeGo();this.later(()=>{if(this.pendingMatch===id){this.pendingMatch=null;this.notice='A player could not finish loading. Try Start Match again.';this.change('lobby');this.sendLobby();}},30000);return true;}catch{this.pendingMatch=null;this.notice='A vehicle could not load. Choose another body or try again.';this.change('lobby');this.sendLobby();return false;}}
  makeSimulation(id,players){if(this.role==='host')this.matchOwners=new Map(players.map(player=>[player.id,player.token]));this.matchId=id;this.sequence=0;this.sim=new Simulation({...this.options,players:players.map(player=>({id:player.id,team:player.team,bot:player.bot===true})),humanIds:players.filter(player=>!player.bot).map(player=>player.id)});this.sim.localPlayerId=players.some(player=>player.id===this.id)?this.id:null;for(const car of this.sim.cars){const player=players.find(player=>player.id===car.id),look=appearance(player.look);car.networkRole=car.id===0?'host':'guest';car.playerName=look.name;car.appearance={body:look.body,color:look.paint==='blue'&&car.team===1?'#f39838':colors[look.paint]};}for(const entry of this.entries.values())entry.remote=new RemoteInputs();for(const member of this.members)member.rematch=false;this.hostPaused=false;}
- stateFor(entry){return makeState(this.sim,++this.sequence,entry.remote.ack,this.matchId);}
+ stateFor(entry,world=null){return world?{...world,n:++this.sequence,ack:entry.remote.ack}:makeState(this.sim,++this.sequence,entry.remote.ack,this.matchId);}
  config(entry,join=false){return {t:'party-config',build:NET_BUILD,matchId:this.matchId,join,selfId:entry.id,playerId:this.matchOwners?.get(entry.id)===entry.member.token?entry.id:null,players:this.sim.cars.map(car=>({id:car.id,team:car.team,bot:car.bot===true,look:{body:car.appearance.body,name:car.playerName,paint:'blue'},color:car.appearance.color})),options:this.options,state:this.stateFor(entry),paused:this.hostPaused,chatState:this.chat.state()};}
  sendConfig(entry,join){entry.link.send(this.config(entry,join));}
  async loadConfig(packet){if(packet.build!==NET_BUILD||typeof packet.matchId!=='string'||!Array.isArray(packet.players)||packet.players.length<1||packet.players.length>8||new Set(packet.players.map(player=>player.id)).size!==packet.players.length||packet.players.some(player=>!Number.isInteger(player.id)||player.id<0||player.id>7||![0,1].includes(player.team))){this.fail('Invalid custom match configuration.');return;}const generation=this.loadGeneration=(this.loadGeneration||0)+1,players=packet.players;this.change('starting');try{await this.prepare(players.map(player=>appearance(player.look).body),this.normalizeOptions(packet.options));if(this.closed||generation!==this.loadGeneration)return;this.options=this.normalizeOptions(packet.options);this.makeSimulation(packet.matchId,players);this.sim.localPlayerId=packet.playerId===this.id&&players.some(player=>player.id===this.id)?this.id:null;for(const car of this.sim.cars){const player=players.find(player=>player.id===car.id);if(/^#[a-f0-9]{6}$/i.test(player.color))car.appearance.color=player.color;}this.replica=new GuestReplica(this.sim,this.sim.localPlayerId);if(!this.replica.receive(packet.state,this.clock()))throw Error();this.hostPaused=packet.paused===true;this.replica.paused=this.hostPaused;if(packet.chatState)this.chat.replace(packet.chatState);this.pendingMatch=packet.join?null:packet.matchId;this.link.send({t:packet.join?'party-joined':'party-loaded',matchId:packet.matchId});}catch{this.fail('The custom match or a selected vehicle could not load.');}}
@@ -53,8 +54,23 @@ export class PartyRoom{
  hostStep(input,dt){if(this.role!=='host'||!this.active||this.hostPaused)return false;const inputs=this.inputs();if(this.sim.localPlayerId!==null)inputs.set(this.sim.localPlayerId,input);this.sim.step({},dt,inputs);return true;}
  guestStep(input){if(this.active&&!this.hostPaused&&this.sim.localPlayerId!==null){this.replica.step(input);const events=this.replica.drainPredictedEvents();if(events.length)this.onEvents(events);}}
  sendInputs(force=false){const now=this.clock();if(this.role!=='guest'||!this.active||this.hostPaused||this.sim.localPlayerId===null||!force&&now-(this.lastInput||0)<1000/60)return;this.lastInput=now;const frames=packInputFrames(this.replica.inputFrames());if(frames.length)this.link.send({t:'input',matchId:this.matchId,frames},true);}
- publish(force=false){const now=this.clock(),interval=1000/(this.sim?.cars.length>2?20:30);if(this.role!=='host'||!this.active||!force&&(this.hostPaused||this.sim.phase==='ended'||now-this.lastPublish<interval))return;this.lastPublish=now;for(const entry of this.entries.values())if(entry.link?.open&&!entry.recovering)entry.link.send(compact(this.stateFor(entry)),true);}
- events(events){if(this.role!=='host'||!this.active||!events.length)return;for(const entry of this.entries.values())if(entry.link?.open&&!entry.recovering)entry.link.send({t:'events',matchId:this.matchId,events:cleanEvents(events.slice(0,24)),state:compact(this.stateFor(entry))});}
+ publish(force=false){
+  const now=this.clock(),interval=1000/(this.sim?.cars.length>2?20:30);
+  if(this.role!=='host'||!this.active||!force&&(this.hostPaused||this.sim.phase==='ended'||now-this.lastPublish<interval))return;
+  this.lastPublish=now;let world=null;
+  for(const entry of this.entries.values())if(entry.link?.open&&!entry.recovering){
+   const state=world?this.stateFor(entry,world):compact(this.stateFor(entry));
+   world||=state;entry.link.send(state,true);
+  }
+ }
+ events(events){
+  if(this.role!=='host'||!this.active||!events.length)return;
+  const cleaned=cleanEvents(events.slice(0,24));let world=null;
+  for(const entry of this.entries.values())if(entry.link?.open&&!entry.recovering){
+   const state=world?this.stateFor(entry,world):compact(this.stateFor(entry));world||=state;
+   entry.link.send({t:'events',matchId:this.matchId,events:cleaned,state});
+  }
+ }
  setPaused(paused){if(this.role!=='host'||!this.matchId)return;this.hostPaused=!!paused;for(const entry of this.entries.values())if(entry.link?.open&&!entry.recovering)entry.link.send({t:'pause',matchId:this.matchId,paused:this.hostPaused,state:compact(this.stateFor(entry))});this.change();}
  skipReplay(){if(!this.active)return;if(this.role==='host'){this.sim.skipReplay();this.publish(true);}else this.link.send({t:'skip',matchId:this.matchId});}
  requestRematch(wanted=true){if(!this.active||this.sim.phase!=='ended'||this.self.team===null)return false;if(this.role==='host'){this.self.rematch=!!wanted;this.sendLobby();this.maybeRematch();}else this.link.send({t:'party-rematch',matchId:this.matchId,wanted:!!wanted});return true;}

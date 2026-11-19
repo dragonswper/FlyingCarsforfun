@@ -13,9 +13,11 @@ export class GameService {
     region = 'oceania',
     queueClock,
     clock = () => performance.now(),
-    autostart = true
+    autostart = true,
+    setIntervalFn = (callback,ms) => setInterval(callback,ms),
+    clearIntervalFn = timer => clearInterval(timer)
   } = {}) {
-    Object.assign(this, {maxRooms, region, clock, autostart});
+    Object.assign(this, {maxRooms, region, clock, autostart, setIntervalFn, clearIntervalFn});
     this.rooms = new Map();
     this.bindings = new Map();
     this.sockets = new Set();
@@ -23,6 +25,7 @@ export class GameService {
     this.auth = new GuestAuth();
     this.closed = false;
     this.timer = null;
+    this.physicsRooms = [];
     this.queue = new ServerMatchQueue({
       clock: queueClock,
       onMatch: (players, options, bots) => this.matched(players, options, bots)
@@ -126,6 +129,7 @@ export class GameService {
       } catch {
         this.reject(socket, 'The game packet could not be applied.');
       }
+      if (packet.t !== 'input') this.updateCadence();
       return;
     }
     if (!connection.identity) {
@@ -207,13 +211,33 @@ export class GameService {
     this.bindings.delete(socket);
     if (current && current.entry.link === current.link) current.room.lostPeer(current.entry);
     this.stopIfIdle();
+    this.updateCadence();
   }
   start() {
     if (this.timer || this.closed) return;
     this.last = this.clock();
     this.accumulator = 0;
     this.lastQueue = -Infinity;
-    this.timer = setInterval(() => this.pump(), 1000 / 120);
+    this.updateCadence(true);
+  }
+  simulating(room) {
+    return room.active && !room.closed && !room.recovering && !room.hostPaused &&
+      !room.pendingMatch && room.sim?.phase !== 'ended';
+  }
+  updateCadence(start = false) {
+    if (!this.autostart || this.closed || (!start && !this.timer)) return;
+    let running = false;
+    for (const room of this.rooms.values()) {
+      if (this.simulating(room)) { running = true; break; }
+    }
+    const interval = running ? 1000 / 120 : 100;
+    if (this.timer && this.tickInterval === interval) return;
+    this.clearIntervalFn(this.timer);
+    // A newly started match must not catch up time spent waiting in its lobby.
+    this.last = this.clock();
+    this.accumulator = 0;
+    this.tickInterval = interval;
+    this.timer = this.setIntervalFn(() => this.pump(), interval);
     this.timer.unref?.();
   }
   pump() {
@@ -224,26 +248,36 @@ export class GameService {
       (this.accumulator || 0) + Math.max(0, (now - (this.last ?? now)) / 1000)
     );
     this.last = now;
+    this.physicsRooms.length = 0;
+    for (const room of this.rooms.values()) {
+      if (this.simulating(room)) this.physicsRooms.push(room);
+    }
+    if (!this.physicsRooms.length) this.accumulator = 0;
     let steps = 0;
     while (this.accumulator >= C.step && steps++ < 18) {
-      for (const room of this.rooms.values()) room.pump(C.step);
+      for (const room of this.physicsRooms) room.pump(C.step);
       this.accumulator -= C.step;
     }
     if (now - (this.lastQueue ?? -Infinity) >= 100) {
       this.lastQueue = now;
       this.queue.pump();
+    }
+    if (now - (this.lastMaintenance ?? -Infinity) >= 1000) {
+      this.lastMaintenance = now;
       this.auth.prune();
     }
+    this.updateCadence();
   }
   stopIfIdle() {
     if (this.sockets.size || this.rooms.size || this.queue.waiting.size) return;
-    clearInterval(this.timer);
+    this.clearIntervalFn(this.timer);
     this.timer = null;
+    this.physicsRooms.length = 0;
   }
   close() {
     if (this.closed) return;
     this.closed = true;
-    clearInterval(this.timer);
+    this.clearIntervalFn(this.timer);
     this.timer = null;
     for (const socket of this.sockets)
       if (socket.readyState === 1)
@@ -265,5 +299,6 @@ export class GameService {
     this.sockets.clear();
     this.connections.clear();
     this.bindings.clear();
+    this.physicsRooms.length = 0;
   }
 }

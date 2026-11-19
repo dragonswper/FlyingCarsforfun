@@ -171,8 +171,8 @@ export class ServerSession extends PartyRoom {
     super.makeSimulation(id, serverPlayers(this.options, players));
     for (const entry of this.entries.values()) entry.remote = new ServerInputs();
   }
-  stateFor(entry) {
-    return {...super.stateFor(entry), net: {
+  stateFor(entry,world=null) {
+    return {...super.stateFor(entry,world), net: {
       inputQueueMs: Math.round(entry.remote.queue.length * C.step * 1000),
       inputTick: entry.remote.inputTick ?? entry.remote.ack
     }};

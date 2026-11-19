@@ -7,7 +7,25 @@ const ID=/^BC-[A-F0-9]{12}$/;
 // Presence, room capabilities and short-lived invitations are never persisted.
 export class SocialService{
  constructor({store=null,room=()=>null,clock=()=>Date.now(),maxProfiles=4096}={}){Object.assign(this,{store,room,clock,maxProfiles});this.profiles=new Map();this.saved=new Map();this.presence=new Map();this.lobbies=new Map();this.invites=new Map();this.rates=new Map();this.chain=Promise.resolve();}
- async load(){if(!this.loaded)this.loaded=(async()=>{if(!this.store)return;let startAfter;while(true){const rows=await this.store.list({prefix:'profile:',limit:1000,...(startAfter?{startAfter}:{})});for(const [key,p]of rows)if(key.startsWith('profile:')&&ID.test(p?.id)&&typeof p.hash==='string'){this.profiles.set(p.id,p);this.saved.set(p.id,structuredClone(p));}if(rows.size<1000)break;startAfter=[...rows.keys()].at(-1);}})();return this.loaded;}
+ async load() {
+  if(!this.loaded)this.loaded=(async()=>{
+   if(!this.store)return;
+   let startAfter;
+   while(true){
+    const rows=await this.store.list({prefix:'profile:',limit:1000,...(startAfter?{startAfter}:{})});
+    for(const [key,p]of rows)if(key.startsWith('profile:')&&ID.test(p?.id)&&typeof p.hash==='string'){
+     this.profiles.set(p.id,p);this.saved.set(p.id,structuredClone(p));
+    }
+    if(rows.size<1000)break;
+    startAfter=[...rows.keys()].at(-1);
+   }
+  })().catch(error=>{
+   // Retry a temporary storage outage; never keep a rejected startup promise
+   // or a partially loaded player directory for the object's whole lifetime.
+   this.loaded=null;this.profiles.clear();this.saved.clear();throw error;
+  });
+  return this.loaded;
+ }
  async save(...profiles){if(!this.store)return;const unique=[...new Set(profiles)],write=async store=>{for(const p of unique)await store.put('profile:'+p.id,p);};try{if(this.store.transaction)await this.store.transaction(write);else await write(this.store);for(const p of unique)this.saved.set(p.id,structuredClone(p));}catch(error){for(const p of unique){const old=this.saved.get(p.id);if(old)this.profiles.set(p.id,structuredClone(old));else this.profiles.delete(p.id);}throw error;}}
  handle(body,secret,address='unknown'){const task=this.chain.then(()=>this.execute(body,secret,address));this.chain=task.catch(()=>{});return task.catch(error=>({status:error.status||503,data:{error:error.status?error.message:'Friends are temporarily unavailable. Try again.'}}));}
  prune(){const now=this.clock();for(const [id,tabs]of this.presence){for(const [tab,p]of tabs)if(p.at<now-60000)tabs.delete(tab);if(!tabs.size)this.presence.delete(id);}for(const [id,record]of this.lobbies)if(!this.retainedLobby(record))this.lobbies.delete(id);for(const [id,list]of this.invites){const valid=list.filter(i=>i.expires>now&&this.lobbies.has(i.owner));if(valid.length)this.invites.set(id,valid);else this.invites.delete(id);}for(const [id,r]of this.rates)if(r.until<=now)this.rates.delete(id);}
@@ -21,9 +39,10 @@ export class SocialService{
   await this.load();if(!body||typeof body!=='object'||Array.isArray(body)||typeof secret!=='string'||!/^[a-f0-9]{64}$/.test(secret))fail('A valid device identity is required.',401);
   this.prune();const hash=digest(secret),id='BC-'+hash.slice(0,12).toUpperCase(),now=this.clock();let p=this.profiles.get(id);
   if(p&&p.hash!==hash)fail('This device identity could not be verified.',401);
-  const rate=this.rates.get(id)||{count:0,until:now+60000};if(++rate.count>90)fail('Please wait before trying again.',429);this.rates.set(id,rate);
   if(body.op==='sync'&&!/^[a-f0-9-]{16,64}$/.test(String(body.tab||'')))fail('A valid tab ID is required.');
-  if(!p){if(body.op!=='sync')fail('Open the game to create your player ID first.',401);if(this.profiles.size>=this.maxProfiles)fail('The player directory is full. Try again later.',503);const key='new:'+address,bucket=this.rates.get(key)||{count:0,until:now+3600000};if(++bucket.count>32||this.rates.size>10000)fail('Too many new device IDs. Try again later.',429);this.rates.set(key,bucket);p={id,hash,name:playerName(body.name),friends:[],incoming:[],outgoing:[],blocked:[]};this.profiles.set(id,p);await this.save(p);}
+  if(!p){if(body.op!=='sync')fail('Open the game to create your player ID first.',401);if(this.profiles.size>=this.maxProfiles)fail('The player directory is full. Try again later.',503);const key='new:'+address,bucket=this.rates.get(key)||{count:0,until:now+3600000};if(++bucket.count>32||!this.rates.has(key)&&this.rates.size>=this.maxProfiles+2048)fail('Too many new device IDs. Try again later.',429);this.rates.set(key,bucket);p={id,hash,name:playerName(body.name),friends:[],incoming:[],outgoing:[],blocked:[]};this.profiles.set(id,p);await this.save(p);}
+  // Only authenticated, stored identities receive a per-device rate bucket.
+  const rate=this.rates.get(id)||{count:0,until:now+60000};if(++rate.count>90)fail('Please wait before trying again.',429);this.rates.set(id,rate);
   const peer=this.profiles.get(body.peer),unlink=(a,b)=>{for(const key of ['friends','incoming','outgoing'])a[key]=a[key].filter(id=>id!==b.id);};
   switch(body.op){
    case 'sync':{

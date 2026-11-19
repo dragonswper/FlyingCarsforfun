@@ -10,6 +10,8 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.22 — performance and mobile preview:** Shared world snapshots reduce server broadcast work; waiting lobbies run at a lower cadence, while match physics remains 120 Hz. Fields load their own assets on demand. Phones get smaller Fennec/stadium models, adaptive graphics, multitouch driving, camera controls and responsive menus. [Controls, measurements and testing](docs/release-1.22.md). Reload both players for the matching build.
+
 **1.21 — friends and shared lobbies:** Permanent browser IDs, name/ID search, mutual friend requests, online status, invitations, a live player count and public/friends/invite-only lobby discovery. Lobby Radio starts on load where allowed, with first-interaction fallback. The photo-based **Bonnie Blue’s Van** is selectable with animated wheels. [Controls, persistence, media limits and verification](docs/release-1.21.md). Reload both players for the matching build.
 
 **1.20 — Frostvale Festival, camera stability and ceiling driving:** Adds a fifth field assembled from your Christmas village, tree, lights, mountain-road and snow assets, plus Lobby Radio with both supplied songs. Free cam keeps a stable direction through aerial tricks and smooths wall avoidance; cars can continue onto the field ceiling and inside goal roofs. **Options → Video → Cinematic** enables richer lighting, soft shadows and short grass on turf, with independent controls. [Controls, media credits and verification](docs/release-1.20.md). Reload every player’s tab for the matching physics build.
