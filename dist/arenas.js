@@ -13,6 +13,9 @@ export const ARENAS = Object.freeze({
   woods: Object.freeze({name:'EVERGREEN GROVE',subtitle:'Forest clearing · Pines · Golden-hour light',
     sky:'#a2b5ac',fog:'#a7bbb0',sun:'#ffe4b4',ambient:'#dbedd5',ground:'#384b32',
     stripes:['#3c6442','#355b3b'],ink:'#e0ebc5e0',caption:'EVERGREEN',trim:'#493e2e',ramp:'#61745a',surround:'#3e5638',grass:true}),
+  harbour:Object.freeze({name:'HARBOURWORKS',subtitle:'Dockside stadium · Steel grandstands · Harbour cranes',
+    sky:'#8d9b9f',fog:'#a2ada8',sun:'#ffe0ae',ambient:'#d6e4e7',ground:'#303c3c',
+    stripes:['#28534b','#234c43'],ink:'#e5e5c9d0',caption:'HARBOURWORKS',trim:'#202e36',ramp:'#526462',surround:'#3a4544',grass:true}),
   festival:Object.freeze({name:'FROSTVALE FESTIVAL',subtitle:'Supplied Christmas village · Mountain road · Festive lights',
     sky:'#14283e',fog:'#54728b',sun:'#ffe6c5',ambient:'#b9d7ed',ground:'#526a7a',
     stripes:['#d2e0ea','#c5d6e4'],ink:'#4c6c86e0',caption:'FROSTVALE',trim:'#31475b',ramp:'#a5bdcf',surround:'#cbddea'})

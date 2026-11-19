@@ -10,6 +10,10 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.23 — Harbourworks and custom HUD layouts:** An original Blender-built dockside stadium, saved drag/resize/opacity controls for desktop and both phone orientations, touch mirroring, clearer mobile menus and fullscreen/home-screen help. Select **Harbourworks** in any field selector; use **Options → Interface → Edit HUD Layout**. [Controls, source artwork and verification](docs/release-1.23.md). Reload all players for the matching build.
+
+**1.23 — Harbourworks and HUD layout studio:** An original stadium modeled in Blender, with steel canopies, grandstands, warehouses and cranes. Includes editable `.blend` source, saved desktop/portrait/landscape HUD layouts, move/resize/opacity controls, mirrored touch groups, fullscreen help and clearer mobile menus. [Controls, artwork and verification](docs/release-1.23.md). Reload every player for the matching build.
+
 **1.22 — performance and mobile preview:** Shared world snapshots reduce server broadcast work; waiting lobbies run at a lower cadence, while match physics remains 120 Hz. Fields load their own assets on demand. Phones get smaller Fennec/stadium models, adaptive graphics, multitouch driving, camera controls and responsive menus. [Controls, measurements and testing](docs/release-1.22.md). Reload both players for the matching build.
 
 **1.21 — friends and shared lobbies:** Permanent browser IDs, name/ID search, mutual friend requests, online status, invitations, a live player count and public/friends/invite-only lobby discovery. Lobby Radio starts on load where allowed, with first-interaction fallback. The photo-based **Bonnie Blue’s Van** is selectable with animated wheels. [Controls, persistence, media limits and verification](docs/release-1.21.md). Reload both players for the matching build.

@@ -1,4 +1,5 @@
 /* Champions Field architecture with a collision-aligned pitch and animated Fennec vehicles. */
+import {loadHarbour} from './harbour-assets.js';
 import * as T from './vendor/three.module.js';
 import { createPads } from './physics.js';
 import { C, clamp, arenaOutline } from './constants.js';
@@ -127,6 +128,7 @@ export class GameView{
  nativeDetail(){return this.graphics.profile.mobile?'mobile':['high','ultra'].includes(this.qualityLevel)?'high':'balanced';}
  async ensureArena(value,onProgress){
   const id=normalizeArena(value);
+  if(id==='harbour')await loadHarbour(event=>onProgress?.({asset:'harbour',loaded:event.loaded,total:event.total}));
   if(id==='festival')await loadFestivalAssets(onProgress);
   if(id==='champions'){await this.loadNativeArena(onProgress);await this.ensureStadiumDetail(this.nativeDetail());}
  }

@@ -1,0 +1,13 @@
+{
+  "name": "Harbourworks",
+  "author": "Boost Circuit project",
+  "license": "MIT",
+  "source": "scripts/create-harbourworks.py",
+  "sourceBlend": "art/harbourworks.blend",
+  "bytes": 3760936,
+  "sha256": "7822d03a90123eab86b1929c9e998ed1e33474f94424922190eb163d7c7303c3",
+  "triangles": 68780,
+  "materialBatches": 13,
+  "textures": 0,
+  "collision": "Standard shared regulation field; scenery is decorative and outside play"
+}

@@ -1,11 +1,13 @@
 import * as T from './vendor/three.module.js';
 import {ARENAS,normalizeArena} from './arenas.js';
 import {freezeStaticTransforms} from './rendering.js';
+import {makeHarbourEnvironment} from './harbour-assets.js';
 import {makeFestivalEnvironment} from './festival-assets.js';
 
 // Small, deterministic original scenes. Repeated scenery uses GPU instancing;
 // decorative solids stay outside the playing enclosure and never affect physics.
 export function createArenaEnvironment(value) {
+  if(value==='harbour')return makeHarbourEnvironment();
   if(value==='festival'){
     const forest=createArenaEnvironment('snow'),festival=makeFestivalEnvironment();
     // Keep the instanced forest and light strings around the supplied scenery;
