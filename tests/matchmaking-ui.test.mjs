@@ -15,3 +15,10 @@ test('queue UI shows countdown, preparation and retry states with working Search
 test('matchmade peers are named as opponents and bot fallback keeps bot names',()=>{
  assert.equal(driverName({id:1,team:1,networkRole:'guest',matchmade:true},0),'OPPONENT');assert.equal(driverName({id:1,team:1,networkRole:'guest',matchmade:true},1),'YOU');assert.equal(driverName({id:1,team:1,bot:true},0),'ACE');assert.equal(driverName({id:1,team:1,networkRole:'guest'},0),'GUEST');
 });
+test('dedicated practice and lobby choices explain their actual action and missing server configuration is discoverable',()=>{
+ const names=['matchmaking-dialog','matchmaking-search','matchmaking-cancel','matchmaking-clock','matchmaking-progress','matchmaking-remaining','matchmaking-status','matchmaking-detail','search-connection','search-server-url','search-mode','search-server-field','matchmaking-advanced'];
+ const nodes=Object.fromEntries(names.map(id=>[id,Object.assign(new EventTarget(),{dataset:{},value:'',hidden:false,textContent:'',open:false,showModal(){this.open=true;}})])),preferences={onlineConnection:'server',onlineMode:'free'};
+ const ui=setupMatchmakingUI({preferences},{getElementById:id=>nodes[id]});assert.equal(nodes['matchmaking-search'].textContent,'OPEN FREE PLAY');assert.match(nodes['matchmaking-detail'].textContent,/spectators/);ui.open();assert.equal(nodes['matchmaking-advanced'].open,true);
+ nodes['search-mode'].value='custom';nodes['search-mode'].dispatchEvent(new Event('change'));assert.equal(nodes['matchmaking-search'].textContent,'CREATE LOBBY');assert.match(nodes['matchmaking-detail'].textContent,/teams/);nodes['search-mode'].value='duel';nodes['search-mode'].dispatchEvent(new Event('change'));assert.equal(nodes['matchmaking-search'].textContent,'FIND MATCH');assert.match(nodes['matchmaking-detail'].textContent,/60 seconds/);
+ ui.render({phase:'searching',remaining:30});nodes['search-mode'].value='training';nodes['search-mode'].dispatchEvent(new Event('change'));assert.equal(nodes['matchmaking-search'].hidden,true);assert.equal(nodes['matchmaking-remaining'].textContent,'30');
+});

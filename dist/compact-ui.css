@@ -1,0 +1,174 @@
+/* Compact layouts follow viewport space, not a device's input/UA report. */
+.compact-only { display: none; }
+.garage-heading, .garage-content { display: contents; }
+.match-essentials { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; text-align: left; }
+.match-essentials > label, .match-advanced-content > label { display: grid; gap: 6px; min-width: 0; font-size: 13px; color: #bceaff; }
+.match-essentials > .setting { grid-column: 1 / -1; margin: 0; padding: 0; border: 0; }
+.match-essentials select, .match-advanced-content select { width: 100%; min-width: 0; padding: 9px; font: inherit; color: #e8f5fa; background: #0a2536; border: 1px solid #527d92; }
+#matchmaking-advanced { margin-top: 16px; text-align: left; border-top: 1px solid #416779; }
+#matchmaking-advanced summary { padding: 12px 0; cursor: pointer; color: #b2d9e9; font-size: 13px; }
+.match-advanced-content { padding-top: 4px; }
+.music-dialog { width: min(440px, calc(100vw - 24px)); }
+.compact-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.compact-dialog-heading h2 { margin: 0; }
+.compact-dialog-heading .close { position: static; flex-shrink: 0; }
+
+.compact-ui { overscroll-behavior: none; }
+.compact-ui #lobby, .compact-ui dialog { --m: 1px; }
+.compact-ui #lobby { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.compact-ui .menu-brand { top: max(12px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left)); }
+.compact-ui .menu-brand > span { font-size: 20px; letter-spacing: 2px; }
+.compact-ui .menu-brand small, .compact-ui .arena-label, .compact-ui .showroom-radio { display: none; }
+.compact-ui .online-presence { top: max(6px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); min-height: 44px; font-size: 11px; gap: 6px; padding: 4px 9px; }
+.compact-ui .online-presence strong { font-size: 14px; }
+.compact-ui .home-screen { top: max(60px, calc(env(safe-area-inset-top) + 48px)); bottom: 112px; left: max(12px, env(safe-area-inset-left)); width: min(390px, 46vw); padding: 0 4px 0 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; pointer-events: auto; }
+.compact-ui .main-menu { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.compact-ui .menu-row { grid-column: span 3; min-width: 0; min-height: 44px; padding: 8px 10px; font-size: 16px; line-height: 1.15; letter-spacing: .2px; text-shadow: none; }
+.compact-ui #friends-button { font-size: 14px; }
+.compact-ui #career-button, .compact-ui #settings-button, .compact-ui #controls-button { grid-column: span 2; font-size: 12px; justify-content: center; text-align: center; }
+.compact-ui .menu-row::before, .compact-ui .menu-row:hover::before { transform: none; border: 1px solid #557c8d70; border-radius: 4px; background: #081e2de8; box-shadow: none; }
+.compact-ui .menu-row:not(.menu-selected) { color: #e1eef5; }
+.compact-ui .menu-row.menu-selected::before { background: #c9ecf8; border-color: #ecfaff; }
+.compact-ui .menu-row.menu-selected { color: #12394c; }
+.compact-ui .row-chevron { font-size: 17px; margin-left: 5px; }
+.compact-ui .menu-help, .compact-ui .arena-discovery { display: none; }
+.compact-ui .profile { bottom: max(59px, calc(env(safe-area-inset-bottom) + 54px)); left: max(12px, env(safe-area-inset-left)); width: min(330px, 46vw); max-width: none; height: 40px; padding: 0 6px 0 0; background: #0c293bd9; border: 1px solid #527487; }
+.compact-ui .avatar { width: 36px; height: 36px; border: 0; }
+.compact-ui .profile-info { padding: 0 8px; min-width: 0; }
+.compact-ui .profile-info > strong { max-width: 160px; font-size: 15px; line-height: 1.2; }
+.compact-ui .profile-info > span { font-size: 9px; }
+.compact-ui .profile-progress, .compact-ui .level { display: none; }
+.compact-ui #profile-edit { min-height: 44px; padding: 5px 8px; font-size: 10px; }
+.compact-ui .showroom-label { bottom: 116px; right: max(16px, env(safe-area-inset-right)); max-width: 43vw; }
+.compact-ui .showroom-label > strong { font-size: 19px; }
+.compact-ui .showroom-label > span { font-size: 10px; }
+.compact-ui .showroom-label button { min-height: 44px; padding: 8px 12px; font-size: 12px; }
+.compact-ui .menu-footer { height: calc(50px + env(safe-area-inset-bottom)); min-height: 50px; padding: 3px max(12px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(12px, env(safe-area-inset-left)); border-top: 1px solid #476c7c88; background: #061b29ef; }
+.compact-ui .menu-footer > span { display: none; }
+.compact-ui .menu-footer > div { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; }
+.compact-ui .menu-footer button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; font-size: 11px; letter-spacing: .5px; gap: 6px; }
+.compact-ui .menu-footer .compact-only { margin-right: auto; }
+.compact-ui .menu-footer svg { width: 17px; height: 17px; }
+.compact-ui .play-panel { top: max(52px, env(safe-area-inset-top)); bottom: calc(56px + env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); width: auto; max-width: none; transform: none; padding: 12px; overflow-y: auto; background: #071e2ef5; border: 1px solid #52788b; border-radius: 5px; }
+.compact-ui .play-panel h1 { font-size: 25px; letter-spacing: .5px; margin: 0 0 12px; }
+.compact-ui .mode-selector { gap: 6px; }
+.compact-ui .mode-choice { min-height: 52px; padding: 8px; }
+.compact-ui .mode-choice strong { font-size: 15px; }
+.compact-ui .mode-choice small { font-size: 10px; }
+.compact-ui .arena-preview { height: 68px; margin-bottom: 10px; }
+.compact-ui .arena-preview strong { font-size: 20px; }
+.compact-ui .arena-preview span { font-size: 11px; }
+.compact-ui .arena-preview > div { padding: 8px 14px; }
+
+/* A modal replaces competing lobby chrome. Native dialog still owns focus. */
+.compact-ui:has(dialog[open]) #lobby, .compact-ui:has(dialog[open]) .online-presence { visibility: hidden; }
+.compact-ui dialog { top: max(10px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: auto; transform: none; margin: 0; width: auto; max-width: none; max-height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom))); padding: 16px; overflow-y: auto; background: #081f2ffb; border: 1px solid #598397; box-shadow: 0 8px 40px #0008; border-radius: 6px; font-size: 14px; }
+.compact-ui dialog::backdrop, .compact-ui #garage-dialog::backdrop { background: #020d17c7; backdrop-filter: blur(3px); }
+.compact-ui dialog h2 { font-size: 24px; line-height: 1.2; letter-spacing: .5px; text-align: left; margin: 0 0 12px; text-shadow: none; }
+.compact-ui dialog h3 { font-size: 14px; margin: 14px 0 8px; }
+.compact-ui dialog p { font-size: 13px; line-height: 1.45; }
+.compact-ui dialog button { min-height: 44px; font-size: 14px; padding: 8px 12px; }
+.compact-ui dialog .close { width: 44px; min-width: 44px; height: 44px; padding: 6px; }
+.compact-ui dialog input:not([type=checkbox]):not([type=range]), .compact-ui dialog select, .compact-ui dialog textarea { min-height: 44px; min-width: 0; max-width: 100%; font-size: 16px; border-radius: 4px; }
+.compact-ui select { appearance: none; -webkit-appearance: none; padding-right: 30px !important; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23b8d6e5' stroke-width='1.5' d='m1 1 5 5 5-5'/%3E%3C/svg%3E") !important; background-repeat: no-repeat !important; background-position: right 10px center !important; }
+.compact-ui .setting { padding: 10px 0; gap: 12px; font-size: 14px; }
+.compact-ui .setting strong { font-size: 15px; }
+.compact-ui .setting small { font-size: 11px; line-height: 1.4; }
+.compact-ui .dialog-actions { margin-top: 12px; gap: 8px; }
+.compact-ui .vertical { display: grid; grid-template-columns: 1fr 1fr; }
+.compact-ui .room-options { gap: 10px; margin: 12px 0; }
+.compact-ui .room-options label { font-size: 13px; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; }
+.compact-ui .room-options select { padding: 8px 10px; font-size: 15px; }
+.compact-ui .friends-columns { grid-template-columns: 1fr 1fr; gap: 14px; }
+.compact-ui .drive-settings { height: calc(100dvh - 20px); }
+.compact-ui .settings-tabs { flex-shrink: 0; overflow-x: auto; }
+.compact-ui .settings-tabs button { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+.compact-ui .settings-panel { padding: 10px 12px; }
+.compact-ui .range-setting { font-size: 13px; }
+.compact-ui .settings-footer { flex-shrink: 0; padding-top: 8px; }
+
+/* Four compact vehicle tiles per row in landscape, two in portrait. */
+.compact-ui #garage-dialog { top: max(10px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); width: auto; height: calc(100dvh - max(10px, env(safe-area-inset-top)) - max(10px, env(safe-area-inset-bottom))); max-height: none; transform: none; padding: 12px 16px; overflow: hidden; background: #081f2ffb; border: 1px solid #598397; }
+.compact-ui #garage-dialog[open] { display: flex; flex-direction: column; }
+.compact-ui #garage-dialog .garage-heading { display: flex; flex: 0 0 auto; align-items: center; gap: 12px; padding-bottom: 8px; border-bottom: 1px solid #436a7d; }
+.compact-ui #garage-dialog h2 { order: 0; margin: 0; font-size: 24px; line-height: 1.2; }
+.compact-ui #garage-dialog .garage-close { order: 2; margin-left: auto; position: static !important; float: none; width: 44px; height: 44px; font-size: 26px !important; }
+.compact-ui #garage-dialog .garage-subtitle { display: none; }
+.compact-ui #garage-dialog .garage-content { display: block; min-height: 0; flex: 1; padding-top: 8px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.compact-ui #garage-dialog h3 { font-size: 12px; line-height: 1.3; letter-spacing: 1px; margin: 8px 0; }
+.compact-ui #garage-dialog .body-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.compact-ui #garage-dialog .body-card { min-width: 0; min-height: 106px; padding: 8px; background: #102d3f; border: 1px solid #52778a; box-shadow: none; }
+.compact-ui #garage-dialog .body-card.selected { background: #1b4862; border: 2px solid #bcecff; padding: 7px; }
+.compact-ui #garage-dialog .car-art { width: 100%; height: 60px; }
+.compact-ui #garage-dialog .body-card strong { margin: 5px 0 0; font-size: 13px; line-height: 1.2; letter-spacing: .2px; overflow-wrap: anywhere; }
+.compact-ui #garage-dialog .body-card small { display: none; }
+.compact-ui #garage-dialog .garage-status { margin: 8px 0 0; min-height: 18px; font-size: 12px; }
+.compact-ui #garage-dialog .paint { min-width: 44px; min-height: 44px; width: 44px; height: 44px; }
+
+/* Search keeps mode, region and arena visible; optional details scroll above actions. */
+.compact-ui #matchmaking-dialog[open] { display: flex; flex-direction: column; height: min(510px, calc(100dvh - 20px)); padding: 0; overflow: hidden; }
+.compact-ui .matchmaking-heading { flex: 0 0 auto; padding: 14px 16px 10px; border-bottom: 1px solid #416b80; }
+.compact-ui .matchmaking-heading .eyebrow { font-size: 10px; letter-spacing: 1.5px; margin: 0 0 4px; }
+.compact-ui .matchmaking-heading h2 { font-size: 23px; margin: 0; }
+.compact-ui .matchmaking-content { min-height: 0; flex: 1; overflow-y: auto; padding: 10px 16px; scrollbar-width: thin; overscroll-behavior: contain; }
+.compact-ui #matchmaking-dialog .dialog-actions { flex: 0 0 auto; justify-content: stretch; margin: 0; padding: 8px 16px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid #416b80; background: #081f2f; }
+.compact-ui #matchmaking-dialog .dialog-actions > button { flex: 1; min-height: 44px; font-size: 15px; }
+.compact-ui #matchmaking-dialog .dialog-description { font-size: 12px; text-align: left; line-height: 1.4; margin: 0 0 10px; }
+.compact-ui #matchmaking-dialog[data-phase=idle] .matchmaking-status, .compact-ui #matchmaking-dialog[data-phase=cancelled] .matchmaking-status { display: none; }
+.compact-ui .match-essentials { gap: 8px 12px; }
+.compact-ui .match-essentials > label { font-size: 11px; letter-spacing: .5px; }
+.compact-ui .match-essentials > .setting { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+.compact-ui .match-essentials select { margin: 0; min-height: 44px; padding: 8px 10px; }
+.compact-ui #matchmaking-advanced { margin-top: 8px; }
+.compact-ui #matchmaking-advanced summary { min-height: 44px; padding: 12px 0; font-size: 11px; }
+.compact-ui .match-advanced-content .server-field { margin: 12px 0; text-align: left; }
+.compact-ui .match-advanced-content .server-field small, .compact-ui .network-preference-hint { font-size: 12px; line-height: 1.5; }
+.compact-ui #matchmaking-dialog:is([data-phase=searching],[data-phase=connecting],[data-phase=checking],[data-phase=preparing],[data-phase=starting]) #matchmaking-preferences { display: none; }
+.compact-ui #matchmaking-dialog .matchmaking-status { font-size: 19px; margin: 14px 0; }
+.compact-ui #matchmaking-dialog .matchmaking-clock strong { font-size: 44px; }
+.compact-ui #matchmaking-dialog .matchmaking-pulse { width: 24px; height: 24px; }
+
+.compact-ui #music-dialog { top: 50%; left: 50%; right: auto; bottom: auto; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 24px)); height: auto; }
+.compact-ui #music-dialog .compact-dialog-heading { margin-bottom: 12px; }
+.compact-ui #music-dialog h2 { margin: 0; font-size: 22px; }
+.compact-ui #music-dialog .lobby-music { padding: 0; margin: 0; background: none; border: 0; }
+.compact-ui #music-dialog .lobby-music h3 { display: none; }
+.compact-ui #music-dialog .lobby-music select { width: 100%; min-height: 44px; font-size: 16px; }
+.compact-ui #music-dialog .music-buttons { gap: 6px; margin: 12px 0; }
+.compact-ui #music-dialog .music-buttons button { min-height: 44px; min-width: 44px; font-size: 15px; padding: 8px; }
+.compact-ui #music-dialog [data-music-play] { min-width: 64px; }
+.compact-ui #music-dialog .music-buttons label { font-size: 11px; min-width: 70px; }
+.compact-ui #music-dialog .lobby-music p { white-space: normal; font-size: 12px; line-height: 1.5; }
+
+@media (max-width: 600px) and (orientation: portrait) {
+ .compact-ui .home-screen { width: auto; right: max(12px, env(safe-area-inset-right)); top: max(62px, calc(env(safe-area-inset-top) + 48px)); bottom: auto; max-height: calc(100dvh - 190px); }
+ .compact-ui .profile { width: calc(100vw - 24px); right: 12px; bottom: calc(58px + env(safe-area-inset-bottom)); }
+ .compact-ui .profile-info > strong { max-width: 190px; }
+ .compact-ui .showroom-label { bottom: 115px; left: 16px; right: 16px; max-width: none; display: block; text-align: right; }
+ .compact-ui .showroom-label > strong { font-size: 17px; }
+ .compact-ui .showroom-label > span { display: none; }
+ .compact-ui .showroom-label button { display: none; }
+ .compact-ui .menu-footer button { padding: 8px; font-size: 10px; }
+ .compact-ui .friends-columns, .compact-ui .vertical { grid-template-columns: 1fr; }
+ .compact-ui .room-options label { grid-template-columns: 1fr; gap: 5px; }
+ .compact-ui #garage-dialog .body-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .compact-ui #garage-dialog .body-card { min-height: 112px; }
+ .compact-ui #garage-dialog .car-art { height: 64px; }
+ .compact-ui .match-essentials > .setting { grid-template-columns: 1fr; }
+ .compact-ui .matchmaking-content { padding: 12px 14px; }
+ .compact-ui #hud-editor { height: calc(100dvh - 20px); }
+}
+@media (max-height: 350px) and (orientation: landscape) {
+ .compact-ui .home-screen { top: 52px; bottom: 100px; }
+ .compact-ui .profile { bottom: 54px; height: 36px; }
+}
+/* Prevent Safari's landscape text inflation while retaining normal page zoom. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.compact-ui .matchmaking-heading { text-align: left; }
+.compact-ui .menu-footer button { font-size: 12px; }
+@media (max-width: 350px) { .compact-ui .menu-footer button { font-size: 11px; padding: 8px 7px; } }
+.compact-footer-label { display: none; }
+.compact-ui .wide-footer-label { display: none; }
+.compact-ui .compact-footer-label { display: inline; }
+.compact-ui .menu-footer button { min-width: 44px; }
+.compact-ui #hud-editor .hud-ghost { min-width: 0; min-height: 0; padding: 6px; font-size: 12px; }
