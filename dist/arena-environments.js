@@ -3,10 +3,12 @@ import {ARENAS,normalizeArena} from './arenas.js';
 import {freezeStaticTransforms} from './rendering.js';
 import {makeHarbourEnvironment} from './harbour-assets.js';
 import {makeFestivalEnvironment} from './festival-assets.js';
+import {BLENDER_ARENA_IDS,makeOriginalArenaEnvironment} from './original-arena-assets.js';
 
 // Small, deterministic original scenes. Repeated scenery uses GPU instancing;
 // decorative solids stay outside the playing enclosure and never affect physics.
 export function createArenaEnvironment(value) {
+  if(BLENDER_ARENA_IDS.includes(value))return makeOriginalArenaEnvironment(value);
   if(value==='harbour')return makeHarbourEnvironment();
   if(value==='festival'){
     const forest=createArenaEnvironment('snow'),festival=makeFestivalEnvironment();

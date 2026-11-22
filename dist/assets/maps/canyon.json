@@ -1,0 +1,18 @@
+{
+  "id": "canyon",
+  "name": "Red Rock Canyon",
+  "description": "Layered sandstone, natural arch and desert rail bridge",
+  "author": "Boost Circuit project",
+  "license": "MIT",
+  "originalArtwork": true,
+  "source": "scripts/create-arena-pack.py",
+  "sourceBlend": "art/canyon.blend",
+  "bytes": 2003144,
+  "sha256": "e391f08eba58c08f75f768bb6cc2414fca859f3b7c21d12267dbeadd9ed4dfec",
+  "triangles": 38192,
+  "materialBatches": 12,
+  "textures": 0,
+  "sourceProps": 2122,
+  "collision": "Shared regulation field; decoration outside cage and goal rooms",
+  "blenderVersion": "4.3.2"
+}

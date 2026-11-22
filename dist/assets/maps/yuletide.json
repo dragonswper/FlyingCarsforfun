@@ -1,0 +1,18 @@
+{
+  "id": "yuletide",
+  "name": "Yuletide Market",
+  "description": "Christmas market, clocktower, snow and lanterns",
+  "author": "Boost Circuit project",
+  "license": "MIT",
+  "originalArtwork": true,
+  "source": "scripts/create-arena-pack.py",
+  "sourceBlend": "art/yuletide.blend",
+  "bytes": 2882348,
+  "sha256": "078275ba9d4b882cf7b5435cab329b4e6f3461a0f0a83a013c0b5bc6e64f5aff",
+  "triangles": 51914,
+  "materialBatches": 12,
+  "textures": 0,
+  "sourceProps": 2822,
+  "collision": "Shared regulation field; decoration outside cage and goal rooms",
+  "blenderVersion": "4.3.2"
+}

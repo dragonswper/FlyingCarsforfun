@@ -1,0 +1,18 @@
+{
+  "id": "halloween",
+  "name": "Halloween Hollow",
+  "description": "Pumpkin harvest, gothic manor and moonlit bare trees",
+  "author": "Boost Circuit project",
+  "license": "MIT",
+  "originalArtwork": true,
+  "source": "scripts/create-arena-pack.py",
+  "sourceBlend": "art/halloween.blend",
+  "bytes": 1988516,
+  "sha256": "24a7c93d208a5b0e28eb06a531508c24cd2a7ac462dc48c8e449140d38e4de55",
+  "triangles": 37184,
+  "materialBatches": 13,
+  "textures": 0,
+  "sourceProps": 2144,
+  "collision": "Shared regulation field; decoration outside cage and goal rooms",
+  "blenderVersion": "4.3.2"
+}

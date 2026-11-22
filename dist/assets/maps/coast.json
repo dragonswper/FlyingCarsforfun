@@ -1,0 +1,18 @@
+{
+  "id": "coast",
+  "name": "Sunset Coast",
+  "description": "Seaside promenade, lighthouse, palms and sailboats",
+  "author": "Boost Circuit project",
+  "license": "MIT",
+  "originalArtwork": true,
+  "source": "scripts/create-arena-pack.py",
+  "sourceBlend": "art/coast.blend",
+  "bytes": 1684360,
+  "sha256": "d050837c7ae922f7efd2aa184a0f7512338867818fe11572882ce32eaeafd5ce",
+  "triangles": 31366,
+  "materialBatches": 13,
+  "textures": 0,
+  "sourceProps": 2114,
+  "collision": "Shared regulation field; decoration outside cage and goal rooms",
+  "blenderVersion": "4.3.2"
+}

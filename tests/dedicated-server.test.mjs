@@ -16,7 +16,7 @@ async function lobby(t,{people=2,maxPeople=4,arena='champions'}={}){
 }
 async function start(h){for(let n=0;n<h.clients.length;n++){h.clients[n].chooseTeam(n%2);h.clients[n].setReady(true);}await until(()=>h.owner.members.every(member=>member.team!==null&&member.ready),'ready');assert.equal(h.owner.startMatch(),true);await until(()=>h.clients.every(room=>room.active),'match');return h.app.rooms.get(h.owner.code);}
 
-for(const [arena,next]of [['snow','city'],['city','woods'],['woods','snow'],['harbour','city']])test(arena+' field reaches both players, late spectators and the next configured rematch',async t=>{
+for(const [arena,next]of [['snow','city'],['city','woods'],['woods','snow'],['harbour','city'],['yuletide','halloween'],['halloween','coast'],['coast','canyon'],['canyon','orbital'],['orbital','yuletide']])test(arena+' field reaches both players, late spectators and the next configured rematch',async t=>{
  const h=await lobby(t,{arena}),session=await start(h);
  assert.equal(session.sim.options.arena,arena);assert.ok(h.clients.every(room=>room.sim.options.arena===arena));
  assert.equal(session.configure({...session.options,arena:next}),false);

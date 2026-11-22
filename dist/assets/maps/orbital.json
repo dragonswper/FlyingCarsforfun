@@ -1,0 +1,18 @@
+{
+  "id": "orbital",
+  "name": "Orbital Station",
+  "description": "Observation ring, solar arrays and an Earthrise",
+  "author": "Boost Circuit project",
+  "license": "MIT",
+  "originalArtwork": true,
+  "source": "scripts/create-arena-pack.py",
+  "sourceBlend": "art/orbital.blend",
+  "bytes": 2141744,
+  "sha256": "9ed4788849b5dc7c61ef911550d4f909b8e0f162df932299055d6c8cac8bf3c1",
+  "triangles": 39404,
+  "materialBatches": 13,
+  "textures": 0,
+  "sourceProps": 2242,
+  "collision": "Shared regulation field; decoration outside cage and goal rooms",
+  "blenderVersion": "4.3.2"
+}
