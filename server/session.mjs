@@ -174,6 +174,9 @@ export class ServerSession extends PartyRoom {
   }
   makeSimulation(id, players) {
     super.makeSimulation(id, serverPlayers(this.options, players));
+    // Clients build their visible replay from received states. The headless
+    // authority never consumes its own camera replay or needs those copies.
+    this.sim.recordReplay = false;
     for (const entry of this.entries.values()) entry.remote = new ServerInputs();
   }
   stateFor(entry,world=null) {

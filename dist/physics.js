@@ -114,7 +114,7 @@ export class Simulation{
   if(this.options.mode==='doubles')this.cars.push(makeCar(1,0,true),makeCar(2,1,true),makeCar(3,1,true));
   if((this.options.mode==='custom'||this.options.dedicated)&&Array.isArray(this.options.players)&&this.options.players.length)this.cars=this.options.players.slice(0,8).map(player=>makeCar(player.id,player.team,player.bot===true));
   if(Array.isArray(this.options.humanIds))for(const car of this.cars)if(this.options.humanIds.includes(car.id))car.bot=false;
-  this.ball={p:new V(0,C.ballRestHeight,0),v:new V(),spin:new V(),q:new Q()};this.pads=createPads();this.score=[0,0];this.remaining=this.options.duration;this.overtime=false;this.elapsed=0;this.phase='kickoff';this.phaseTime=3;this.clockStarted=false;this.lastTouch=-1;this.lastTouchTime=-99;this.replay=[];this.recordTime=0;this.trainingIndex=0;this.trainingHits=0;this.shotTime=15;
+  this.ball={p:new V(0,C.ballRestHeight,0),v:new V(),spin:new V(),q:new Q()};this.pads=createPads();this.score=[0,0];this.remaining=this.options.duration;this.overtime=false;this.elapsed=0;this.phase='kickoff';this.phaseTime=3;this.clockStarted=false;this.lastTouch=-1;this.lastTouchTime=-99;this.replay=[];this.recordReplay=true;this.recordTime=0;this.trainingIndex=0;this.trainingHits=0;this.shotTime=15;
   if(this.options.mode==='training')this.loadDrill();else this.kickoff();
   if(this.options.mode==='free'){this.phase='playing';this.cars[0].boost=100;}
  }
@@ -170,7 +170,7 @@ export class Simulation{
    if(this.overtime)this.remaining+=dt;else this.remaining=Math.max(0,this.remaining-dt);
    if(!this.overtime&&this.remaining<=0&&this.ball.p.y<=C.ballRestHeight+.025){if(this.score[0]===this.score[1]){this.overtime=true;this.remaining=0;this.kickoff();this.emit('overtime');}else this.end();}
   }
-  this.recordTime+=dt;if(this.recordTime>=.05){this.recordTime=0;this.replay.push(this.snapshot());if(this.replay.length>100)this.replay.shift();}
+  if(this.recordReplay){this.recordTime+=dt;if(this.recordTime>=.05){this.recordTime=0;this.replay.push(this.snapshot());if(this.replay.length>100)this.replay.shift();}}
  }
  snapshot(){return {ball:{p:this.ball.p.toArray(),q:this.ball.q.toArray()},cars:this.cars.map(c=>({id:c.id,team:c.team,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting,speed:c.v.dot(FWD.clone().applyQuaternion(c.q)),steer:c.renderSteer||0,grounded:c.grounded})),time:this.elapsed};}
  state(localId=0){const player=this.cars.find(car=>car.id===localId)||this.cars[0];return {phase:this.phase,mode:this.options.mode,score:[...this.score],remaining:this.remaining,overtime:this.overtime,phaseTime:this.phaseTime,elapsed:this.elapsed,boost:player.boost,speed:player.v.length()*3.6,grounded:player.grounded,supersonic:player.supersonic,trainingIndex:this.trainingIndex,trainingHits:this.trainingHits,drillName:this.drillName,shotTime:this.shotTime,players:this.cars.map(c=>({id:c.id,team:c.team,goals:c.goals,assists:c.assists,touches:c.touches,demos:c.demos,score:c.score}))};}

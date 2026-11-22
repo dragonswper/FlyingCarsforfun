@@ -218,7 +218,7 @@ export class GameView{
   finally{for(const guard of guards)guard.restore();}
  }
  async prepare(){await this.warmCameraMaterials(this.scene,[...this.cars.values()].map(model=>model.cameraGuard));}
- diagnostics(){const guard=this.cars.get(this.localPlayerId)?.cameraGuard;return {arena:this.arenaId,mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail,rendering:{...this.resolvedRendering,grassInstances:this.grass?.geometry.instanceCount||0},camera:{...this.chase.diagnostics(),vehicleOpacity:guard?.opacity??1,vehicleClearance:guard?.radius??0}};}
+ diagnostics(){const guard=this.cars.get(this.localPlayerId)?.cameraGuard;return {arena:this.arenaId,mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail,rendering:{...this.resolvedRendering,grassInstances:this.grass?.geometry.instanceCount||0,grassBufferBytes:(this.grass?.bufferCapacity||0)*20},camera:{...this.chase.diagnostics(),vehicleOpacity:guard?.opacity??1,vehicleClearance:guard?.radius??0}};}
  sync(sim,paint='#299bff',body='fennec'){
   this.setArena(sim.options.arena);
   this.chase.reset();

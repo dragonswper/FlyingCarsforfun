@@ -10,6 +10,8 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.24.1 — optimization update:** Less collision CPU/allocation work, grass buffers allocated on demand, field shader preparation during match loading and lighter dedicated replay bookkeeping. [Changes, measurements and verification](docs/release-1.24.1.md).
+
 **1.24.0 — five original Blender arenas:** Yuletide Market (Christmas), Halloween Hollow, Sunset Coast, Red Rock Canyon and Orbital Station join the eleven-field online rotation and all arena selectors. Editable `.blend` files, optimized GLBs and Blender-rendered previews are included. [Fields, source and validation](docs/release-1.24.md).
 
 **1.23.2 — random online arenas:** Every game under Online Match now uses a shared random field, including bot fill, online practice and rematches. Rematches avoid the previous arena; both clients prepare the next field before starting. [Behavior and validation](docs/release-1.23.2.md). Reload all players for the matching build.

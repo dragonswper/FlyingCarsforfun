@@ -1,6 +1,9 @@
 import {Vector3 as V,Quaternion as Q} from './vendor/three.module.js';
 import {C,clamp,CORNER_PLANES} from './constants.js';
 const UP=new V(0,1,0),FWD=new V(0,0,1),RIGHT=new V(1,0,0);
+// Support queries return a number; their basis vectors never escape. Reuse
+// them and rotate once per distinct orientation, including mid-solve turns.
+const supportRight=new V(),supportUp=new V(),supportForward=new V(),supportRotation=new Q(NaN,NaN,NaN,NaN);
 export function arenaPlanes(p){
  const planes=[{n:new V(-Math.sign(p.x||1),0,0),d:C.halfWidth-Math.abs(p.x)}],opening=Math.abs(p.x)<C.goalWidth+.2&&p.y<C.goalHeight+.2;
  if(!opening)planes.push({n:new V(0,0,-Math.sign(p.z||1)),d:C.halfLength-Math.abs(p.z)});
@@ -20,21 +23,29 @@ export function roundedSurface(p,n,d,goal=false){
  return {normal:n.clone().multiplyScalar(horizontal/length).addScaledVector(UP,sign*vertical/length),gap:radius-length,upper:sign<0};
 }
 export function carSupport(car,normal){
- const right=RIGHT.clone().applyQuaternion(car.q),up=UP.clone().applyQuaternion(car.q),forward=FWD.clone().applyQuaternion(car.q);
- return Math.max(C.carHeight,Math.abs(normal.dot(right))*C.hitboxHalfWidth+Math.abs(normal.dot(up))*C.hitboxHalfHeight+Math.abs(normal.dot(forward))*C.hitboxHalfLength-normal.dot(up)*C.hitboxOffsetUp-normal.dot(forward)*C.hitboxOffsetForward);
+ if(!supportRotation.equals(car.q)){
+  supportRotation.copy(car.q);supportRight.copy(RIGHT).applyQuaternion(car.q);supportUp.copy(UP).applyQuaternion(car.q);supportForward.copy(FWD).applyQuaternion(car.q);
+ }
+ return Math.max(C.carHeight,Math.abs(normal.dot(supportRight))*C.hitboxHalfWidth+Math.abs(normal.dot(supportUp))*C.hitboxHalfHeight+Math.abs(normal.dot(supportForward))*C.hitboxHalfLength-normal.dot(supportUp)*C.hitboxOffsetUp-normal.dot(supportForward)*C.hitboxOffsetForward);
 }
 function bounce(body,n,restitution){const vn=body.v.dot(n);if(vn<0)body.v.addScaledVector(n,-(1+restitution)*vn);return Math.max(0,-vn);}
 function capsule(body,a,b,radius,restitution,car){const segment=b.clone().sub(a),t=clamp(body.p.clone().sub(a).dot(segment)/segment.lengthSq(),0,1),near=a.clone().addScaledVector(segment,t),delta=body.p.clone().sub(near),length=delta.length();if(length<1e-7)return;delta.divideScalar(length);const support=car?carSupport(body,delta)+.12:radius;if(length<support){body.p.addScaledVector(delta,support-length+.001);bounce(body,delta,restitution);}}
 // Cars need persistent, orientation-aware contacts. A tiny separation after a
 // solve must not alternate between driving and aerial controls on every tick.
 const CAR_CONTACT_SKIN=.015;
+// Conservative orientation-independent support bound, including the larger
+// retained-contact skin. Far surfaces cannot constrain the chassis or curves.
+const MAX_CAR_SUPPORT=C.hitboxHalfWidth+C.hitboxHalfHeight+C.hitboxHalfLength+C.hitboxOffsetUp+C.hitboxOffsetForward+.06,
+ FAR_CAR_PLANE=Math.max(C.ramp,C.ceilingRamp,C.goalRamp,MAX_CAR_SUPPORT);
 function collideCarArena(body){
- let contacts=[],impact=0;const up=UP.clone().applyQuaternion(body.q);
+ let contacts=[],impact=0;const up=UP.clone().applyQuaternion(body.q),unit=Math.abs(body.q.lengthSq()-1)<1e-6,
+  farPlane=unit?FAR_CAR_PLANE:Infinity,maxSupport=unit?MAX_CAR_SUPPORT:Infinity;
  const constrain=(normal,gap)=>{const retained=body.grounded&&body.noContact===0&&up.dot(normal)>.55,skin=retained?.06:CAR_CONTACT_SKIN;if(gap>skin)return;if(gap<0||retained){body.p.addScaledVector(normal,-gap);impact=Math.max(impact,bounce(body,normal,0));}contacts.push({normal,gap});};
  for(let iteration=0;iteration<3;iteration++){
   contacts=[];const origin=body.p.clone();
   for(const {n,d:initialDistance,goal}of arenaPlanes(body.p).sort((a,b)=>a.d-b.d)){
    const d=initialDistance+n.x*(body.p.x-origin.x)+n.z*(body.p.z-origin.z);
+   if(d>farPlane)continue;
    const rounded=roundedSurface(body.p,n,d,goal);
    if(rounded){
     if(rounded.upper&&body.grounded&&body.noContact===0&&!body.flipActive&&up.dot(rounded.normal)>.55&&Math.abs(rounded.gap-carSupport(body,rounded.normal))<.25){
@@ -48,9 +59,9 @@ function collideCarArena(body){
    }
    else constrain(n,d-carSupport(body,n));
   }
-  constrain(UP.clone(),body.p.y-carSupport(body,UP));
-  const ceiling=arenaCeiling(body.p),down=new V(0,-1,0);
-  constrain(down,ceiling-body.p.y-carSupport(body,down));
+  if(body.p.y<=maxSupport)constrain(UP.clone(),body.p.y-carSupport(body,UP));
+  const ceiling=arenaCeiling(body.p);
+  if(ceiling-body.p.y<=maxSupport){const down=new V(0,-1,0);constrain(down,ceiling-body.p.y-carSupport(body,down));}
   const post=(a,b)=>{const segment=b.clone().sub(a),t=clamp(body.p.clone().sub(a).dot(segment)/segment.lengthSq(),0,1),delta=body.p.clone().sub(a.addScaledVector(segment,t)),length=delta.length();if(length>1e-7){delta.divideScalar(length);constrain(delta,length-carSupport(body,delta)-.12);}};
   for(const sign of [-1,1])if(Math.abs(body.p.z-sign*C.halfLength)<1.2){for(const x of [-C.goalWidth,C.goalWidth])post(new V(x,0,sign*C.halfLength),new V(x,C.goalHeight,sign*C.halfLength));post(new V(-C.goalWidth,C.goalHeight,sign*C.halfLength),new V(C.goalWidth,C.goalHeight,sign*C.halfLength));}
  }

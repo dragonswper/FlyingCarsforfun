@@ -5,15 +5,14 @@ import {C,CORNER_PLANES} from './constants.js';
 // beyond the faded edge of the patch; they do not move the ball or car contacts.
 export class ShortGrass{
  constructor(scene,capacity=90000){
+  this.capacity=Math.max(0,Math.min(90000,Math.floor(Number(capacity)||0)));
   const geometry=this.geometry=new T.InstancedBufferGeometry();
   geometry.setAttribute('position',new T.Float32BufferAttribute([-.012,0,0,.012,0,0,0,1,0, 0,0,-.012,0,0,.012,0,1,0],3));
   geometry.setAttribute('normal',new T.Float32BufferAttribute([0,.9,.3,0,.9,.3,0,.9,.3, .3,.9,0,.3,.9,0,.3,.9,0],3));
   geometry.setAttribute('uv',new T.Float32BufferAttribute([0,0,1,0,.5,1,0,0,1,0,.5,1],2));
-  const offsets=new Float32Array(capacity*2),variation=new Float32Array(capacity*3);let seed=1202026;
-  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-  for(let i=0;i<capacity;i++){offsets.set([(random()-.5)*44,(random()-.5)*44],i*2);variation.set([.032+random()*.03,random(),random()*Math.PI*2],i*3);}
-  geometry.setAttribute('grassOffset',new T.InstancedBufferAttribute(offsets,2));geometry.setAttribute('grassVariation',new T.InstancedBufferAttribute(variation,3));geometry.instanceCount=0;
+  geometry.instanceCount=0;
   const center=this.center=new T.Vector2(),material=this.material=new T.MeshStandardMaterial({color:'#ffffff',roughness:.95,metalness:0,side:T.DoubleSide});
+  this.bufferCapacity=0;
   const cornerMask=CORNER_PLANES.map(p=>`if(abs(bladeWorld.x)>${C.cornerX.toFixed(3)}&&abs(bladeWorld.y)>${C.cornerZ.toFixed(3)})inside=min(inside,(${p.nx.toFixed(7)})*abs(bladeWorld.x)+(${p.nz.toFixed(7)})*abs(bladeWorld.y)-(${p.boundary.toFixed(7)})-${(C.ramp+.15).toFixed(3)});`).join('\n');
   material.onBeforeCompile=shader=>{
    shader.uniforms.grassCenter={value:center};
@@ -39,9 +38,21 @@ export class ShortGrass{
   material.customProgramCacheKey=()=> 'short-grass-v1';
   this.mesh=new T.Mesh(geometry,material);this.mesh.name='Short_Field_Grass';this.mesh.frustumCulled=false;this.mesh.receiveShadow=true;this.mesh.visible=false;scene.add(this.mesh);
  }
+ ensureBuffers(count){
+  if(count<=this.bufferCapacity)return;
+  // Release old GPU bindings before growing attributes. The deterministic
+  // prefix stays identical, so changing quality never scatters the turf.
+  if(this.bufferCapacity)this.geometry.dispose();
+  const offsets=new Float32Array(count*2),variation=new Float32Array(count*3);let seed=1202026;
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+  for(let i=0;i<count;i++){offsets.set([(random()-.5)*44,(random()-.5)*44],i*2);variation.set([.032+random()*.03,random(),random()*Math.PI*2],i*3);}
+  this.geometry.setAttribute('grassOffset',new T.InstancedBufferAttribute(offsets,2));this.geometry.setAttribute('grassVariation',new T.InstancedBufferAttribute(variation,3));this.bufferCapacity=count;
+ }
  configure(count,field){
   const map=field?.material?.map||null;if(this.material.map!==map){this.material.map=map;this.material.needsUpdate=true;}
-  this.geometry.instanceCount=Math.max(0,Math.min(90000,count));this.mesh.visible=count>0&&!!map;
+  const next=Math.max(0,Math.min(this.capacity,Math.floor(Number(count)||0)));
+  this.mesh.visible=next>0&&!!map;if(this.mesh.visible)this.ensureBuffers(next);
+  this.geometry.instanceCount=this.mesh.visible?next:0;
  }
  update(position){this.center.set(position.x,position.z);}
  dispose(){this.geometry.dispose();this.material.dispose();}
