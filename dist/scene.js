@@ -10,6 +10,7 @@ import { batchStaticPitch, freezeStaticTransforms, BoostPadView, ParticlePool } 
 import { AdaptiveGraphics } from './performance.js';
 import { ChaseCamera } from './camera.js';
 import { VehicleCameraGuard } from './camera-vehicle.js';
+import { VehicleSurfaceGuard } from './vehicle-surfaces.js';
 import {ARENAS,normalizeArena} from './arenas.js';
 import {createArenaEnvironment} from './arena-environments.js';
 import {loadFestivalAssets} from './festival-assets.js';
@@ -158,7 +159,7 @@ export class GameView{
  async ensureBody(body,onProgress){
   if(body!=='bottled'&&!Object.hasOwn(CUSTOM_BODY_FILES,body)&&!isNoveltyABody(body))return;
   const template=await(body==='bottled'?loadBottled(onProgress):isNoveltyABody(body)?loadNoveltyABody(body,onProgress):loadCustomBody(body,onProgress));this.bodyWarmups||=new Map();
-  if(!this.bodyWarmups.has(body))this.bodyWarmups.set(body,(async()=>{const model=body==='bottled'?makeBottledModel('#299bff',template):isNoveltyABody(body)?makeNoveltyAModel(body,'#299bff',template):makeCustomModel(body,'#299bff',template);try{const textures=new Set();model.visual.traverse(object=>{for(const material of Array.isArray(object.material)?object.material:[object.material])if(material)for(const value of Object.values(material))if(value?.isTexture)textures.add(value);});for(const texture of textures)this.renderer.initTexture(texture);await this.warmCameraMaterials(model.root,[new VehicleCameraGuard(model)]);}finally{disposeModel(model);}})().catch(error=>{this.bodyWarmups.delete(body);throw error;}));
+  if(!this.bodyWarmups.has(body))this.bodyWarmups.set(body,(async()=>{const model=body==='bottled'?makeBottledModel('#299bff',template):isNoveltyABody(body)?makeNoveltyAModel(body,'#299bff',template):makeCustomModel(body,'#299bff',template);try{if(body==='c17')new VehicleSurfaceGuard(model);const textures=new Set();model.visual.traverse(object=>{for(const material of Array.isArray(object.material)?object.material:[object.material])if(material)for(const value of Object.values(material))if(value?.isTexture)textures.add(value);});for(const texture of textures)this.renderer.initTexture(texture);await this.warmCameraMaterials(model.root,[new VehicleCameraGuard(model)]);}finally{disposeModel(model);}})().catch(error=>{this.bodyWarmups.delete(body);throw error;}));
   return this.bodyWarmups.get(body);
  }
  quality(level){this.qualityLevel=level;this.graphics.setMode(level);this.applyGraphics();if(this.stadium&&this.arenaId==='champions')this.ensureStadiumDetail(this.nativeDetail());}
@@ -227,6 +228,7 @@ export class GameView{
   this.cameraHasAnchor=false;this.cameraPhase=null;
   for(const c of this.cars.values()){this.scene.remove(c.root);disposeModel(c);}this.cars.clear();
   this.localPlayerId=sim.localPlayerId===null?null:sim.localPlayerId??0;for(const car of sim.cars){const chosen=car.appearance?.body||(car.id===this.localPlayerId?body:'fennec'),color=car.appearance?.color||(car.id===this.localPlayerId?paint:teamColors[car.team]);const model=chosen==='fennec'?makeFennecModel(color):chosen==='bottled'?makeBottledModel(color):isNoveltyABody(chosen)?makeNoveltyAModel(chosen,color):Object.hasOwn(CUSTOM_BODY_FILES,chosen)?makeCustomModel(chosen,color):makeCarModel(color,chosen);const glow=mesh(model.root,new T.TorusGeometry(.68,.022,5,32),new T.MeshBasicMaterial({color:teamColors[car.team]}),[0,-.19,0],[Math.PI/2,0,0]);glow.castShadow=false;
+   if(chosen==='c17')model.surfaceGuard=new VehicleSurfaceGuard(model);
    model.cameraGuard=new VehicleCameraGuard(model,glow);model.simCar=car;this.cars.set(car.id,model);this.scene.add(model.root);}this.carShadows.count=sim.cars.length;this.update(sim,0,true);
  }
  burst(position,color='#ffc478',count=25){this.particles.spawn(position,color,count);}
@@ -238,6 +240,7 @@ export class GameView{
    model.root.visible=snapshot?!state.demo:car.demoTime<=0;model.flame.visible=!!state.boosting&&!menu;model.flame.scale.z=1+Math.sin(this.spin*80)*.15;
    const speed=snapshot?(state.speed||0):car.v.dot(this.forward.set(0,0,1).applyQuaternion(car.q));
    const animationState={speed:menu?0:speed,steer:menu?0:snapshot?(state.steer||0):car.renderSteer||0,dt,grounded:snapshot?state.grounded!==false:car.grounded,throttle:menu?0:snapshot?state.throttle||0:car.renderThrottle||0};if(!animateNoveltyAModel(model,animationState))animateVehicle(model,animationState);
+   model.surfaceGuard?.update(dt,!menu);
   }
   if(snapshot){this.ball.position.fromArray(snapshot.ball.p);this.ball.quaternion.fromArray(snapshot.ball.q);}else{this.ball.position.copy(sim.ball.p);this.ball.quaternion.copy(sim.ball.q);}
   this.ballShadow.position.set(this.ball.position.x,.022,this.ball.position.z);this.ballIndicator.position.set(this.ball.position.x,.028,this.ball.position.z);this.ballIndicator.visible=!menu;const shadowScale=1+this.ball.position.y*.13;this.ballShadow.scale.setScalar(shadowScale);this.ballShadow.material.opacity=.35/(1+this.ball.position.y*.35);

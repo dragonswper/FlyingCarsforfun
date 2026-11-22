@@ -10,6 +10,8 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.25.1 — aircraft corner clearance:** Prevents the C-17 artwork from clipping into ramps while retaining shared car physics; camera protection follows the adjusted model. [Cause, behavior and verification](docs/release-1.25.1.md).
+
 **1.25.0 — turf, points and teamplay:** Curved wind-animated grass, detailed turf surfaces, shots/saves and match-point feedback, a tappable scoreboard, winning-team MVP, and improved bot kickoffs, defense, shot placement and recovery. [Controls, rules and verification](docs/release-1.25.md).
 
 **1.24.1 — optimization update:** Less collision CPU/allocation work, grass buffers allocated on demand, field shader preparation during match loading and lighter dedicated replay bookkeeping. [Changes, measurements and verification](docs/release-1.24.1.md).

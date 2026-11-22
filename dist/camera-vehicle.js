@@ -5,6 +5,7 @@ import {C, clamp} from './constants.js';
 // shared physics hitbox. No triangle raycasts or scene traversals per frame.
 export class VehicleCameraGuard {
   constructor(model, decoration = null) {
+    this.visualOffset = model.visualOffset || null;
     this.bounds = new Box3(); this.materials = [];
     this.eye = new Vector3(); this.target = new Vector3(); this.hit = new Vector3();
     this.inverseRotation = new Quaternion(); this.ray = new Ray(); this.opacity = 1;
@@ -33,11 +34,12 @@ export class VehicleCameraGuard {
     if (this.bounds.isEmpty()) this.bounds.set(new Vector3(-.6,-.2,-1),new Vector3(.6,.7,1));
     // Account for suspension movement and a .22 m camera/near-plane sphere.
     this.bounds.expandByScalar(.06);
-    this.radius = Math.hypot(Math.max(Math.abs(this.bounds.min.x),Math.abs(this.bounds.max.x)),
+    this.baseRadius = Math.hypot(Math.max(Math.abs(this.bounds.min.x),Math.abs(this.bounds.max.x)),
       Math.max(Math.abs(this.bounds.min.y),Math.abs(this.bounds.max.y)),
       Math.max(Math.abs(this.bounds.min.z),Math.abs(this.bounds.max.z))) + .22;
     this.nearBounds = this.bounds.clone().expandByScalar(.18);
   }
+  get radius() { return this.baseRadius + (this.visualOffset?.length() || 0); }
   setOpacity(value) {
     if (Math.abs(value - this.opacity) < 1e-6) return;
     this.opacity = value;
@@ -54,6 +56,7 @@ export class VehicleCameraGuard {
     this.inverseRotation.copy(rotation).invert();
     this.eye.copy(eye).sub(position).applyQuaternion(this.inverseRotation);
     this.target.copy(ball).sub(position).applyQuaternion(this.inverseRotation);
+    if (this.visualOffset) { this.eye.sub(this.visualOffset); this.target.sub(this.visualOffset); }
     let goal = 1;
     if (this.nearBounds.containsPoint(this.eye)) goal = 0;
     else if (ballCam && this.target.length() < this.radius + C.ballRadius + 1) {
