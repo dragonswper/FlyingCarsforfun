@@ -15,7 +15,7 @@ export function resolveRendering(profile,preferences){
  const prefs=renderingPreferences(preferences),cinematic=profile.tier==='ultra';
  return {shadowSize:prefs.shadows==='off'?0:prefs.shadows==='ultra'?4096:prefs.shadows==='soft'?2048:cinematic?4096:profile.shadows?1024:0,
   enhanced:prefs.lighting==='enhanced'||prefs.lighting==='preset'&&cinematic,
-  grassCount:prefs.grass==='high'?90000:prefs.grass==='low'?24000:prefs.grass==='off'?0:cinematic?60000:0,
+  grassCount:prefs.grass==='high'?48000:prefs.grass==='low'?12000:prefs.grass==='off'?0:cinematic?48000:profile.tier==='high'?18000:profile.tier==='balanced'?8000:0,
   scale:profile.scale*prefs.resolutionScale/100,exposure:prefs.exposure};
 }
 // A small generated HDR lighting environment gives painted metal, windows,

@@ -1,4 +1,5 @@
 import {normalizeArena} from './arenas.js';
+import {MatchScoring,competitiveMode} from './scoring.js';
 /* Browser-native car soccer. Verified values are separate from analytic contact approximations. */
 import {Vector3 as V,Quaternion as Q} from './vendor/three.module.js';
 import {C,clamp,curve,THROTTLE_CURVE,CURVATURE_CURVE,BALL_HIT_CURVE} from './constants.js';
@@ -13,7 +14,7 @@ const padLocations=[[0,-4240],[-1792,-4184],[1792,-4184],[-3072,-4096],[3072,-40
 export function createPads(){return padLocations.map(([x,z],id)=>({id,p:new V(x/100,big.has(id)?.73:.70,z/100),big:big.has(id),timer:0}));}
 
 export function makeCar(id,team,bot=false){
- return {id,team,bot,p:new V(0,C.carHeight,0),v:new V(),q:new Q(),omega:new V(),normal:UP.clone(),grounded:true,boost:C.boostSpawn,boosting:false,boostTime:0,drifting:false,handbrake:0,jumpHeld:false,jumpActive:false,hasJumped:false,jumpTime:0,jumpEndTime:0,airTime:0,canDouble:false,noContact:0,flipTime:0,flipActive:false,flipRotation:0,flipAxis:new V(),selfRightTime:0,selfRightTarget:new Q(),demoTime:0,supersonic:false,supersonicTime:0,touches:0,goals:0,assists:0,saves:0,demos:0,score:0,hitCooldown:0,extraHitCooldown:0,recoverTime:0};
+ return {id,team,bot,p:new V(0,C.carHeight,0),v:new V(),q:new Q(),omega:new V(),normal:UP.clone(),grounded:true,boost:C.boostSpawn,boosting:false,boostTime:0,drifting:false,handbrake:0,jumpHeld:false,jumpActive:false,hasJumped:false,jumpTime:0,jumpEndTime:0,airTime:0,canDouble:false,noContact:0,flipTime:0,flipActive:false,flipRotation:0,flipAxis:new V(),selfRightTime:0,selfRightTarget:new Q(),demoTime:0,supersonic:false,supersonicTime:0,touches:0,goals:0,assists:0,saves:0,shots:0,demos:0,score:0,hitCooldown:0,extraHitCooldown:0,recoverTime:0};
 }
 function spawnCar(c,x,z,yaw){
  c.p.set(x,C.carHeight,z);c.v.set(0,0,0);c.q.setFromAxisAngle(UP,yaw);c.omega.set(0,0,0);c.normal.copy(UP);c.selfRightTarget.identity();
@@ -109,7 +110,7 @@ export function collideCars(a,b,emit=()=>{}){
 const drills=[{name:'Straight shot',car:[0,-32],ball:[0,.913,-20],v:[0,0,0]},{name:'Left angle',car:[-18,-30],ball:[-10,.913,-12],v:[0,0,0]},{name:'Right angle',car:[18,-30],ball:[10,.913,-12],v:[0,0,0]},{name:'First aerial',car:[0,-18],ball:[0,3.8,-7],v:[0,0,1.5]},{name:'Make the save',car:[0,-40],ball:[2,2,-8],v:[-1.2,1,-15]}];
 export class Simulation{
  constructor(options={}){
-  this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options,arena:normalizeArena(options?.arena)};this.prediction=new BallPrediction();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
+  this.options={mode:'duel',duration:300,difficulty:'pro',unlimited:false,...options,arena:normalizeArena(options?.arena)};this.prediction=new BallPrediction();this.scoring=new MatchScoring();this.botRoles=[null,null];this.touchHistory=[];this.events=[];this.cars=[makeCar(0,0)];
   if(this.options.mode==='duel')this.cars.push(makeCar(1,1,true));
   if(this.options.mode==='doubles')this.cars.push(makeCar(1,0,true),makeCar(2,1,true),makeCar(3,1,true));
   if((this.options.mode==='custom'||this.options.dedicated)&&Array.isArray(this.options.players)&&this.options.players.length)this.cars=this.options.players.slice(0,8).map(player=>makeCar(player.id,player.team,player.bot===true));
@@ -122,7 +123,7 @@ export class Simulation{
  kickoff(){
   this.kickoffs=(this.kickoffs||0)+1;
   const spawns=[[0,-46.08,0],[-2.56,-38.4,0],[2.56,-38.4,0],[-20.48,-25.6,Math.PI/4],[20.48,-25.6,-Math.PI/4]],count=[0,0];for(const c of this.cars){const [x,z,yaw]=spawns[((this.kickoffs-1)+count[c.team]++)%spawns.length],sign=c.team?-1:1;spawnCar(c,x*sign,z*sign,yaw+(c.team?Math.PI:0));}
-  this.botRoles=[null,null];this.touchHistory=[];this.goAt=undefined;this.prediction.invalidate();
+  this.botRoles=[null,null];this.scoring.reset();this.touchHistory=[];this.goAt=undefined;this.prediction.invalidate();
   this.ball.p.set(0,C.ballRestHeight,0);this.ball.v.set(0,0,0);this.ball.spin.set(0,0,0);this.ball.q.identity();this.pads.forEach(p=>p.timer=0);this.phase='kickoff';this.phaseTime=3;this.clockStarted=false;this.lastTouch=-1;this.replay=[];
  }
  loadDrill(){
@@ -140,7 +141,7 @@ export class Simulation{
  end(){this.phase='ended';this.emit('end',{won:this.score[0]>this.score[1]});}
  goal(team){
   if(this.phase!=='playing')return;
-  this.score[team]++;const scorer=this.cars.find(c=>c.id===this.lastTouch);if(scorer&&scorer.team===team){scorer.goals++;scorer.score+=C.goalPoints;const assist=[...this.touchHistory].reverse().find(t=>t.team===team&&t.id!==scorer.id&&this.elapsed-t.time<=C.assistWindow);if(assist){const teammate=this.cars.find(c=>c.id===assist.id);teammate.assists++;teammate.score+=C.assistPoints;}}
+  this.score[team]++;const scorer=this.cars.find(c=>c.id===this.lastTouch);if(scorer&&scorer.team===team){scorer.goals++;scorer.score+=C.goalPoints;this.scoring.notify(this,scorer,'goal');const assist=[...this.touchHistory].reverse().find(t=>t.team===team&&t.id!==scorer.id&&this.elapsed-t.time<=C.assistWindow);if(assist){const teammate=this.cars.find(c=>c.id===assist.id);teammate.assists++;teammate.score+=C.assistPoints;this.scoring.notify(this,teammate,'assist');}}
   if(this.options.mode==='training'&&team===0)this.trainingHits++;
   this.phase='goal';this.phaseTime=4;this.emit('goal',{team,scorer:scorer?.team===team?scorer.id:null,speed:this.ball.v.length()*3.6});
  }
@@ -154,9 +155,9 @@ export class Simulation{
   }
   const hit=stepBall(this.ball,dt);if(hit.impact>3)this.emit('bounce',{speed:hit.impact,p:this.ball.p.toArray()});
   this.tick=(this.tick||0)+1;
-  for(const car of (this.tick%2?this.cars:this.cars.slice().reverse())){if(collideCarBall(car,this.ball)){
+  for(const car of (this.tick%2?this.cars:this.cars.slice().reverse())){if(competitiveMode(this.options.mode))this.scoring.capture(this);if(collideCarBall(car,this.ball)){
    this.clockStarted=true;this.lastTouch=car.id;this.lastTouchTime=this.elapsed;this.prediction.invalidate();if(this.touchHistory.at(-1)?.id!==car.id)this.touchHistory.push({id:car.id,team:car.team,time:this.elapsed});else this.touchHistory.at(-1).time=this.elapsed;this.touchHistory=this.touchHistory.filter(t=>this.elapsed-t.time<=C.assistWindow);
-   if(car.hitCooldown===0){car.touches++;car.hitCooldown=.15;this.emit('hit',{car:car.id,speed:this.ball.v.length(),p:this.ball.p.toArray()});}
+   if(car.hitCooldown===0){this.scoring.touch(this,car);car.touches++;car.hitCooldown=.15;this.emit('hit',{car:car.id,speed:this.ball.v.length(),p:this.ball.p.toArray()});}
   }}
   for(let a=0;a<this.cars.length;a++)for(let b=a+1;b<this.cars.length;b++)collideCars(this.cars[a],this.cars[b],(t,d)=>this.emit(t,d));
   for(const car of this.cars){collideArena(car,C.carHeight,0,true);lengthClamp(car.v,C.maxSpeed);lengthClamp(car.omega,C.maxAngularSpeed);}
@@ -173,5 +174,5 @@ export class Simulation{
   if(this.recordReplay){this.recordTime+=dt;if(this.recordTime>=.05){this.recordTime=0;this.replay.push(this.snapshot());if(this.replay.length>100)this.replay.shift();}}
  }
  snapshot(){return {ball:{p:this.ball.p.toArray(),q:this.ball.q.toArray()},cars:this.cars.map(c=>({id:c.id,team:c.team,p:c.p.toArray(),q:c.q.toArray(),demo:c.demoTime>0,boosting:c.boosting,speed:c.v.dot(FWD.clone().applyQuaternion(c.q)),steer:c.renderSteer||0,grounded:c.grounded})),time:this.elapsed};}
- state(localId=0){const player=this.cars.find(car=>car.id===localId)||this.cars[0];return {phase:this.phase,mode:this.options.mode,score:[...this.score],remaining:this.remaining,overtime:this.overtime,phaseTime:this.phaseTime,elapsed:this.elapsed,boost:player.boost,speed:player.v.length()*3.6,grounded:player.grounded,supersonic:player.supersonic,trainingIndex:this.trainingIndex,trainingHits:this.trainingHits,drillName:this.drillName,shotTime:this.shotTime,players:this.cars.map(c=>({id:c.id,team:c.team,goals:c.goals,assists:c.assists,touches:c.touches,demos:c.demos,score:c.score}))};}
+ state(localId=0){const player=this.cars.find(car=>car.id===localId)||this.cars[0];return {phase:this.phase,mode:this.options.mode,score:[...this.score],remaining:this.remaining,overtime:this.overtime,phaseTime:this.phaseTime,elapsed:this.elapsed,boost:player.boost,speed:player.v.length()*3.6,grounded:player.grounded,supersonic:player.supersonic,trainingIndex:this.trainingIndex,trainingHits:this.trainingHits,drillName:this.drillName,shotTime:this.shotTime,players:this.cars.map(c=>({id:c.id,team:c.team,goals:c.goals,assists:c.assists,saves:c.saves,shots:c.shots,touches:c.touches,demos:c.demos,score:c.score}))};}
 }

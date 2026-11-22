@@ -1,6 +1,7 @@
 import {Vector3, Quaternion} from './vendor/three.module.js';
 import {C, makeCar, stepCar, collideCarBall, collideCars} from './physics.js';
 import {stepBall} from './ball.js';
+import {MATCH_POINTS} from './scoring.js';
 import {carSupport, collideArena} from './arena.js';
 import {cleanInput, validCounter} from './network-protocol.js';
 
@@ -24,6 +25,7 @@ const NUMBERS = [
   'goals',
   'assists',
   'saves',
+  'shots',
   'touches',
   'demos',
   'renderSteer',
@@ -152,6 +154,7 @@ export function validState(value, sim) {
       rotation(car.selfRightTarget) &&
       VECTORS.every((key) => array(car[key], 3)) &&
       NUMBERS.every((key) => finite(car[key])) &&
+      ['score','goals','assists','saves','shots','touches','demos'].every(key=>Number.isSafeInteger(car[key])&&car[key]>=0&&car[key]<=1e6) &&
       FLAGS.every((key) => typeof car[key] === 'boolean') &&
       car.boost >= 0 &&
       car.boost <= 100.001 &&
@@ -431,7 +434,7 @@ export class GuestReplica {
       this.history?.clear();
       this.remember(through);
     } else {
-      for (const key of ['score', 'goals', 'assists', 'saves', 'touches', 'demos'])
+      for (const key of ['score', 'goals', 'assists', 'saves', 'shots', 'touches', 'demos'])
         this.predicted[key] = local[key];
       for (const n of this.history.keys()) if (n < through) this.history.delete(n);
     }
@@ -635,12 +638,13 @@ export class GuestReplica {
 
 export function cleanEvents(events) {
   if (!Array.isArray(events) || events.length > 24) return [];
-  const types = ['goal', 'hit', 'bounce', 'pad', 'demo', 'go', 'overtime', 'end', 'save', 'miss'];
+  const types = ['goal', 'hit', 'bounce', 'pad', 'demo', 'go', 'overtime', 'end', 'save', 'miss', 'score'];
   return events
     .filter(
       (e) =>
         e &&
         types.includes(e.type) &&
+        (e.type!=='score'||(Object.hasOwn(MATCH_POINTS,e.kind)&&e.points===MATCH_POINTS[e.kind]&&Number.isInteger(e.car)&&e.car>=0&&e.car<8)) &&
         (!e.p || array(e.p, 3)) &&
         (!('speed' in e) || finite(e.speed, 1000)) &&
         (!('team' in e) || e.team === 0 || e.team === 1) &&
@@ -651,7 +655,7 @@ export function cleanEvents(events) {
     )
     .map((e) => {
       const result = {type: e.type};
-      for (const key of ['team', 'scorer', 'speed', 'p', 'car', 'id', 'big', 'by', 'won'])
+      for (const key of ['team', 'scorer', 'speed', 'p', 'car', 'id', 'big', 'by', 'won', 'kind', 'points'])
         if (key in e) result[key] = e[key];
       return result;
     });

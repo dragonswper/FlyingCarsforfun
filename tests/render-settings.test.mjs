@@ -2,9 +2,9 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import * as T from '../dist/vendor/three.module.js';
 import {renderingPreferences,resolveRendering} from '../dist/render-settings.js';
 import {graphicsProfile} from '../dist/performance.js';import {ShortGrass} from '../dist/grass.js';
-test('old graphics choices retain their cost while Cinematic opts into shading and grass',()=>{
- for(const quality of ['low','balanced','high']){const value=resolveRendering(graphicsProfile(quality),{});assert.equal(value.enhanced,false);assert.equal(value.grassCount,0);}
- const value=resolveRendering(graphicsProfile('ultra'),{});assert.equal(value.enhanced,true);assert.equal(value.shadowSize,4096);assert.equal(value.grassCount,60000);
+test('natural turf scales with graphics presets while low and mobile keep grass disabled by default',()=>{
+ for(const quality of ['low','balanced','high']){const value=resolveRendering(graphicsProfile(quality),{});assert.equal(value.enhanced,false);assert.equal(value.grassCount,{low:0,balanced:8000,high:18000}[quality]);}
+ const value=resolveRendering(graphicsProfile('ultra'),{});assert.equal(value.enhanced,true);assert.equal(value.shadowSize,4096);assert.equal(resolveRendering(graphicsProfile('mobile'),{}).grassCount,0);assert.equal(value.grassCount,48000);
 });
 test('advanced graphics settings clamp stored numbers and allow low-cost overrides of Cinematic',()=>{
  const preferences=renderingPreferences({resolutionScale:900,exposure:-4,shadows:'off',grass:'off',lighting:'basic'});

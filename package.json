@@ -1,6 +1,6 @@
 {
   "name": "boost-circuit",
-  "version": "1.24.1",
+  "version": "1.25.0",
   "private": true,
   "type": "module",
   "description": "Original browser-native car soccer inspired by researched arena-soccer mechanics",

@@ -176,3 +176,26 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .random-arena-summary { font-size: 15px; color: #e4f4fa; background: #0b283b; border: 1px solid #4d7c90; padding: 9px 12px; text-align: left; }
 .random-arena-summary small { display: block; font: 11px/1.45 Arial,sans-serif; color: #a8c8d8; margin-top: 3px; }
 .compact-ui .random-arena-summary { font-size: 14px; }
+/* Match points stay readable on a narrow touch screen. */
+.score-toast { position: fixed; z-index: 6; left: 50%; top: max(92px, 15dvh); transform: translateX(-50%); padding: 7px 14px; border: 1px solid #d5b55b88; border-radius: 4px; color: #ffe2a0; background: #132833e8; font: 600 17px/1.2 Rajdhani, sans-serif; letter-spacing: .6px; pointer-events: none; white-space: nowrap; }
+.score-head, .score-row { grid-template-columns: minmax(110px, 1fr) repeat(5, 64px); }
+.score-panel { max-height: 68dvh; overflow: auto; }
+#scoreboard-toggle { pointer-events: auto; border: 0; padding: 0; margin: 0; border-radius: 0; background: none; color: inherit; font: inherit; cursor: pointer; touch-action: manipulation; }
+#scoreboard-toggle::after { content: ''; position: absolute; inset: -7px 0; }
+#scoreboard-toggle:focus-visible { outline: 2px solid #d9f6ff; outline-offset: 4px; }
+#score-close { position: absolute; top: 6px; right: 6px; width: 44px; height: 44px; padding: 0; background: #102c40; border: 1px solid #6b9fb455; border-radius: 3px; color: #deeff5; font: 28px/1 sans-serif; pointer-events: auto; }
+.score-panel { pointer-events: auto; }
+body.scoreboard-open #online-presence { visibility: hidden; pointer-events: none; }
+.score-panel h2 { padding-right: 44px; }
+.result-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.result-mvp { margin: 8px 0 14px; color: #ffe0a0; font-size: 17px; text-align: center; }
+@media (max-width: 760px), (max-height: 500px) {
+ .score-panel { top: 12%; width: calc(100vw - 24px); max-height: 78dvh; padding: 12px; }
+ .score-head, .score-row { grid-template-columns: minmax(80px, 1fr) repeat(5, minmax(29px, .38fr)); gap: 4px; padding-left: 5px; padding-right: 5px; }
+ .score-head { font-size: 10px; letter-spacing: 0; }
+ .score-row { font-size: 17px; }
+ .score-row span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ .score-panel > p { font-size: 10px; letter-spacing: 0; margin-top: 10px; }
+ .result-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+ .score-toast { top: max(66px, 14dvh); font-size: 14px; }
+}

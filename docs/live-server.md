@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.24.1**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.25.0**, and its public client protocol matches the tested source.
+
+Version 1.25.0 adds natural turf, shots and saves with match points, a tappable six-column scoreboard, winning-team MVP and improved bot teamplay/recovery. [Controls, scoring rules and verification](release-1.25.md).
 
 Version 1.24.1 reduces collision CPU/allocation work, allocates grass detail on demand, prepares field shaders during loading and removes unused headless replay copies. [Optimization measurements and verification](release-1.24.1.md).
 

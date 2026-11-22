@@ -15,6 +15,7 @@ import {createArenaEnvironment} from './arena-environments.js';
 import {loadFestivalAssets} from './festival-assets.js';
 import {renderingPreferences,resolveRendering,EnvironmentLighting} from './render-settings.js';
 import {ShortGrass} from './grass.js';
+import {configureTurfSurface,disposeTurfDetail} from './turf-texture.js';
 import {buildDriveSurfaces} from './drive-surfaces.js';
 import {CUSTOM_BODY_FILES} from './bodies.js';
 import {isNoveltyABody,loadNoveltyABody,makeNoveltyAModel,animateNoveltyAModel,disposeNoveltyAModel,disposeNoveltyATemplates} from './novelty-assets-a.js';
@@ -175,7 +176,8 @@ export class GameView{
   for(const group of [...this.arenaCache.values()].map(arena=>arena.root).concat([...this.environments.values()].map(env=>env.root),[this.stadium,this.innerField])){
    group?.traverse(node=>{if(!node.isMesh)return;const materials=Array.isArray(node.material)?node.material:[node.material];node.castShadow=size>0&&materials.every(mat=>!mat.transparent)&&node.name!=='Scenery_Ground'&&!node.name.includes('turf')&&!node.name.startsWith('Boost_Pad_');node.receiveShadow=true;});
   }
-  this.grass?.configure(ARENAS[this.arenaId].grass?render.grassCount:0,this.arena.field);this.resize();
+  this.grass?.configure(ARENAS[this.arenaId].grass?render.grassCount:0,this.arena.field);
+  configureTurfSurface(this.arena.field,!!ARENAS[this.arenaId].grass&&profile.tier!=='low'&&render.grassCount>0);this.resize();
  }
 
  monitorFrame(dt){if(this.graphics.observe(dt))this.applyGraphics();}
@@ -253,9 +255,9 @@ export class GameView{
    this.chase.sample(p,player.root.quaternion,this.ball.position,this.cameraSettings,this.cameraMode,dt,{speed,velocity:this.cameraVelocity,grounded:state?.grounded??player.simCar.grounded,cameraRadius:player.cameraGuard.radius});desired.copy(this.chase.position);target.copy(this.chase.look);driverRig=true;
   }
   for(const model of this.cars.values()){if(driverRig&&model===player)model.cameraGuard.update(desired,this.ball.position,p,player.root.quaternion,this.cameraMode,dt);else model.cameraGuard.restore();}
-  this.cameraAnchor.copy(p);this.cameraHasAnchor=true;this.grass?.update(p);
+  this.cameraAnchor.copy(p);this.cameraHasAnchor=true;this.grass?.update(p,this.spin);
   let shadow=0;for(const model of this.cars.values()){this.shadowPosition.set(model.root.position.x,.018,model.root.position.z);const visible=model.root.visible&&model.root.position.y<8;this.shadowScale.set(visible?.65:0,visible?1.1:0,1);this.shadowMatrix.compose(this.shadowPosition,this.shadowRotation,this.shadowScale);this.carShadows.setMatrixAt(shadow++,this.shadowMatrix);}this.carShadows.instanceMatrix.needsUpdate=true;
   const smooth=dt===0?1:1-Math.exp(-8*dt);if(driverRig){this.camera.position.copy(desired);this.look.copy(target);}else{this.camera.position.lerp(desired,smooth);this.look.lerp(target,smooth);}this.camera.up.set(0,1,0);this.camera.lookAt(this.look);this.camera.fov=driverRig?verticalFov(this.chase.fov,this.camera.aspect):T.MathUtils.lerp(this.camera.fov,menu?45:verticalFov(this.cameraSettings.fov,this.camera.aspect),dt===0?1:Math.min(1,dt*8));this.camera.updateProjectionMatrix();this.renderer.render(this.scene,this.camera);
  }
- dispose(){this.stadiumRequest++;this.environmentLighting.dispose();this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();disposeBottledTemplate();for(const model of this.cars.values())if(model.noveltyA)disposeNoveltyAModel(model);disposeCustomTemplates();disposeNoveltyATemplates();this.renderer.dispose();}
+ dispose(){this.stadiumRequest++;this.environmentLighting.dispose();disposeTurfDetail();this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();disposeBottledTemplate();for(const model of this.cars.values())if(model.noveltyA)disposeNoveltyAModel(model);disposeCustomTemplates();disposeNoveltyATemplates();this.renderer.dispose();}
 }
