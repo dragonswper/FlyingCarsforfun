@@ -36,6 +36,7 @@ export function createGameServer({
   tick = true,
   region = 'singapore',
   queueClock,
+  arenaRandom,
   socialStore=null
 } = {}) {
   if (!tls && !tlsProxy)
@@ -44,7 +45,7 @@ export function createGameServer({
     );
   if (tlsProxy && (!publicOrigin || !/^https:\/\/[^/]+$/.test(publicOrigin)))
     throw Error('A trusted TLS proxy requires an explicit HTTPS PUBLIC_ORIGIN.');
-  const service = new GameService({maxRooms, region, queueClock, autostart: tick});
+  const service = new GameService({maxRooms, region, queueClock, arenaRandom, autostart: tick});
   const {rooms, bindings, sockets, auth, queue} = service;
   const social=new SocialService({store:socialStore,room:code=>rooms.get(code)});
   let closed = false;

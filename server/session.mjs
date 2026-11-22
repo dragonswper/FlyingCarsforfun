@@ -1,5 +1,6 @@
 import {randomBytes} from 'node:crypto';
 import {Buffer} from 'node:buffer';
+import {randomArena} from '../dist/arenas.js';
 import {PartyRoom} from '../dist/party-room.js';
 import {partySecret} from '../dist/party-transport.js';
 import {NET_BUILD, appearance, MAX_PACKET} from '../dist/network-protocol.js';
@@ -42,7 +43,7 @@ class SocketLink {
   }
 }
 export class ServerSession extends PartyRoom {
-  constructor({code, options, matchmade = false, onEmpty = () => {}, ...callbacks} = {}) {
+  constructor({code, options, matchmade = false, onEmpty = () => {}, chooseArena = randomArena, ...callbacks} = {}) {
     super(callbacks);
     this.role = 'host';
     this.id = -1;
@@ -55,6 +56,7 @@ export class ServerSession extends PartyRoom {
     this.status = 'lobby';
     this.ownerId = null;
     this.onEmpty = onEmpty;
+    this.chooseArena = chooseArena;
     this.beat();
   }
   normalizeOptions(value) {
@@ -149,7 +151,7 @@ export class ServerSession extends PartyRoom {
   configure(options) {
     if (this.pendingMatch || (this.matchId && this.sim?.phase !== 'ended') || this.matchmade)
       return false;
-    const next = serverOptions(options);
+    const next = serverOptions({...options,...(this.options.randomArena?{randomArena:true}:{})});
     if (this.members.filter((member) => member.team !== null).length > modePlayers(next.mode)) {
       this.notice = 'Select Spectate before switching to a mode with fewer driving slots.';
       this.sendLobby();
@@ -166,6 +168,9 @@ export class ServerSession extends PartyRoom {
     }
     this.sendLobby();
     return true;
+  }
+  selectMatchArena() {
+    if(this.options.randomArena)this.options={...this.options,arena:this.chooseArena(this.sim?.options.arena)};
   }
   makeSimulation(id, players) {
     super.makeSimulation(id, serverPlayers(this.options, players));

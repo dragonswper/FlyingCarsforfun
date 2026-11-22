@@ -55,24 +55,24 @@ test('the online menu lets users choose secure server and mode before searching,
   change(nodes['search-connection'], 'server');
   assert.equal(nodes['search-mode'].disabled, false);
   change(nodes['search-mode'], 'doubles');
-  assert.equal(ui.selection().arena,'champions');
+  assert.equal(ui.selection().arena,'random');
   change(nodes['search-arena'],'snow');
   assert.deepEqual(ui.selection(), {
     kind: 'server',
     mode: 'doubles',
     address: 'https://arena.example',
-    arena: 'snow'
+    arena: 'random'
   });
   assert.equal(preferences.onlineMode, 'doubles');
-  assert.equal(saves, 3);
-  assert.equal(preferences.onlineArena,'snow');
+  assert.equal(saves, 2);
+  assert.equal(preferences.onlineArena,undefined);
   assert.equal(searches, 0);
   nodes['matchmaking-search'].click();
   assert.equal(searches, 1);
   ui.render({phase: 'searching', remaining: 59});
   assert.ok(fields.every((field) => field.disabled));
   ui.render({phase: 'cancelled'});
-  assert.ok(fields.every((field) => !field.disabled));
+  assert.ok(fields.every((field) => field===nodes['search-arena']?field.disabled:!field.disabled));
   preferences.serverURL = 'https://other.example';
   ui.open();
   assert.equal(ui.selection().address, 'https://other.example');

@@ -89,3 +89,16 @@ test('automatic matches forward shared chat state only from the winning room',as
  const room=a.controller.matchedRoom;assert.equal(room.sendChat('Hello opponent'),true);await settle();assert.equal(aStates.at(-1).messages[0].text,'Hello opponent');assert.deepEqual(aStates.at(-1).messages,bStates.at(-1).messages);
  room.role==='host'?room.chat.clear():b.controller.matchedRoom.chat.clear();await settle();assert.deepEqual(aStates.at(-1).messages,[]);assert.deepEqual(bStates.at(-1).messages,[]);
 });
+
+test('the peer authority chooses one field and waits for both new arenas to load before presenting a random rematch',async t=>{
+ const loads=[],pending=[],h=harness(t,{prepare:room=>{loads.push({role:room.role,arena:room.options.arena});if(room.options.arena==='harbour')return new Promise(resolve=>pending.push({room,resolve}));}}),a=h.create({chooseArena:()=>{throw Error('Guest must not choose a field');}}),b=h.create({chooseArena:previous=>previous==='city'?'harbour':'city'});
+ a.controller.start({name:'Guest'},{arena:'festival'});b.controller.start({name:'Host'},{arena:'snow'});await settle();const guest=a.controller.matchedRoom,host=b.controller.matchedRoom,first=host.matchId;assert.equal(host.sim.options.arena,'city');assert.equal(guest.sim.options.arena,'city');assert.deepEqual(loads.map(item=>item.arena),['city','city']);
+ host.sim.phase=guest.sim.phase='ended';guest.requestRematch();host.requestRematch();await settle();assert.equal(pending.length,1);assert.equal(pending[0].room,host);assert.equal(host.matchId,first);assert.equal(guest.matchId,first);assert.equal(host.sim.options.arena,'city');
+ pending[0].resolve();await settle();assert.equal(pending.length,2);assert.equal(pending[1].room,guest);assert.equal(host.matchId,first);assert.equal(guest.matchId,first);pending[1].resolve();await settle();assert.notEqual(host.matchId,first);assert.equal(guest.matchId,host.matchId);assert.equal(host.sim.options.arena,'harbour');assert.equal(guest.sim.options.arena,'harbour');assert.equal(a.found.length,2);assert.equal(b.found.length,2);
+});
+test('leaving during a random peer rematch prevents late field preparation from starting another game',async t=>{
+ let release;const h=harness(t,{prepare:room=>room.options.arena==='harbour'?new Promise(resolve=>release=resolve):undefined}),a=h.create({chooseArena:()=> 'city'}),b=h.create({chooseArena:previous=>previous?'harbour':'city'});a.controller.start({});b.controller.start({});await settle();const host=b.controller.matchedRoom,guest=a.controller.matchedRoom;host.sim.phase=guest.sim.phase='ended';host.requestRematch();guest.requestRematch();await settle();assert.ok(release);host.close();release();await settle();assert.equal(h.matches.length,2);assert.equal(host.closed,true);
+});
+test('the timed peer bot fallback chooses a field independently of the saved online preference',t=>{
+ const h=harness(t),a=h.create({chooseArena:()=> 'harbour'});a.controller.start({},{arena:'snow'});h.clock.advance(SEARCH_MS);assert.equal(a.fallback.length,1);assert.equal(a.fallback[0].options.arena,'harbour');
+});

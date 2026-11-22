@@ -9,6 +9,7 @@ export function serverOptions(value = {}) {
   const mode = SERVER_MODES.includes(value.mode) ? value.mode : 'custom';
   return {
     dedicated: true,
+    ...(value.randomArena===true?{randomArena:true}:{}),
     arena: normalizeArena(value.arena),
     mode,
     duration: Math.max(60, Math.min(1800, Math.round(Number(value.duration) || 300))),

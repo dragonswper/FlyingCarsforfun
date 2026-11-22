@@ -11,7 +11,7 @@ export class ServerMatchQueue {
       throw Error('The matchmaking queue is full. Try again later.');
     if ([...this.waiting.values()].some((item) => item.identity.id === identity.id))
       throw Error('This guest session is already searching.');
-    const options = serverOptions({...packet.options, maxPeople: 8}),
+    const options = serverOptions({...packet.options, maxPeople: 8, randomArena: true}),
       network = networkPreferences(packet.network),
       now = this.clock();
     const item = {

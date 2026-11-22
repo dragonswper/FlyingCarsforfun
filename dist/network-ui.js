@@ -14,7 +14,7 @@ export function postMatchState(room,sim){
  if(!room||room.closed)return {next,disabled:true,label:'OPPONENT LEFT',message:room?.error||'The opponent left. Find your next match when ready.'};
  if(room.party&&room.self?.team===null)return {next,disabled:room.recovering,label:'OPEN LOBBY',message:'You are spectating. Open the lobby to choose a team for the next match.'};
  if(room.recovering)return {next,disabled:true,label:'RECONNECTING…',message:'Reconnecting to your opponent. You can also find a new match.'};
- if(room.pendingMatch)return {next,disabled:true,label:'STARTING REMATCH…',message:'Both players agreed. Starting the rematch…'};
+ if(room.pendingMatch||room.loadingArenaMatch||room.preparing||room.status==='starting')return {next,disabled:true,label:'STARTING REMATCH…',message:'Both players agreed. Loading the next arena and vehicles…'};
  return {next,disabled:false,label:room.rematchWanted?'CANCEL REMATCH REQUEST':'REQUEST REMATCH',message:room.rematchWanted?'Rematch requested. Waiting for your opponent…':room.remoteRematch?'Your opponent requested a rematch. Accept to play again.':'Both players must agree to a rematch.'};
 }
 export function setupNetworkUI({preferences,save=()=>{},rematch=()=>{},next=()=>{},leave=()=>{}},root=document){

@@ -10,6 +10,8 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.23.2 — random online arenas:** Every game under Online Match now uses a shared random field, including bot fill, online practice and rematches. Rematches avoid the previous arena; both clients prepare the next field before starting. [Behavior and validation](docs/release-1.23.2.md). Reload all players for the matching build.
+
 **1.23.1 — compact mobile menus:** Smaller navigation and garage cards, music in its own sheet, a fixed matchmaking action row, and connection options under an expandable section. Layout detection also covers desktop-site mode. [Changes and verification](docs/release-1.23.1.md).
 
 **1.23 — Harbourworks and custom HUD layouts:** An original Blender-built dockside stadium, saved drag/resize/opacity controls for desktop and both phone orientations, touch mirroring, clearer mobile menus and fullscreen/home-screen help. Select **Harbourworks** in any field selector; use **Options → Interface → Edit HUD Layout**. [Controls, source artwork and verification](docs/release-1.23.md). Reload all players for the matching build.

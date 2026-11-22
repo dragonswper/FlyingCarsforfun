@@ -1,3 +1,4 @@
+import {randomArena} from './arenas.js';
 import {Simulation} from './physics.js';
 import {RoomTransport} from './network-transport.js';
 import {NET_PROTOCOL,NET_BUILD,MATCH_QUEUE,roomCode,normalizeCode,roomOptions,appearance,guestId,RemoteInputs,STATE_INTERVAL,packInputFrames} from './network-protocol.js';
@@ -11,8 +12,8 @@ const secret=()=>Array.from(crypto.getRandomValues(new Uint8Array(32)),n=>n.toSt
 const validSecret=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
 
 export class NetworkRoom{
- constructor({Transport=RoomTransport,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),onChange=()=>{},onMatch=()=>{},onEvents=()=>{},onDisconnect=()=>{},onChat=()=>{},onChatState=()=>{}}={}){
-  Object.assign(this,{Transport,clock,setTimer,clearTimer,onChange,onMatch,onEvents,onDisconnect,onChat,onChatState});this.status='idle';this.closed=false;this.matchmade=false;this.ready=false;this.remoteReady=false;this.rtt=0;this.hostPaused=false;this.matchId=null;this.peerHello=false;this.timers=new Set();this.lastReceive=clock();this.lastRealtimeAt=clock();this.quality=new ConnectionQuality();this.pings=new Map();this.pingId=0;this.preferences=networkPreferences();this.recovering=false;this.rematchWanted=false;this.remoteRematch=false;this.chatSeen=new Set();this.chatAt=-Infinity;this.remoteChatAt=-Infinity;this.chat=new ChatHistory({clock,setTimer,clearTimer,onChange:state=>{if(this.closed)return;this.onChatState(state);if(this.role==='host'&&this.connected)this.transport.send({t:'chat-state',state});}});
+ constructor({Transport=RoomTransport,clock=()=>performance.now(),setTimer=(fn,ms)=>setTimeout(fn,ms),clearTimer=id=>clearTimeout(id),onChange=()=>{},onMatch=()=>{},onEvents=()=>{},onDisconnect=()=>{},onChat=()=>{},onChatState=()=>{},prepareArena=null,chooseArena=randomArena}={}){
+  Object.assign(this,{Transport,clock,setTimer,clearTimer,onChange,onMatch,onEvents,onDisconnect,onChat,onChatState,prepareArena,chooseArena});this.status='idle';this.closed=false;this.matchmade=false;this.ready=false;this.remoteReady=false;this.rtt=0;this.hostPaused=false;this.matchId=null;this.peerHello=false;this.timers=new Set();this.lastReceive=clock();this.lastRealtimeAt=clock();this.quality=new ConnectionQuality();this.pings=new Map();this.pingId=0;this.preferences=networkPreferences();this.recovering=false;this.rematchWanted=false;this.remoteRematch=false;this.chatSeen=new Set();this.chatAt=-Infinity;this.remoteChatAt=-Infinity;this.chat=new ChatHistory({clock,setTimer,clearTimer,onChange:state=>{if(this.closed)return;this.onChatState(state);if(this.role==='host'&&this.connected)this.transport.send({t:'chat-state',state});}});
  }
  get connected(){return !this.closed&&!!this.transport?.open&&this.peerHello;}
  get active(){return this.connected&&!!this.matchId&&this.status==='playing';}
@@ -35,6 +36,7 @@ export class NetworkRoom{
  open(){
   if(this.closed)return;
   this.lastReceive=this.clock();
+  if(!this.recovering&&this.matchmade&&!this.initialArenaChosen){this.initialArenaChosen=true;if(this.role==='host')this.options={...this.options,arena:this.chooseArena()};else this.options=null;}
   if(this.recovering)this.transport.send({t:'resume',protocol:NET_PROTOCOL,build:NET_BUILD,role:this.role,matchId:this.matchId,pendingMatch:this.pendingMatch||null,key:this.recoveryKey});
   else{this.transport.send({t:'hello',protocol:NET_PROTOCOL,build:NET_BUILD,role:this.role,matchmade:this.matchmade,look:this.look,network:this.preferences});this.later(()=>{if(!this.peerHello)this.fail('The other player did not complete the version check. Try a fresh room.');},8000);}
   this.startHeartbeat();
@@ -85,7 +87,12 @@ export class NetworkRoom{
   else if(packet.t==='start'&&this.role==='guest'&&this.options&&typeof packet.matchId==='string'&&/^[a-f0-9-]{36}$/.test(packet.matchId)){
    if(this.sim?.phase==='ended'&&!(this.rematchWanted&&this.remoteRematch)){this.fail('The opponent tried to rematch without your agreement.');return;}
    if(this.matchmade&&!this.ready&&!this.matchId){this.fail('The opponent tried to start before the vehicles were ready.');return;}
-   if(this.matchId===packet.matchId){this.transport.send({t:'started',matchId:this.matchId});return;}this.prepare(packet.matchId);this.transport.send({t:'started',matchId:this.matchId});
+   if(this.matchId===packet.matchId){this.transport.send({t:'started',matchId:this.matchId});return;}
+   if(this.loadingArenaMatch===packet.matchId)return;
+   const options=packet.options?roomOptions(packet.options):this.options;
+   if(this.matchmade&&(options.mode!=='duel'||options.duration!==300||options.coop)){this.fail('Invalid online match settings.');return;}
+   this.options=options;this.loadingArenaMatch=packet.matchId;this.change('starting');
+   this.loadMatchArena(packet.matchId,()=>{this.loadingArenaMatch=null;this.prepare(packet.matchId);this.transport.send({t:'started',matchId:this.matchId});});
   }else if(packet.t==='started'&&this.role==='host'&&this.pendingMatch&&packet.matchId===this.pendingMatch){const matchId=this.pendingMatch;this.pendingMatch=null;this.prepare(matchId);this.publish(true);}
   else if(packet.t==='pause'&&this.role==='guest'&&packet.matchId===this.matchId){this.hostPaused=packet.paused===true;if(packet.state)this.state(packet.state);this.replica.paused=this.hostPaused;if(this.hostPaused){this.replica.pending.length=0;this.replica.visualP.copy(this.sim.cars[this.sim.localPlayerId].p);this.replica.visualQ.copy(this.sim.cars[this.sim.localPlayerId].q);}this.change();}
   else if(packet.matchId===this.matchId&&this.matchId){
@@ -99,7 +106,18 @@ export class NetworkRoom{
  setReady(ready){if(this.role!=='guest'||!this.connected||!this.options||this.matchId)return;this.ready=!!ready;this.transport.send({t:'ready',ready:this.ready});this.change();}
  startMatch(){
   if(this.role!=='host'||!this.connected||this.recovering||(!this.remoteReady&&!this.matchId)||this.pendingMatch||this.sim?.phase==='ended'&&!(this.rematchWanted&&this.remoteRematch))return false;
-  this.pendingMatch=crypto.randomUUID();this.hostPaused=false;this.change('starting');this.transport.send({t:'start',matchId:this.pendingMatch});const pending=this.pendingMatch;this.later(()=>{if(this.pendingMatch===pending)this.fail('The guest did not start the match. Create a new room.');},10000);return true;
+  if(this.matchmade&&this.matchId)this.options={...this.options,arena:this.chooseArena(this.options.arena)};
+  const pending=this.pendingMatch=crypto.randomUUID();this.hostPaused=false;this.change('starting');
+  this.loadMatchArena(pending,()=>{this.transport.send({t:'start',matchId:pending,options:this.options});});
+  this.later(()=>{if(this.pendingMatch===pending)this.fail('The field could not finish loading. Try a fresh match.');},45000);return true;
+ }
+ loadMatchArena(matchId,ready){
+  const current=()=>!this.closed&&!this.recovering&&(this.pendingMatch===matchId||this.loadingArenaMatch===matchId);
+  if(!this.prepareArena||this.preparedArena===this.options.arena){if(current())ready();return;}
+  const arena=this.options.arena;
+  Promise.resolve().then(()=>{if(current())return this.prepareArena(this.options,this);}).then(()=>{
+   if(!current())return;this.preparedArena=arena;ready();
+  }).catch(()=>{if(current())this.fail('The selected arena could not load. Try a fresh match.');});
  }
  prepare(matchId){
   this.rematchWanted=false;this.remoteRematch=false;
@@ -125,7 +143,7 @@ export class NetworkRoom{
  linkLost(reason){if(this.closed)return;if(this.recovering){this.retryRecovery();return;}if(this.matchId&&validSecret(this.recoveryKey)){this.beginRecovery();return;}this.fail(reason);}
  stopLink(){const old=this.transport;this.transport=null;this.stopTimer(this.heartbeat);this.stopTimer(this.attemptTimer);old?.close();}
  beginRecovery(){
-  if(this.closed||this.recovering)return;this.recovering=true;this.recoveryDeadline=this.clock()+RECOVERY_MS;this.peerHello=false;this.pings.clear();this.clearTimers();this.stopLink();this.remote&&(this.remote=new RemoteInputs());if(this.replica){this.replica.pending.length=0;this.replica.paused=true;}this.recoveryTick();this.link();
+  if(this.closed||this.recovering)return;if(this.loadingArenaMatch){this.loadingArenaMatch=null;this.options={...this.options,arena:this.sim.options.arena};}this.recovering=true;this.recoveryDeadline=this.clock()+RECOVERY_MS;this.peerHello=false;this.pings.clear();this.clearTimers();this.stopLink();this.remote&&(this.remote=new RemoteInputs());if(this.replica){this.replica.pending.length=0;this.replica.paused=true;}this.recoveryTick();this.link();
  }
  recoveryTick(){if(!this.recovering||this.closed)return;if(this.clock()>=this.recoveryDeadline){this.fail('Reconnection timed out after 20 seconds. The match has ended.');return;}this.change('reconnecting');this.recoveryTimer=this.later(()=>this.recoveryTick(),Math.min(250,this.recoveryDeadline-this.clock()));}
  retryRecovery(){if(!this.recovering||this.closed)return;this.stopLink();this.resumePeer=false;this.resumeStateReady=false;if(this.clock()>=this.recoveryDeadline){this.recoveryTick();return;}this.stopTimer(this.retryTimer);this.retryTimer=this.later(()=>this.link(),Math.min(1000,this.recoveryDeadline-this.clock()));}
@@ -135,7 +153,7 @@ export class NetworkRoom{
   if(packet.t==='resume'){
    const committed=this.role==='host'&&this.pendingMatch&&packet.matchId===this.pendingMatch,awaiting=this.role==='guest'&&packet.pendingMatch===this.matchId;
    if(packet.key!==this.recoveryKey||!valid&&!committed&&!awaiting||packet.protocol!==NET_PROTOCOL||packet.build!==NET_BUILD||packet.role===this.role||!['host','guest'].includes(packet.role)){this.fail('The returning player could not be verified.');return;}
-   if(this.role==='host'&&this.pendingMatch){const pending=this.pendingMatch;this.pendingMatch=null;if(committed)this.prepare(pending);}
+   if(this.role==='host'&&this.pendingMatch){const pending=this.pendingMatch;this.pendingMatch=null;if(committed)this.prepare(pending);else this.options={...this.options,arena:this.sim.options.arena};}
    this.resumePeer=true;if(this.role==='host'){this.remote=new RemoteInputs();this.playerInputs=new Map();if(!this.transport.send({t:'resume-state',matchId:this.matchId,key:this.recoveryKey,state:this.snapshot(),paused:this.hostPaused,hostVote:this.rematchWanted,guestVote:this.remoteRematch,chatState:this.chat.state()}))this.retryRecovery();}
   }else if(valid&&this.resumePeer){
    if(packet.t==='resume-leave'){this.fail('The other player left the match.');return;}

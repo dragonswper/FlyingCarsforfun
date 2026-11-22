@@ -172,3 +172,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .compact-ui .compact-footer-label { display: inline; }
 .compact-ui .menu-footer button { min-width: 44px; }
 .compact-ui #hud-editor .hud-ghost { min-width: 0; min-height: 0; padding: 6px; font-size: 12px; }
+
+.random-arena-summary { font-size: 15px; color: #e4f4fa; background: #0b283b; border: 1px solid #4d7c90; padding: 9px 12px; text-align: left; }
+.random-arena-summary small { display: block; font: 11px/1.45 Arial,sans-serif; color: #a8c8d8; margin-top: 3px; }
+.compact-ui .random-arena-summary { font-size: 14px; }

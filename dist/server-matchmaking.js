@@ -42,7 +42,7 @@ export class DedicatedMatchmaker {
             this.finished = true;
             this.onLobby(room);
           } else if (['starting', 'lobby'].includes(room.status))
-            this.onChange({phase: 'preparing', reason: 'Preparing all selected vehicles…'});
+            this.onChange({phase: 'preparing', reason: 'Preparing the arena and vehicles…'});
         },
         onMatch: (sim) => {
           // Search has ended, but this session still owns subsequent rematches.

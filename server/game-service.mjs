@@ -1,3 +1,4 @@
+import {randomArena} from '../dist/arenas.js';
 import {randomBytes} from 'node:crypto';
 import {NET_BUILD, decodePacket} from '../dist/network-protocol.js';
 import {C} from '../dist/physics.js';
@@ -14,6 +15,7 @@ export class GameService {
     queueClock,
     clock = () => performance.now(),
     autostart = true,
+    arenaRandom = Math.random,
     setIntervalFn = (callback,ms) => setInterval(callback,ms),
     clearIntervalFn = timer => clearInterval(timer)
   } = {}) {
@@ -26,6 +28,7 @@ export class GameService {
     this.closed = false;
     this.timer = null;
     this.physicsRooms = [];
+    this.arenaRandom = arenaRandom;
     this.queue = new ServerMatchQueue({
       clock: queueClock,
       onMatch: (players, options, bots) => this.matched(players, options, bots)
@@ -38,6 +41,11 @@ export class GameService {
       code,
       options,
       matchmade,
+      chooseArena: previous => {
+        const arena=randomArena(previous||this.lastOnlineArena,this.arenaRandom);
+        this.lastOnlineArena=arena;
+        return arena;
+      },
       onEmpty: (session) => {
         this.rooms.delete(session.code);
         session.close(false);
@@ -57,7 +65,7 @@ export class GameService {
           remaining: 0,
           reason: bots
             ? 'Search finished after 60 seconds. Empty driving slots will use bots.'
-            : 'Players found. Preparing vehicles…'
+            : 'Players found. Preparing a random arena…'
         })
       );
       const attached = room.attach(player.socket, player.packet, player.identity);

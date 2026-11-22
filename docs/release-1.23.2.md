@@ -1,0 +1,13 @@
+# 1.23.2 — Random online arenas
+
+Reload https://flyingcarsforfun.connstors.workers.dev for **boost-circuit-1.23.2**.
+
+Every game launched through **Online Match** now chooses a shared random arena from Champions Field, Winterlight Park, Neon City, Evergreen Grove, Harbourworks and Frostvale Festival. Saved online arena preferences are ignored, and the menu shows **Random Every Game** rather than offering a fixed online preference. This applies to public duels, doubles, online free play/training, queued custom lobbies and 60-second bot fill. Rematches pick again and avoid the previous field. Private Match hosts retain their explicit fixed-field controls.
+
+The dedicated authority chooses before sending match configuration; clients and late spectators receive that concrete arena, never separate local random choices. A fresh dedicated online session avoids the last online field while that server instance remains running. Queued custom lobbies retain the random policy when their host changes other settings. Lobby discovery labels this policy clearly.
+
+Browser-hosted public games use the host's chosen field. The start packet now carries the selected options, and a preparation barrier waits for the guest's arena load before committing the rematch. An abandoned load cannot start a game after leaving. If a peer connection drops during an uncommitted field change, it recovers the preceding match; late callbacks from the cancelled load are ignored. Reconnecting to an ongoing match keeps that match's arena.
+
+Browser-hosted bot fallback prepares its random field before presenting the game; Play Again prepares another random field. Ordinary offline exhibition/training field selection is unchanged. Randomness changes scenery selection, not arena collision dimensions, driving or match rules.
+
+All **411 automated tests** pass, along with the syntax checks and Cloudflare deployment dry run. Validation covers all six eligible arenas and previous-field exclusion, all dedicated online modes and bot fill, shared configuration/late spectators, consent before random rematches, client preference migration, loading cancellation, reconnects during preparation and fresh-session variation. The Chromium browser check started two clients with conflicting saved preferences, verified a shared Harbourworks field and an agreed Frostvale Festival rematch, and drove the guest after the switch with no browser errors. The software renderer stalled long enough to trigger connection recovery during field transitions; the completed check recovered the same match. This is not a frame-rate or latency benchmark. Physical phone performance and independent network paths are not inferred from software-rendered browser checks.

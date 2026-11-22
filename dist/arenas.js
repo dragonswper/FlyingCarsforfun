@@ -23,3 +23,12 @@ export const ARENAS = Object.freeze({
 export const ARENA_IDS = Object.freeze(Object.keys(ARENAS));
 export const normalizeArena = value => typeof value==='string'&&Object.hasOwn(ARENAS,value)?value:'champions';
 export const arenaName = value => ARENAS[normalizeArena(value)].name;
+
+// Choose a real arena on the authority, never independently on each client.
+// A rematch avoids the previous field; every other field has equal chance.
+export function randomArena(previous,random=Math.random) {
+ const choices=ARENA_IDS.filter(id=>id!==previous);
+ const sample=Number(random());
+ const index=Number.isFinite(sample)?Math.max(0,Math.min(choices.length-1,Math.floor(sample*choices.length))):0;
+ return choices[index];
+}

@@ -42,10 +42,10 @@ for(const id of ['snow','city','woods'])test(id+' scenery uses bounded instancin
  if(snow){assert.equal(snow.geometry.drawRange.count,96);scene.setQuality('high');assert.equal(snow.geometry.drawRange.count,384);assert.equal(snow.userData.time.value,10);}
 });
 
-test('different arena preferences share one matchmaking pool and the match receives one authoritative field',()=>{
+test('saved arena preferences do not split the online queue and each match uses the random policy',()=>{
  const matches=[],queue=new ServerMatchQueue({onMatch:(players,options)=>matches.push({players,options})});
  const socket=()=>({readyState:1,send(){},close(){}}),a=socket(),b=socket();
  queue.add(a,{id:'one'},{options:{mode:'duel',arena:'snow'},network:{region:'oceania'}});
  queue.add(b,{id:'two'},{options:{mode:'duel',arena:'city'},network:{region:'oceania'}});
- assert.equal(matches.length,1);assert.equal(matches[0].options.arena,'snow');assert.equal(matches[0].players.length,2);assert.equal(queue.waiting.size,0);
+ assert.equal(matches.length,1);assert.equal(matches[0].options.randomArena,true);assert.equal(matches[0].players.length,2);assert.equal(queue.waiting.size,0);
 });

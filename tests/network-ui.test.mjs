@@ -24,3 +24,6 @@ test('saved network choices synchronize both menus and live quality/reconnect UI
  room.recovering=true;room.recoveryDeadline=20000;ui.render(room,sim,5000);assert.equal(nodes['reconnect-overlay'].hidden,false);assert.equal(nodes['reconnect-seconds'].textContent,'15');assert.equal(nodes['rematch-button'].disabled,true);for(const id of ['rematch-button','next-match-button','reconnect-leave'])nodes[id].dispatchEvent(new Event('click'));assert.deepEqual([rematches,next,leaves],[1,1,1]);ui.render(null,null);assert.equal(nodes['network-notice'].hidden,true);assert.equal(nodes['reconnect-overlay'].hidden,true);
  room.recovering=false;room.lastReceive=5000;room.lastRealtimeAt=0;ui.render(room,sim,5000);assert.equal(nodes['network-notice'].textContent,'CONNECTION INTERRUPTED');assert.match(nodes['network-hud'].textContent,/UPDATES STALLED/);
 });
+test('results disable additional rematch requests while a peer or dedicated client loads the next arena',()=>{
+ const sim=new Simulation({mode:'duel',humanIds:[0,1]});sim.phase='ended';sim.cars[0].networkRole='host';for(const pending of [{loadingArenaMatch:'match'},{preparing:true},{status:'starting'}]){const state=postMatchState({...pending,rematchWanted:true},sim);assert.equal(state.disabled,true);assert.match(state.message,/arena/);}
+});
