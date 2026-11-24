@@ -206,7 +206,7 @@ function updateHUD(){const s=sim.state(localId());text('blue-score',s.score[0]);
  else{const active=announcement&&s.elapsed<announcement.until;text('match-message',active?announcement.message:'');$('match-message').className='match-message'+(active&&announcement.kind?' '+announcement.kind:'');}
  if(!$('score-panel').hidden)renderScore();
 }
-function handleEvents(){const events=sim.events.splice(0);if(online()&&room.role==='host')room.events(events);for(const e of events){
+function handleEvents(){const events=sim.events.splice(0);if(online()&&room.role==='host')room.events(events);for(const e of events){view.animateEvent(e);
  if(e.type==='score'){
   if(e.car===localId()){const label={shot:'SHOT ON GOAL',save:'SAVE',assist:'ASSIST',goal:'GOAL'}[e.kind];if(label){clearTimeout(scoreToastTimer);text('score-toast',label+' +'+e.points);show('score-toast',true);scoreToastTimer=setTimeout(()=>show('score-toast',false),2200);}}
  }else if(e.type==='goal'){

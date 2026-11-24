@@ -1,0 +1,53 @@
+{
+  "workload": "5000 fixed 120 Hz ticks; 8 players; redundant packed input at 60 Hz; real physics and binary snapshots; no renderer or network",
+  "baselineCommit": "df6de0ae658122ff60be7e0e2f425194a1c74b51",
+  "measurement": "Two alternating repetitions, three runs each, same cloud workspace after browser checks finished. CPU time is not FPS or internet latency.",
+  "before": [
+    {
+      "ticksPerRun": 5000,
+      "players": 8,
+      "runsMs": [
+        650.696596,
+        338.58588899999995,
+        275.11700799999994
+      ],
+      "medianMs": 338.58588899999995,
+      "bytesPerRun": 15352952
+    },
+    {
+      "ticksPerRun": 5000,
+      "players": 8,
+      "runsMs": [
+        573.809548,
+        330.20306500000004,
+        266.95499299999994
+      ],
+      "medianMs": 330.20306500000004,
+      "bytesPerRun": 15352952
+    }
+  ],
+  "after": [
+    {
+      "ticksPerRun": 5000,
+      "players": 8,
+      "runsMs": [
+        532.910288,
+        297.97012100000006,
+        266.09839999999997
+      ],
+      "medianMs": 297.97012100000006,
+      "bytesPerRun": 15352952
+    },
+    {
+      "ticksPerRun": 5000,
+      "players": 8,
+      "runsMs": [
+        570.705502,
+        300.18365399999993,
+        263.18607399999985
+      ],
+      "medianMs": 300.18365399999993,
+      "bytesPerRun": 15352952
+    }
+  ]
+}

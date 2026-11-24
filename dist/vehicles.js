@@ -1,6 +1,6 @@
 /* Runtime adapters for the supplied vehicles. Wheel motion is procedural. */
 import * as T from './vendor/three.module.js';
-import {C,curve,STEERING_CURVE} from './constants.js';
+import {C} from './constants.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
 import {CUSTOM_BODY_FILES} from './bodies.js';
 let fennecTemplate=null,fennecPromise;
@@ -83,24 +83,8 @@ export function makeCustomModel(id,color='#299bff',template=customTemplates.get(
  const flame=boostFlame(root);flame.name=id+'_Boost';if(id==='c17')flame.position.y=.15;
  return {kind:id,root,visual,paint,chassis,wheels,wheelBase,flame,travel:0,lastSpeed:0,setColor(value){paint?.color.set(value);}};
 }
-export function animateVehicle(model,{speed=0,steer=0,dt=0,grounded=true,throttle=0}={}){
- if(dt<=0)return;dt=Math.min(dt,.1);speed=Number.isFinite(speed)?speed:0;steer=T.MathUtils.clamp(steer,-1,1);
- const response=1-Math.exp(-12*dt),baseAngle=steer*curve(STEERING_CURVE,Math.abs(speed))*Math.PI/180,wheelBase=model.wheelBase||1.095;
- for(const wheel of model.wheels){
-  const spinSpeed=grounded?speed:Math.abs(throttle)>.05?throttle*Math.max(6,Math.abs(speed)):speed;
-  wheel.rolling.rotation.x=(wheel.rolling.rotation.x+spinSpeed*dt/(wheel.radius||.235))%(Math.PI*2);
-  let angle=0;
-  if(wheel.front&&Math.abs(baseAngle)>.001){const radius=wheelBase/Math.tan(Math.abs(baseAngle)),inner=radius-Math.sign(baseAngle)*wheel.pivot.position.x;angle=Math.sign(baseAngle)*Math.atan(wheelBase/Math.max(.5,inner));}
-  wheel.pivot.rotation.y+=(angle-wheel.pivot.rotation.y)*response;
- }
- if(model.chassis){
-  const acceleration=(speed-(model.lastSpeed||0))/dt;model.travel=(model.travel||0)+speed*dt;
-  const pitch=grounded?T.MathUtils.clamp(-acceleration*.0018,-.045,.045):0,roll=grounded?T.MathUtils.clamp(steer*Math.abs(speed)*.0025,-.05,.05):0;
-  model.chassis.rotation.x+=(pitch-model.chassis.rotation.x)*response;model.chassis.rotation.z+=(roll-model.chassis.rotation.z)*response;
-  model.chassis.position.y=grounded?Math.sin(model.travel*7)*.003*Math.min(1,Math.abs(speed)/5):0;
- }
- model.lastSpeed=speed;
-}
+// Stable API for existing vehicle adapters.
+export {animateVehicle} from './animation/vehicle.js';
 export function disposeVehicle(model){
  const geometries=new Set(),materials=new Set();model.root.traverse(o=>{if(o.geometry&&!o.userData.sharedGeometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m)materials.add(m);});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());
 }

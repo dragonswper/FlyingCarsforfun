@@ -23,29 +23,7 @@ export function freezeStaticTransforms(root){
  root.updateMatrixWorld(true);root.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});
 }
 
-export class BoostPadView{
- constructor(parent,pads){
-  this.pads=pads;this.matrix=new T.Matrix4();this.position=new T.Vector3();this.scale=new T.Vector3();this.rotation=new T.Quaternion();this.color=new T.Color();this.active=new Uint8Array(pads.length);this.active.fill(2);
-  const baseMat=new T.MeshStandardMaterial({color:'#101d2c',roughness:.7,metalness:.18});
-  this.bases=new T.InstancedMesh(new T.CylinderGeometry(1.25,1.3,.08,12),baseMat,pads.length);
-  this.rings=new T.InstancedMesh(new T.TorusGeometry(1,.09,5,24),new T.MeshBasicMaterial({color:'#ffd17a',toneMapped:false}),pads.length);
-  this.orbs=new T.InstancedMesh(new T.SphereGeometry(1,12,8),new T.MeshStandardMaterial({color:'#ffd17a',emissive:'#ffb13f',emissiveIntensity:1.2,roughness:.3,metalness:.2}),pads.length);
-  for(const [name,mesh]of [['Bases',this.bases],['Rings',this.rings],['Orbs',this.orbs]]){mesh.name='Boost_Pad_'+name;mesh.frustumCulled=false;parent.add(mesh);}
-  this.orbs.instanceMatrix.setUsage(T.DynamicDrawUsage);this.rings.instanceMatrix.setUsage(T.StaticDrawUsage);
-  for(let i=0;i<pads.length;i++){
-   const p=pads[i],r=p.big?.78:.36;this.position.set(p.p.x,.05,p.p.z);this.scale.set(r,1,r);this.rotation.identity();this.matrix.compose(this.position,this.rotation,this.scale);this.bases.setMatrixAt(i,this.matrix);
-   this.position.set(p.p.x,.13,p.p.z);this.rotation.setFromAxisAngle(new T.Vector3(1,0,0),Math.PI/2);this.scale.setScalar(r);this.matrix.compose(this.position,this.rotation,this.scale);this.rings.setMatrixAt(i,this.matrix);
-  }
-  this.bases.instanceMatrix.needsUpdate=true;this.rings.instanceMatrix.needsUpdate=true;this.update(pads,0);
- }
- update(pads,time){
-  let colorsChanged=false;for(let i=0;i<pads.length;i++){
-   const p=pads[i],active=p.timer<=0?1:0;if(this.active[i]!==active){this.active[i]=active;this.color.setScalar(active?1:.12);this.rings.setColorAt(i,this.color);colorsChanged=true;}
-   this.position.set(p.p.x,.07,p.p.z);this.position.y+=(p.big?.55:.22)+Math.sin(time*2+i)*.045;this.rotation.setFromAxisAngle(T.Object3D.DEFAULT_UP,time*1.6);this.scale.setScalar(active?(p.big?.35:.14):0);this.matrix.compose(this.position,this.rotation,this.scale);this.orbs.setMatrixAt(i,this.matrix);
-  }
-  this.orbs.instanceMatrix.needsUpdate=true;if(colorsChanged)this.rings.instanceColor.needsUpdate=true;
- }
-}
+export {BoostPadView} from './animation/field.js';
 
 // One bounded, reusable particle buffer avoids allocating meshes during a hit or goal.
 export class ParticlePool{

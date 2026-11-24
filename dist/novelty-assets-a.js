@@ -2,7 +2,7 @@
 import * as T from './vendor/three.module.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {C} from './constants.js';
-import {animateVehicle,disposeVehicle} from './vehicles.js';
+import {disposeVehicle} from './vehicles.js';
 
 export const NOVELTY_A_NAMES=Object.freeze({randy:'RANDY MARSH',ridiculous:'RIDICULOUS VEHICLE',viking:'VIKING BATTLE VEHICLE'});
 export const NOVELTY_A_FILES=Object.freeze({randy:'randy.glb',ridiculous:'ridiculous.glb',viking:'viking.glb'});
@@ -91,19 +91,7 @@ export function makeNoveltyAModel(id,color='#299bff',template=templates.get(id))
   noveltyA:true,mixer,action,animationRate:0,setColor(){}};
 }
 
-export function animateNoveltyAModel(model,state={}){
- if(!model?.noveltyA)return false;
- animateVehicle(model,state);
- if(model.mixer){
-  const dt=Math.min(.1,Math.max(0,Number.isFinite(state.dt)?state.dt:0));
-  const speed=Number.isFinite(state.speed)?Math.abs(state.speed):0;
-  const running=state.grounded!==false?Math.min(2.6,speed/2.8):0;
-  model.animationRate+=(running-model.animationRate)*(1-Math.exp(-10*dt));
-  if(speed<.05&&model.animationRate<.015){model.animationRate=0;model.action.time=0;}
-  model.action.timeScale=model.animationRate;model.mixer.update(dt);
- }
- return true;
-}
+export {animateNoveltyAModel} from './animation/novelty.js';
 
 export function disposeNoveltyAModel(model){
  if(!model?.noveltyA)return false;

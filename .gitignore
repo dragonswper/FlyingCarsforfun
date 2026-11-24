@@ -17,3 +17,7 @@ secrets/
 .social-data/
 *.log
 .DS_Store
+
+# Blender backup copies; keep the editable .blend sources.
+*.blend1
+*.blend2

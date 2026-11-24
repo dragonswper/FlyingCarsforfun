@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.27.0**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.28.0**, and its public client protocol matches the tested source.
+
+Version 1.28.0 adds the presentation animation system, original Blender pennants, Full/Reduced animation controls and a reorganised server runtime. The menu, garage, music and match dialogs share a cleaner desktop/mobile design. [Changes, performance evidence and checks](release-1.28.md).
 
 Version 1.27.0 gives all eleven fields original Blender sky domes, including sunsets, moonlit clouds, winter aurora and orbital stars. [Map skies, source and checks](release-1.27.md).
 

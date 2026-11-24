@@ -35,3 +35,7 @@ blender -b -t 2 --python-exit-code 1 -P scripts/create-sky-domes.py
 ```
 
 This replaces the generated `.blend`, `dist/assets/skies/sky-dome.glb`, eleven WebP images and the hash/size report. Save hand edits separately before rebuilding. The browser uses the actual Blender mesh, with an inward-facing unlit material; its centre follows the camera. The dome is background artwork and has no collision shape. Only the chosen sky downloads with its map, and one shared mesh renders all eleven styles. Source PNGs are packed into the `.blend`; intermediate files use a temporary directory.
+
+## Stadium pennant
+
+`stadium-pennant.blend` is original editable cloth artwork used on all eleven fields. A subdivided 192-triangle UV mesh, two preview wind shape keys and a source-only pole demonstrate the anchored wave. Rebuild the 6 KB runtime GLB with `blender --background --python scripts/create-animation-props.py`. Browser wind is shader-driven; the collision enclosure stays fixed.

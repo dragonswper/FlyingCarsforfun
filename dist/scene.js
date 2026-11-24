@@ -1,3 +1,5 @@
+import {AnimationSystem} from './animation/system.js';
+import {ArenaFlags,loadAnimationProps,disposeAnimationProps} from './animation/flags.js';
 /* Champions Field architecture with a collision-aligned pitch and animated Fennec vehicles. */
 import {loadHarbour} from './harbour-assets.js';
 import {loadOriginalArena} from './original-arena-assets.js';
@@ -20,10 +22,10 @@ import {ShortGrass} from './grass.js';
 import {configureTurfSurface,disposeTurfDetail} from './turf-texture.js';
 import {buildDriveSurfaces} from './drive-surfaces.js';
 import {CUSTOM_BODY_FILES} from './bodies.js';
-import {isNoveltyABody,loadNoveltyABody,makeNoveltyAModel,animateNoveltyAModel,disposeNoveltyAModel,disposeNoveltyATemplates} from './novelty-assets-a.js';
+import {isNoveltyABody,loadNoveltyABody,makeNoveltyAModel,disposeNoveltyAModel,disposeNoveltyATemplates} from './novelty-assets-a.js';
 const disposeModel=model=>{if(!disposeNoveltyAModel(model))disposeVehicle(model);};
 import {loadRocketBall,makeRocketBall} from './ball-model.js';
-import { loadFennec, makeFennecModel, loadBottled, makeBottledModel, animateVehicle, disposeVehicle, disposeFennecTemplate, disposeBottledTemplate, loadCustomBody, makeCustomModel, disposeCustomTemplates } from './vehicles.js';
+import { loadFennec, makeFennecModel, loadBottled, makeBottledModel, disposeVehicle, disposeFennecTemplate, disposeBottledTemplate, loadCustomBody, makeCustomModel, disposeCustomTemplates } from './vehicles.js';
 const v=(x,y,z)=>new T.Vector3(x,y,z);
 const material=(color,extra={})=>new T.MeshStandardMaterial({color,roughness:.55,metalness:.18,...extra});
 const teamColors=['#299bff','#ff9345'];
@@ -59,7 +61,8 @@ export function makeCarModel(color='#299bff',body='striker'){
   const core=mesh(flame,new T.ConeGeometry(.065,.65,8),new T.MeshBasicMaterial({color:'#e5faff'}),[x,.06,-1.26]);core.rotation.x=-Math.PI/2;
  }flame.visible=false;
  for(const child of root.children)child.position.y+=.24-C.carHeight;
- return {root,paint,wheels,flame,parts,setColor(color){paint.color.set(color);}};
+ const chassis=new T.Group();chassis.name='Procedural_Car_Suspension';for(const child of [...root.children])if(child!==flame&&!wheels.some(w=>w.pivot===child)){root.remove(child);chassis.add(child);}root.add(chassis);
+ return {root,paint,chassis,wheels,flame,parts,setColor(color){paint.color.set(color);}};
 }
 function fieldTexture(theme=ARENAS.champions){
  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=2048;const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
@@ -118,7 +121,7 @@ export class GameView{
   this.chase=new ChaseCamera();
   this.cameraAnchor=new T.Vector3();this.cameraVelocity=new T.Vector3();this.cameraPhase=null;this.cameraWasDemo=false;this.cameraHasAnchor=false;
   this.renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance'});this.graphics=new AdaptiveGraphics('auto',{mobile});this.renderer.setPixelRatio(1);this.renderer.shadowMap.enabled=false;this.renderer.shadowMap.type=T.PCFSoftShadowMap;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=1.18;
-  this.scene=new T.Scene();this.scene.background=new T.Color('#192e49');this.scene.fog=new T.Fog('#293e56',140,310);this.sky=new ArenaSkyDome(this.scene);
+  this.scene=new T.Scene();this.scene.background=new T.Color('#192e49');this.scene.fog=new T.Fog('#293e56',140,310);this.sky=new ArenaSkyDome(this.scene);this.animations=new AnimationSystem();this.flags=new ArenaFlags(this.scene);
   this.cameraSettings=normalizeCamera();this.camera=new T.PerspectiveCamera(85,1,.08,360);this.camera.position.set(4,4,-12);this.hemisphere=new T.HemisphereLight('#c2e9ff','#192c35',2.0);this.scene.add(this.hemisphere);
   const sun=new T.DirectionalLight('#dcecff',2.1);sun.position.set(-35,65,-20);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-64,right:64,top:70,bottom:-70,near:1,far:155});sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-.0003;sun.shadow.normalBias=.035;this.scene.add(sun);this.sun=sun;
   const warm=new T.DirectionalLight('#ffb778',.65);warm.position.set(30,18,65);this.scene.add(warm);this.warm=warm;
@@ -132,7 +135,7 @@ export class GameView{
  nativeDetail(){return this.graphics.profile.mobile?'mobile':['high','ultra'].includes(this.qualityLevel)?'high':'balanced';}
  async ensureArena(value,onProgress){
   const id=normalizeArena(value);
-  await Promise.all([loadArenaSky(id,event=>onProgress?.({asset:'sky',loaded:event.loaded,total:event.total})),(async()=>{
+  await Promise.all([loadAnimationProps().then(geometry=>this.flags.prepare(geometry)),loadArenaSky(id,event=>onProgress?.({asset:'sky',loaded:event.loaded,total:event.total})),(async()=>{
   if(ARENAS[id].model)await loadOriginalArena(id,event=>onProgress?.({asset:id,loaded:event.loaded,total:event.total}));
   if(id==='harbour')await loadHarbour(event=>onProgress?.({asset:'harbour',loaded:event.loaded,total:event.total}));
   if(id==='festival')await loadFestivalAssets(onProgress);
@@ -167,7 +170,7 @@ export class GameView{
  }
  quality(level){this.qualityLevel=level;this.graphics.setMode(level);this.applyGraphics();if(this.stadium&&this.arenaId==='champions')this.ensureStadiumDetail(this.nativeDetail());}
  applyGraphics(){
-  const profile=this.graphics.profile,render=resolveRendering(profile,this.renderSettings||{});this.resolvedRendering=render;
+  const profile=this.graphics.profile,render=resolveRendering(profile,this.renderSettings||{});this.resolvedRendering=render;this.animations.configure(this.renderSettings?.motion);
   setStadiumQuality(this.stadium,profile.seats?'high':'low');for(const environment of this.environments.values())environment.setQuality(profile.tier);
   const ratio=clamp(Math.min(window.devicePixelRatio||1,profile.scale)*(this.renderSettings?.resolutionScale??100)/100,.5,2);
   if(Math.abs(this.renderer.getPixelRatio()-ratio)>.001)this.renderer.setPixelRatio(ratio);
@@ -224,7 +227,7 @@ export class GameView{
   finally{for(const guard of guards)guard.restore();}
  }
  async prepare(){await this.warmCameraMaterials(this.scene,[...this.cars.values()].map(model=>model.cameraGuard));}
- diagnostics(){const guard=this.cars.get(this.localPlayerId)?.cameraGuard;return {arena:this.arenaId,sky:this.sky.diagnostics(),mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail,rendering:{...this.resolvedRendering,grassInstances:this.grass?.geometry.instanceCount||0,grassBufferBytes:(this.grass?.bufferCapacity||0)*20},camera:{...this.chase.diagnostics(),vehicleOpacity:guard?.opacity??1,vehicleClearance:guard?.radius??0}};}
+ diagnostics(){const guard=this.cars.get(this.localPlayerId)?.cameraGuard;return {arena:this.arenaId,animation:{...this.animations.diagnostics(),vehicleRigs:this.cars.size,flagInstances:this.flags.cloth?.count||0,flagDrawCalls:this.flags.cloth?2:0},sky:this.sky.diagnostics(),mode:this.qualityLevel,tier:this.graphics.profile.tier,pixelRatio:this.renderer.getPixelRatio(),drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,stadiumDetail:this.stadiumDetail,rendering:{...this.resolvedRendering,grassInstances:this.grass?.geometry.instanceCount||0,grassBufferBytes:(this.grass?.bufferCapacity||0)*20},camera:{...this.chase.diagnostics(),vehicleOpacity:guard?.opacity??1,vehicleClearance:guard?.radius??0}};}
  sync(sim,paint='#299bff',body='fennec'){
   this.setArena(sim.options.arena);
   this.chase.reset();
@@ -235,19 +238,20 @@ export class GameView{
    model.cameraGuard=new VehicleCameraGuard(model,glow);model.simCar=car;this.cars.set(car.id,model);this.scene.add(model.root);}this.carShadows.count=sim.cars.length;this.update(sim,0,true);
  }
  burst(position,color='#ffc478',count=25){this.particles.spawn(position,color,count);}
+ animateEvent(event){if(event.type==='goal')this.flags.goal();}
  update(sim,dt,menu=false,snapshot=null,replay=false){
-  this.menuTime+=dt;this.spin+=dt;this.environments.get(this.arenaId)?.update(this.spin);
+  this.menuTime+=dt;this.spin+=dt;this.animations.begin(dt);this.animations.environment(this.environments.get(this.arenaId));this.flags.update(this.animations.ambientTime,this.animations.dt,this.animations.reduced);
   for(const state of snapshot?.cars||sim.cars){
    const model=this.cars.get(state.id);if(!model)continue;const car=model.simCar;
    if(snapshot){model.root.position.fromArray(state.p);model.root.quaternion.fromArray(state.q);}else{model.root.position.copy(state.p);model.root.quaternion.copy(state.q);}
-   model.root.visible=snapshot?!state.demo:car.demoTime<=0;model.flame.visible=!!state.boosting&&!menu;model.flame.scale.z=1+Math.sin(this.spin*80)*.15;
+   model.root.visible=snapshot?!state.demo:car.demoTime<=0;
    const speed=snapshot?(state.speed||0):car.v.dot(this.forward.set(0,0,1).applyQuaternion(car.q));
-   const animationState={speed:menu?0:speed,steer:menu?0:snapshot?(state.steer||0):car.renderSteer||0,dt,grounded:snapshot?state.grounded!==false:car.grounded,throttle:menu?0:snapshot?state.throttle||0:car.renderThrottle||0};if(!animateNoveltyAModel(model,animationState))animateVehicle(model,animationState);
+   const animationState={speed:menu?0:speed,steer:menu?0:snapshot?(state.steer||0):car.renderSteer||0,dt,grounded:snapshot?state.grounded!==false:car.grounded,throttle:menu?0:snapshot?state.throttle||0:car.renderThrottle||0};this.animations.vehicle(model,animationState,!!state.boosting&&!menu);
    model.surfaceGuard?.update(dt,!menu);
   }
   if(snapshot){this.ball.position.fromArray(snapshot.ball.p);this.ball.quaternion.fromArray(snapshot.ball.q);}else{this.ball.position.copy(sim.ball.p);this.ball.quaternion.copy(sim.ball.q);}
   this.ballShadow.position.set(this.ball.position.x,.022,this.ball.position.z);this.ballIndicator.position.set(this.ball.position.x,.028,this.ball.position.z);this.ballIndicator.visible=!menu;const shadowScale=1+this.ball.position.y*.13;this.ballShadow.scale.setScalar(shadowScale);this.ballShadow.material.opacity=.35/(1+this.ball.position.y*.35);
-  this.arena.padView.update(sim.pads,this.spin);this.particles.update(dt);
+  this.arena.padView.update(sim.pads,this.animations.ambientTime,this.animations.dt,this.animations.reduced);this.particles.update(dt);
   const player=this.cars.get(this.localPlayerId) || this.cars.values().next().value,p=player.root.position,desired=this.desired,target=this.target;this.forward.set(0,0,1).applyQuaternion(player.root.quaternion);
   const displayed=snapshot?.cars.find(car=>car.id===this.localPlayerId),demo=displayed?!!displayed.demo:player.simCar.demoTime>0,resetCamera=this.cameraWasDemo!==demo||this.cameraHasAnchor&&this.cameraAnchor.distanceToSquared(p)>64||this.cameraPhase!==null&&sim.phase==='kickoff'&&this.cameraPhase!=='kickoff';
   if(resetCamera)this.chase.reset();this.cameraPhase=sim.phase;this.cameraWasDemo=demo;
@@ -261,9 +265,9 @@ export class GameView{
    this.chase.sample(p,player.root.quaternion,this.ball.position,this.cameraSettings,this.cameraMode,dt,{speed,velocity:this.cameraVelocity,grounded:state?.grounded??player.simCar.grounded,cameraRadius:player.cameraGuard.radius});desired.copy(this.chase.position);target.copy(this.chase.look);driverRig=true;
   }
   for(const model of this.cars.values()){if(driverRig&&model===player)model.cameraGuard.update(desired,this.ball.position,p,player.root.quaternion,this.cameraMode,dt);else model.cameraGuard.restore();}
-  this.cameraAnchor.copy(p);this.cameraHasAnchor=true;this.grass?.update(p,this.spin);
+  this.cameraAnchor.copy(p);this.cameraHasAnchor=true;this.grass?.update(p,this.animations.ambientTime);
   let shadow=0;for(const model of this.cars.values()){this.shadowPosition.set(model.root.position.x,.018,model.root.position.z);const visible=model.root.visible&&model.root.position.y<8;this.shadowScale.set(visible?.65:0,visible?1.1:0,1);this.shadowMatrix.compose(this.shadowPosition,this.shadowRotation,this.shadowScale);this.carShadows.setMatrixAt(shadow++,this.shadowMatrix);}this.carShadows.instanceMatrix.needsUpdate=true;
   const smooth=dt===0?1:1-Math.exp(-8*dt);if(driverRig){this.camera.position.copy(desired);this.look.copy(target);}else{this.camera.position.lerp(desired,smooth);this.look.lerp(target,smooth);}this.camera.up.set(0,1,0);this.camera.lookAt(this.look);this.camera.fov=driverRig?verticalFov(this.chase.fov,this.camera.aspect):T.MathUtils.lerp(this.camera.fov,menu?45:verticalFov(this.cameraSettings.fov,this.camera.aspect),dt===0?1:Math.min(1,dt*8));this.camera.updateProjectionMatrix();this.sky.update(this.camera);this.renderer.render(this.scene,this.camera);
  }
- dispose(){this.stadiumRequest++;this.sky.dispose();disposeSkyAssets();this.environmentLighting.dispose();disposeTurfDetail();this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();disposeBottledTemplate();for(const model of this.cars.values())if(model.noveltyA)disposeNoveltyAModel(model);disposeCustomTemplates();disposeNoveltyATemplates();this.renderer.dispose();}
+ dispose(){this.animations.dispose();this.flags.dispose();disposeAnimationProps();this.stadiumRequest++;this.sky.dispose();disposeSkyAssets();this.environmentLighting.dispose();disposeTurfDetail();this.scene.traverse(o=>{o.geometry?.dispose();const mats=Array.isArray(o.material)?o.material:[o.material];mats.forEach(m=>{m?.map?.dispose();m?.dispose();});});disposeFennecTemplate();disposeBottledTemplate();for(const model of this.cars.values())if(model.noveltyA)disposeNoveltyAModel(model);disposeCustomTemplates();disposeNoveltyATemplates();this.renderer.dispose();}
 }

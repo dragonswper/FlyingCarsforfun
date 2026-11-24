@@ -5,6 +5,7 @@ export function renderingPreferences(value={}){
  return {resolutionScale:number('resolutionScale',100,50,150),exposure:number('exposure',1.18,.7,1.6),
   frameLimit:value.frameLimit!=null&&[0,30,60,90,120,144].includes(Number(value.frameLimit))?Number(value.frameLimit):60,
   shadows:['preset','off','soft','ultra'].includes(value.shadows)?value.shadows:'preset',
+  motion:['system','full','reduced'].includes(value.motion)?value.motion:'system',
   lighting:['preset','basic','enhanced'].includes(value.lighting)?value.lighting:'preset',
   grass:['preset','off','low','high'].includes(value.grass)?value.grass:'preset'};
 }
