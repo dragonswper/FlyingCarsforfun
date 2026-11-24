@@ -3,6 +3,7 @@ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 export function renderingPreferences(value={}){
  value||={};const number=(key,fallback,min,max)=>Number.isFinite(Number(value[key]))?clamp(Number(value[key]),min,max):fallback;
  return {resolutionScale:number('resolutionScale',100,50,150),exposure:number('exposure',1.18,.7,1.6),
+  frameLimit:value.frameLimit!=null&&[0,30,60,90,120,144].includes(Number(value.frameLimit))?Number(value.frameLimit):60,
   shadows:['preset','off','soft','ultra'].includes(value.shadows)?value.shadows:'preset',
   lighting:['preset','basic','enhanced'].includes(value.lighting)?value.lighting:'preset',
   grass:['preset','off','low','high'].includes(value.grass)?value.grass:'preset'};
@@ -16,7 +17,7 @@ export function resolveRendering(profile,preferences){
  return {shadowSize:prefs.shadows==='off'?0:prefs.shadows==='ultra'?4096:prefs.shadows==='soft'?2048:cinematic?4096:profile.shadows?1024:0,
   enhanced:prefs.lighting==='enhanced'||prefs.lighting==='preset'&&cinematic,
   grassCount:prefs.grass==='high'?48000:prefs.grass==='low'?12000:prefs.grass==='off'?0:cinematic?48000:profile.tier==='high'?18000:profile.tier==='balanced'?8000:0,
-  scale:profile.scale*prefs.resolutionScale/100,exposure:prefs.exposure};
+  scale:profile.scale*prefs.resolutionScale/100,exposure:prefs.exposure,frameLimit:prefs.frameLimit};
 }
 // A small generated HDR lighting environment gives painted metal, windows,
 // ornaments and other PBR surfaces real reflections without an external HDRI.

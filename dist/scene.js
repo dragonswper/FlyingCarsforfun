@@ -181,7 +181,7 @@ export class GameView{
   configureTurfSurface(this.arena.field,!!ARENAS[this.arenaId].grass&&profile.tier!=='low'&&render.grassCount>0);this.resize();
  }
 
- monitorFrame(dt){if(this.graphics.observe(dt))this.applyGraphics();}
+ monitorFrame(dt,targetFPS=60){if(this.graphics.observe(dt,targetFPS))this.applyGraphics();}
  async loadAssets(onProgress,arena='champions'){
   const progress=asset=>event=>onProgress?.({asset,loaded:event.loaded,total:event.total});
   await Promise.all([loadFennec(progress('vehicle'),this.graphics.profile.mobile?'mobile':'standard'),loadRocketBall(progress('ball')),this.ensureArena(arena,onProgress)]);

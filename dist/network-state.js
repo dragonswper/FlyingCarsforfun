@@ -5,56 +5,15 @@ import {MATCH_POINTS} from './scoring.js';
 import {carSupport, collideArena} from './arena.js';
 import {cleanInput, validCounter} from './network-protocol.js';
 
-const NUMBERS = [
-  'boost',
-  'boostTime',
-  'handbrake',
-  'jumpTime',
-  'jumpEndTime',
-  'airTime',
-  'noContact',
-  'flipTime',
-  'flipRotation',
-  'selfRightTime',
-  'demoTime',
-  'supersonicTime',
-  'hitCooldown',
-  'extraHitCooldown',
-  'recoverTime',
-  'score',
-  'goals',
-  'assists',
-  'saves',
-  'shots',
-  'touches',
-  'demos',
-  'renderSteer',
-  'renderThrottle'
-];
-const FLAGS = [
-  'grounded',
-  'boosting',
-  'drifting',
-  'jumpHeld',
-  'jumpActive',
-  'hasJumped',
-  'canDouble',
-  'supersonic',
-  'flipActive'
-];
-const VECTORS = ['p', 'v', 'omega', 'normal', 'flipAxis'];
+import {CAR_NUMBERS as NUMBERS, CAR_FLAGS as FLAGS, CAR_VECTORS as VECTORS} from './state-schema.js';
 const finite = (n, max = 1e6) => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) <= max;
 const array = (v, length, max = 1000) =>
   Array.isArray(v) && v.length === length && v.every((n) => finite(n, max));
 const rotation = (q) => array(q, 4, 1.01) && q.reduce((sum, n) => sum + n * n, 0) > 0.5;
-export function encodeCar(car) {
-  const value = {
-    id: car.id,
-    team: car.team,
-    q: car.q.toArray(),
-    selfRightTarget: car.selfRightTarget.toArray()
-  };
-  for (const key of VECTORS) value[key] = car[key].toArray();
+export function encodeCar(car, value = {}) {
+  value.id=car.id;value.team=car.team;
+  car.q.toArray(value.q??=[]);car.selfRightTarget.toArray(value.selfRightTarget??=[]);
+  for (const key of VECTORS) car[key].toArray(value[key]??=[]);
   for (const key of NUMBERS) value[key] = Number(car[key]) || 0;
   for (const key of FLAGS) value[key] = !!car[key];
   return value;
@@ -96,7 +55,7 @@ export function makeState(sim, n, ack, matchId) {
       lastTouch: sim.lastTouch,
       lastTouchTime: sim.lastTouchTime
     },
-    cars: sim.cars.map(encodeCar),
+    cars: sim.cars.map(car=>encodeCar(car)),
     pads: sim.pads.map((p) => p.timer)
   };
 }
@@ -197,7 +156,7 @@ export const PREDICTION_WINDOW = 120;
 export const RECONCILIATION = {position: 0.06, velocity: 0.3, angle: 0.025, angularVelocity: 0.2};
 function closePrediction(a, b) {
   if (!a) return false;
-  const distance = (key) => Math.hypot(...a[key].map((n, i) => n - b[key][i]));
+  const distance = key => Math.hypot(a[key][0]-b[key][0],a[key][1]-b[key][1],a[key][2]-b[key][2]);
   const dot = Math.min(
     1,
     Math.abs(a.q.reduce((sum, n, i) => sum + n * b.q[i], 0)) /
@@ -224,6 +183,14 @@ export class GuestReplica {
     this.predicted = makeCar(car.id, car.team);
     applyCar(this.predicted, encodeCar(car));
     this.pending = [];
+    this.history = new Map();
+    this.historyPool = [];
+    this.reconcileScratch = {
+      oldP:new Vector3(),oldQ:new Quaternion(),oldBall:new Vector3(),oldBallQ:new Quaternion(),
+      oldRenderP:new Vector3(),oldRenderQ:new Quaternion(),oldRenderBall:new Vector3(),oldRenderBallQ:new Quaternion(),
+      nextP:new Vector3(),nextQ:new Quaternion(),nextBall:new Vector3(),nextBallQ:new Quaternion(),
+      heldBall:{p:new Vector3(),q:new Quaternion(),v:new Vector3(),spin:new Vector3(),previousP:new Vector3(),previousQ:new Quaternion()}
+    };
     this.inputSequence = 0;
     this.frames = [];
     this.lastSequence = -1;
@@ -306,10 +273,16 @@ export class GuestReplica {
     return frame;
   }
   remember(n) {
-    this.history ??= new Map();
-    this.history.set(n, encodeCar(this.predicted));
-    while (this.history.size > PREDICTION_WINDOW + 1)
-      this.history.delete(this.history.keys().next().value);
+    let state=this.history.get(n);
+    if(!state&&this.history.size>=PREDICTION_WINDOW+1){
+      const oldest=this.history.keys().next().value;state=this.history.get(oldest);this.history.delete(oldest);
+    }
+    state??=this.historyPool.pop()||{};
+    this.history.set(n,encodeCar(this.predicted,state));
+  }
+  clearHistory() {
+    for(const state of this.history.values())this.historyPool.push(state);
+    this.history.clear();
   }
   predict(input, worldDt = C.step, ballDt = worldDt) {
     this.previousPrediction.p.copy(this.predicted.p);
@@ -385,23 +358,21 @@ export class GuestReplica {
   }
   receive(value, now) {
     if (value.n <= this.lastSequence || !validState(value, this.sim)) return false;
+    const scratch=this.reconcileScratch;
     const first = this.lastSequence < 0,
       changed = this.lastPhase !== value.phase,
-      oldP = this.predicted.p.clone(),
-      oldQ = this.predicted.q.clone(),
-      oldBall = this.predictedBall.p.clone(),
-      oldBallQ = this.predictedBall.q.clone(),
+      oldP = scratch.oldP.copy(this.predicted.p),
+      oldQ = scratch.oldQ.copy(this.predicted.q),
+      oldBall = scratch.oldBall.copy(this.predictedBall.p),
+      oldBallQ = scratch.oldBallQ.copy(this.predictedBall.q),
       wasDemo = this.predicted.demoTime > 0;
     const alpha = this.presentationAlpha,
-      oldRenderP = this.previousPrediction.p.clone().lerp(oldP, alpha),
-      oldRenderQ = this.previousPrediction.q.clone().slerp(oldQ, alpha),
-      oldRenderBall = this.previousBall.p.clone().lerp(oldBall, alpha),
-      oldRenderBallQ = this.previousBall.q.clone().slerp(oldBallQ, alpha);
-    const preserveBall = this.protectLocalBall(value, now), heldBall = preserveBall ? {
-      p: this.predictedBall.p.clone(), q: this.predictedBall.q.clone(),
-      v: this.predictedBall.v.clone(), spin: this.predictedBall.spin.clone(),
-      previousP: this.previousBall.p.clone(), previousQ: this.previousBall.q.clone()
-    } : null;
+      oldRenderP = scratch.oldRenderP.copy(this.previousPrediction.p).lerp(oldP, alpha),
+      oldRenderQ = scratch.oldRenderQ.copy(this.previousPrediction.q).slerp(oldQ, alpha),
+      oldRenderBall = scratch.oldRenderBall.copy(this.previousBall.p).lerp(oldBall, alpha),
+      oldRenderBallQ = scratch.oldRenderBallQ.copy(this.previousBall.q).slerp(oldBallQ, alpha);
+    const preserveBall = this.protectLocalBall(value, now), heldBall = preserveBall ? scratch.heldBall : null;
+    if(heldBall){for(const key of ['p','q','v','spin'])heldBall[key].copy(this.predictedBall[key]);heldBall.previousP.copy(this.previousBall.p);heldBall.previousQ.copy(this.previousBall.q);}
     if (Number.isFinite(value.net?.inputQueueMs) &&
       value.net.inputQueueMs >= 0 && value.net.inputQueueMs <= 1000)
       this.serverInputQueueMs = value.net.inputQueueMs;
@@ -425,18 +396,21 @@ export class GuestReplica {
     const local = value.cars.find((car) => car.id === this.localId) || value.cars[0],
       correct =
         first || changed || this.spectator || !closePrediction(this.history?.get(through), local);
-    this.pending = this.pending.filter((frame) => frame.n > value.ack);
-    const replay = this.pending.filter(frame => frame.n > through);
+    let kept=0;
+    for(const frame of this.pending)if(frame.n>value.ack)this.pending[kept++]=frame;
+    this.pending.length=kept;
+    let replayStart=0;while(replayStart<kept&&this.pending[replayStart].n<=through)replayStart++;
+    const replayCount=kept-replayStart;
     if (correct) {
       applyCar(this.predicted, local);
       this.previousPrediction.p.copy(this.predicted.p);
       this.previousPrediction.q.copy(this.predicted.q);
-      this.history?.clear();
+      this.clearHistory();
       this.remember(through);
     } else {
       for (const key of ['score', 'goals', 'assists', 'saves', 'shots', 'touches', 'demos'])
         this.predicted[key] = local[key];
-      for (const n of this.history.keys()) if (n < through) this.history.delete(n);
+      for (const [n,state] of this.history) if (n < through) {this.historyPool.push(state);this.history.delete(n);}
     }
     this.predictedBall.p.fromArray(value.ball.p);
     this.predictedBall.q.fromArray(value.ball.q);
@@ -469,19 +443,20 @@ export class GuestReplica {
         // handing the ball back to the shared timeline cannot reverse a shot.
         // Remote contacts retain one-way extrapolation.
         ballAge = Math.min(0.5, age * (1 + ownLead)),
-        worldDt = replay.length ? Math.min(C.step, age / replay.length) : 0,
-        ballDt = replay.length ? Math.min(C.step, ballAge / replay.length) : 0;
+        worldDt = replayCount ? Math.min(C.step, age / replayCount) : 0,
+        ballDt = replayCount ? Math.min(C.step, ballAge / replayCount) : 0;
       if (correct) {
         this.replaying = true;
         try {
-          for (const frame of replay) {
+          for (let index=replayStart;index<this.pending.length;index++) {
+            const frame=this.pending[index];
             this.predict(frame.i, worldDt, ballDt);
             this.remember(frame.n);
           }
         } finally {
           this.replaying = false;
         }
-        if (!replay.length)
+        if (!replayCount)
           for (let left = ballAge; left > 1e-8; left -= C.step) {
             this.previousBall.p.copy(this.predictedBall.p);
             this.previousBall.q.copy(this.predictedBall.q);
@@ -504,7 +479,7 @@ export class GuestReplica {
       this.preservedBallSnapshots++;
     }
     this.lastCorrection = oldP.distanceTo(this.predicted.p);
-    this.lastReplay = correct && !changed ? replay.length : 0;
+    this.lastReplay = correct && !changed ? replayCount : 0;
     if (correct) this.reconciliations = (this.reconciliations || 0) + 1;
     else this.ignoredCorrections = (this.ignoredCorrections || 0) + 1;
     const teleport =
@@ -521,9 +496,9 @@ export class GuestReplica {
       this.visualQ.copy(this.predicted.q);
     } else {
       this.positionError.add(oldRenderP).sub(
-        this.previousPrediction.p.clone().lerp(this.predicted.p, alpha));
+        scratch.nextP.copy(this.previousPrediction.p).lerp(this.predicted.p, alpha));
       this.rotationError.multiply(oldRenderQ).multiply(
-        this.previousPrediction.q.clone().slerp(this.predicted.q, alpha).invert()).normalize();
+        scratch.nextQ.copy(this.previousPrediction.q).slerp(this.predicted.q, alpha).invert()).normalize();
     }
     if (first || changed || oldBall.distanceToSquared(this.predictedBall.p) > 900) {
       this.previousBall.p.copy(this.predictedBall.p);
@@ -534,10 +509,10 @@ export class GuestReplica {
       this.visualBallQ.copy(this.predictedBall.q);
     } else {
       this.ballError.add(oldRenderBall).sub(
-        this.previousBall.p.clone().lerp(this.predictedBall.p, alpha));
+        scratch.nextBall.copy(this.previousBall.p).lerp(this.predictedBall.p, alpha));
       this.ballRotationError
         .multiply(oldRenderBallQ)
-        .multiply(this.previousBall.q.clone().slerp(this.predictedBall.q, alpha).invert())
+        .multiply(scratch.nextBallQ.copy(this.previousBall.q).slerp(this.predictedBall.q, alpha).invert())
         .normalize();
     }
     const offset = value.elapsed - now / 1000;

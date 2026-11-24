@@ -263,9 +263,12 @@ export class GameService {
     if (!this.physicsRooms.length) this.accumulator = 0;
     let steps = 0;
     while (this.accumulator >= C.step && steps++ < 18) {
-      for (const room of this.physicsRooms) room.pump(C.step);
+      for (const room of this.physicsRooms) room.pump(C.step,true);
       this.accumulator -= C.step;
     }
+    // Catch up fixed physics first, then send the freshest world once. Sending
+    // during the first catch-up step added avoidable snapshot age after a hitch.
+    if(steps)for(const room of this.physicsRooms)room.publish?.();
     if (now - (this.lastQueue ?? -Infinity) >= 100) {
       this.lastQueue = now;
       this.queue.pump();

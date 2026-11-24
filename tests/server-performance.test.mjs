@@ -1,12 +1,13 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {randomBytes,randomUUID,createHash} from 'node:crypto';
 import {GameService} from '../server/game-service.mjs';import {ServerSession} from '../server/session.mjs';import {SocialService} from '../server/social-service.mjs';import {compactSnapshot} from '../dist/snapshot.js';import {C} from '../dist/physics.js';
+import {decodeSnapshot} from '../dist/snapshot-wire.js';
 test('compaction preserves the rounded wire format and only mutates detached snapshot data',()=>{
  const value={x:1.234567,negative:-4.44555,list:[Infinity,NaN,{x:.12345}],absent:undefined},old=JSON.parse(JSON.stringify(value,(_,v)=>typeof v==='number'?Math.round(v*1000)/1000:v));
  assert.equal(compactSnapshot(value),value);assert.deepEqual(JSON.parse(JSON.stringify(value)),old);
 });
 test('eight clients share one snapshot build with individual acknowledgements and immutable earlier packets',t=>{
  let now=0;const packets=Array.from({length:8},()=>[]),room=new ServerSession({code:'test',options:{mode:'custom',maxPeople:8},clock:()=>now,setTimer:()=>({unref(){}}),clearTimer(){}});t.after(()=>room.close(false));
- for(let i=0;i<8;i++){const socket={readyState:1,bufferedAmount:0,send:raw=>packets[i].push(JSON.parse(raw)),close(){}};const {entry}=room.attach(socket,{look:{name:'Test'}},{id:'test-'+i});entry.member.team=i%2;entry.member.ready=true;entry.remote.ack=i*7;entry.remote.inputTick=i*9;}
+ for(let i=0;i<8;i++){const socket={readyState:1,bufferedAmount:0,send:raw=>packets[i].push(typeof raw==='string'?JSON.parse(raw):decodeSnapshot(raw)),close(){}};const {entry}=room.attach(socket,{look:{name:'Test'}},{id:'test-'+i});entry.member.team=i%2;entry.member.ready=true;entry.remote.ack=i*7;entry.remote.inputTick=i*9;}
  room.makeSimulation('test',room.players());room.status='playing';room.sim.phase='playing';for(const [i,entry]of room.entries){entry.remote.ack=i*7;entry.remote.inputTick=i*9;}let builds=0;const q=room.sim.cars[0].q,original=q.toArray;q.toArray=function(...args){builds++;return original.apply(this,args);};
  const exact=room.sim.cars[0].p.x;now=40;room.publish(true);assert.equal(builds,1);const states=packets.map(rows=>rows.at(-1));assert.equal(new Set(states.map(s=>s.n)).size,8);for(let i=0;i<8;i++){assert.equal(states[i].ack,i*7);assert.equal(states[i].net.inputTick,i*9);assert.deepEqual(states[i].cars,states[0].cars);}assert.equal(room.sim.cars[0].p.x,exact);
  const saved=JSON.stringify(states);room.sim.cars[0].p.x+=.123456;now+=40;room.publish(true);assert.equal(builds,2);assert.equal(JSON.stringify(states),saved);assert.equal(room.sim.cars[0].p.x,exact+.123456);

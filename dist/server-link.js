@@ -1,4 +1,5 @@
 import {decodePacket, MAX_PACKET} from './network-protocol.js';
+import {decodeSnapshot} from './snapshot-wire.js';
 export function serverEndpoint(value, location = globalThis.location) {
   let url;
   try {
@@ -45,6 +46,7 @@ export class ServerLink {
       networkPing: null
     };
     this.socket = new WebSocketClass(url);
+    this.socket.binaryType = 'arraybuffer';
     this.socket.onopen = () => {
       if (!this.closed) {
         this.open = true;
@@ -53,7 +55,7 @@ export class ServerLink {
     };
     this.socket.onmessage = (event) => {
       if (!this.closed) {
-        const packet = decodePacket(event.data);
+        const packet = typeof event.data === 'string' ? decodePacket(event.data) : decodeSnapshot(event.data);
         if (packet) onPacket(packet);
       }
     };

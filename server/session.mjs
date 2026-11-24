@@ -8,6 +8,8 @@ import {ConnectionQuality} from '../dist/network-quality.js';
 import {serverOptions, serverPlayers, modePlayers} from '../dist/server-options.js';
 import {ServerInputs} from './inputs.mjs';
 import {C} from '../dist/physics.js';
+import {makeState} from '../dist/network-state.js';
+import {encodeSnapshotWorld, snapshotForPeer} from '../dist/snapshot-wire.js';
 
 class SocketLink {
   constructor(socket) {
@@ -40,6 +42,11 @@ class SocketLink {
     this.closed = true;
     this.open = false;
     this.socket.close();
+  }
+  sendSnapshot(world, state) {
+    if(this.closed||!this.open||this.socket.readyState!==1||this.socket.bufferedAmount>Math.max(2048,world.byteLength*2))return false;
+    const wire=this.wire+1,bytes=snapshotForPeer(world,{n:state.n,ack:state.ack,w:wire,net:state.net});
+    try{this.socket.send(bytes);this.wire=wire;return true;}catch{return false;}
   }
 }
 export class ServerSession extends PartyRoom {
@@ -247,11 +254,20 @@ export class ServerSession extends PartyRoom {
     }
     if (!this.entries.size) this.onEmpty(this);
   }
-  pump(dt) {
+  publish(force=false) {
+    const now=this.clock();
+    if(!this.active||!force&&(this.hostPaused||this.sim.phase==='ended'||now-this.lastPublish<1000/30))return;
+    this.lastPublish=now;let world,encoded;
+    for(const entry of this.entries.values())if(entry.link?.open&&!entry.recovering){
+      world??=makeState(this.sim,0,0,this.matchId);encoded??=encodeSnapshotWorld(world);
+      entry.link.sendSnapshot(encoded,this.stateFor(entry,world));
+    }
+  }
+  pump(dt, deferPublish=false) {
     if (!this.matchId || this.pendingMatch || this.recovering || this.closed) return;
     this.hostStep({}, dt);
     const events = this.sim.events.splice(0);
     if (events.length) this.events(events);
-    this.publish();
+    if(!deferPublish)this.publish();
   }
 }

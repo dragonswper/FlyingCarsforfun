@@ -8,7 +8,7 @@ const percentile = (values, p) => values.sort((a, b) => a - b)[
 // Run server ticks, browser frames and packet arrivals on independent clocks.
 // Unlike a loop that renders after every physics step, this reproduces real
 // animation-frame batching and held controls between uneven input deliveries.
-export function drivingTrial(fps, rtt = 200, {hitches = false} = {}) {
+export function drivingTrial(fps, rtt = 200, {hitches = false, snapshot = state => state} = {}) {
   const host = new Simulation({humanIds: [0, 1]}),
     guest = new Simulation({humanIds: [0, 1]});
   host.phase = guest.phase = 'playing';
@@ -35,7 +35,7 @@ export function drivingTrial(fps, rtt = 200, {hitches = false} = {}) {
         if (packet.frames) remote.receive(packet.frames, now);
         else {
           const before = replica.sample(now, 0).cars[1].p.slice();
-          replica.receive(packet.state, now);
+          replica.receive(snapshot(packet.state), now);
           if (now > measuredAfter) corrections.push(replica.lastCorrection);
           const after = replica.sample(now, 0).cars[1].p;
           maxSnapshotSnap = Math.max(maxSnapshotSnap,
