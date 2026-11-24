@@ -23,3 +23,15 @@ Replace `all` with one or more of `yuletide halloween coast canyon orbital` to r
 GLBs, JSON reports and WebP covers are written to `dist/assets/maps/`. Only selected material-batched scene copies and calibration markers enter the GLBs. Neither Blender's preview field nor camera/light objects are exported. The browser adds its shared playable field, rounded enclosure, goals and boost pads. Keep decorative geometry outside that cage and the full goal rooms when editing; `npm test` verifies the exported clearances and budgets.
 
 The older [harbourworks.blend](harbourworks.blend) venue and reference van source also remain in this folder.
+
+## Original sky domes
+
+[sky-domes.blend](sky-domes.blend) contains the shared unit-sphere mesh, eleven packed panoramic paintings, eleven emission materials and an inside-dome preview camera. Assign a `Sky_…` material to the sphere to preview or edit that arena. The sphere and sky paintings are original MIT-licensed Boost Circuit artwork; no downloaded sky photographs or textures are used.
+
+Rebuild with Blender 4.3+ and a `python3`/`python` installation that already has Pillow:
+
+```sh
+blender -b -t 2 --python-exit-code 1 -P scripts/create-sky-domes.py
+```
+
+This replaces the generated `.blend`, `dist/assets/skies/sky-dome.glb`, eleven WebP images and the hash/size report. Save hand edits separately before rebuilding. The browser uses the actual Blender mesh, with an inward-facing unlit material; its centre follows the camera. The dome is background artwork and has no collision shape. Only the chosen sky downloads with its map, and one shared mesh renders all eleven styles. Source PNGs are packed into the `.blend`; intermediate files use a temporary directory.

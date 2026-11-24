@@ -1,0 +1,84 @@
+{
+  "originalArtwork": true,
+  "license": "MIT",
+  "blenderVersion": "4.3.2",
+  "source": "art/sky-domes.blend",
+  "generator": "scripts/create-sky-domes.py",
+  "width": 1024,
+  "height": 512,
+  "arenas": [
+    "champions",
+    "snow",
+    "city",
+    "woods",
+    "harbour",
+    "festival",
+    "yuletide",
+    "halloween",
+    "coast",
+    "canyon",
+    "orbital"
+  ],
+  "files": [
+    {
+      "file": "canyon.webp",
+      "bytes": 5106,
+      "sha256": "b9fcc90bf67804adcd460120065191bb873d214711082f3a5be5744ce27b1cc4"
+    },
+    {
+      "file": "champions.webp",
+      "bytes": 6952,
+      "sha256": "5e4b35499108128e87ea04dd95b029e7ba5c277cb12f83b39673c9d0b0f8b484"
+    },
+    {
+      "file": "city.webp",
+      "bytes": 7174,
+      "sha256": "f72e34a50f8d38b01e2f3d3db5887c1c3e81adaa67e327cc2997e3fc18712b3b"
+    },
+    {
+      "file": "coast.webp",
+      "bytes": 6394,
+      "sha256": "e5b9affa0d0d3560b14361e64c5b7af24f0b9b19ec77c3166cb44109c354ec6b"
+    },
+    {
+      "file": "festival.webp",
+      "bytes": 10486,
+      "sha256": "d9063a04ff57f74845bcfbd2577d63be049cf9580c1e07fb87f1150eec99d903"
+    },
+    {
+      "file": "halloween.webp",
+      "bytes": 9334,
+      "sha256": "391e29a4eef31a489361a564dc01a3ebc07e2e44f720adca3ae303f4b85e414c"
+    },
+    {
+      "file": "harbour.webp",
+      "bytes": 11234,
+      "sha256": "f0a46afbb4337f4b07534067c61ccf01b229dd3ec07df5a0d77027adcdbfee40"
+    },
+    {
+      "file": "orbital.webp",
+      "bytes": 16296,
+      "sha256": "366a724a1e08e7cd35a726632d05423f46feeab86cfaa1b397dbc4ce4d62dc0c"
+    },
+    {
+      "file": "sky-dome.glb",
+      "bytes": 24988,
+      "sha256": "f191d03e31c29819a9e564209d8fae6ebc6918b075c1cdd2f05206900f98f3b0"
+    },
+    {
+      "file": "snow.webp",
+      "bytes": 8558,
+      "sha256": "da9a5340c5f53e0aeec088a67711849401a20c14ad690c19fe05f33eaf43fa9d"
+    },
+    {
+      "file": "woods.webp",
+      "bytes": 7140,
+      "sha256": "9b08233ab522dab4b3878713ae0aa03867c216f2105a5cc8c0a6fefb82be517d"
+    },
+    {
+      "file": "yuletide.webp",
+      "bytes": 7472,
+      "sha256": "847ddeb5718a71902e9c118a133896b1cb83a3751fa4508954c17875b96cc2a3"
+    }
+  ]
+}

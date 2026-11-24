@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.26.0**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.27.0**, and its public client protocol matches the tested source.
+
+Version 1.27.0 gives all eleven fields original Blender sky domes, including sunsets, moonlit clouds, winter aurora and orbital stars. [Map skies, source and checks](release-1.27.md).
 
 Version 1.26.0 reworks dedicated snapshot delivery and guest prediction allocation, publishes all dedicated modes at 30 Hz after physics catch-up, and adds saved frame-rate limits with a 60 FPS default. [Measurements and testing](release-1.26.md). Reload every client for the matching binary-snapshot build.
 
