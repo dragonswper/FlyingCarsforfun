@@ -6,9 +6,9 @@ export class CompactUI {
   Object.assign(this,{root,scope});
   this.media=scope.matchMedia(COMPACT_QUERY);
   this.radio=root.querySelector('.showroom-radio .lobby-music');
-  this.radioParent=this.radio.parentElement;
-  this.radioNext=this.radio.nextSibling;
   this.music=root.getElementById('music-dialog');
+  // Reuse one populated music sheet on desktop and touch, preserving playback.
+  root.getElementById('mobile-music-slot').append(this.radio);
   this.onChange=()=>this.update();
   this.openMusic=()=>{if(!this.music.open)this.music.showModal();};
   this.button=root.getElementById('mobile-music-button');
@@ -19,13 +19,8 @@ export class CompactUI {
  update() {
   const compact=this.media.matches;
   this.root.body.classList.toggle('compact-ui',compact);
-  if(compact)this.root.getElementById('mobile-music-slot').append(this.radio);
-  else {
-   if(this.music.open)this.music.close();
-   this.radioParent.insertBefore(this.radio,this.radioNext);
-  }
   const advanced=this.root.getElementById('matchmaking-advanced');
-  if(this.compact!==compact)advanced.open=!compact;
+  if(this.compact===undefined)advanced.open=false;
   this.compact=compact;
  }
  dispose(){this.media.removeEventListener('change',this.onChange);this.button.removeEventListener('click',this.openMusic);}

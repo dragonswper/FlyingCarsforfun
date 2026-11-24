@@ -9,6 +9,9 @@ function harness(compact=true){
 test('compact UI moves the existing radio once, leaving one audio control panel and preserving manual detail expansion',()=>{
  const h=harness();assert.ok(h.classes.has('compact-ui'));assert.deepEqual(h.slot.children,[h.radio]);assert.equal(h.advanced.open,false);h.advanced.open=true;h.ui.update();assert.equal(h.advanced.open,true);assert.equal(h.slot.children.length,1);h.button.dispatchEvent(new Event('click'));assert.equal(h.music.open,true);h.ui.dispose();
 });
-test('resizing to desktop restores the panel in its original order and closes a mobile music modal',()=>{
- const h=harness();h.button.dispatchEvent(new Event('click'));h.media.matches=false;h.media.dispatchEvent(new Event('change'));assert.equal(h.classes.has('compact-ui'),false);assert.equal(h.music.open,false);assert.deepEqual(h.original.children,[h.radio,h.sibling]);assert.equal(h.slot.children.length,0);assert.equal(h.advanced.open,true);h.ui.dispose();h.media.matches=true;h.media.dispatchEvent(new Event('change'));assert.equal(h.radio.parentElement,h.original);
+test('resizing keeps the populated music sheet and preserves manually expanded connection details',()=>{
+ const h=harness();h.button.dispatchEvent(new Event('click'));h.advanced.open=true;h.media.matches=false;h.media.dispatchEvent(new Event('change'));assert.equal(h.classes.has('compact-ui'),false);assert.equal(h.music.open,true);assert.deepEqual(h.original.children,[h.sibling]);assert.deepEqual(h.slot.children,[h.radio]);assert.equal(h.advanced.open,true);h.ui.dispose();h.media.matches=true;h.media.dispatchEvent(new Event('change'));assert.equal(h.radio.parentElement,h.slot);
+});
+test('desktop Music opens real controls and optional connection details start collapsed',()=>{
+ const h=harness(false);assert.equal(h.advanced.open,false);h.button.dispatchEvent(new Event('click'));assert.equal(h.music.open,true);assert.deepEqual(h.slot.children,[h.radio]);h.ui.dispose();
 });
