@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.28.0**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.28.1**, and its public client protocol matches the tested source.
+
+Version 1.28.1 fixes the version-mismatch dead end in online searches, permits the verified v1.27/v1.28 clients, and adds a one-click update action for incompatible builds. [Compatibility and verification](release-1.28.1.md).
 
 Version 1.28.0 adds the presentation animation system, original Blender pennants, Full/Reduced animation controls and a reorganised server runtime. The menu, garage, music and match dialogs share a cleaner desktop/mobile design. [Changes, performance evidence and checks](release-1.28.md).
 

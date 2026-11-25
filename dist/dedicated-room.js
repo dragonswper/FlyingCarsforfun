@@ -3,12 +3,13 @@ import {ServerLink, serverEndpoint} from './server-link.js';
 import {NET_BUILD, appearance} from './network-protocol.js';
 import {serverOptions} from './server-options.js';
 import {ServerCredentials} from './server-auth.js';
+import {versionMismatch} from './build-compatibility.js';
 import {networkPreferences, assessConnection} from './network-quality.js';
 export const serverCode = (value) => {
   const code = String(value || '').trim();
   if (!/^BCS-[A-Za-z0-9_-]{22}$/.test(code))
     throw Error(
-      'Enter the complete BCS dedicated-server invite. Both players must use the same server URL.'
+      'Enter the complete BCS dedicated-server invite. Both players must use the same server URL.',
     );
   return code;
 };
@@ -25,7 +26,13 @@ export function parseServerInvite(value) {
   return {code: serverCode(split < 0 ? raw : raw.slice(0, split)), address};
 }
 export class DedicatedRoom extends PartyRoom {
-  constructor({address, Link = ServerLink, credentials, onQueue = () => {}, ...options} = {}) {
+  constructor({
+    address,
+    Link = ServerLink,
+    credentials,
+    onQueue = () => {},
+    ...options
+  } = {}) {
     super(options);
     this.address = serverEndpoint(address);
     this.Link = Link;
@@ -57,7 +64,11 @@ export class DedicatedRoom extends PartyRoom {
     this.options = serverOptions(options);
     this.look = appearance(look);
     this.preferences = networkPreferences(network);
-    this.startConnection({t: 'server-queue', options: this.options, network: this.preferences});
+    this.startConnection({
+      t: 'server-queue',
+      options: this.options,
+      network: this.preferences,
+    });
   }
   join(code, look) {
     this.code = parseServerInvite(code).code;
@@ -70,7 +81,9 @@ export class DedicatedRoom extends PartyRoom {
     this.beat();
     this.later(() => {
       if (!this.admitted)
-        this.fail('The dedicated server did not admit this connection. Check its URL and invite.');
+        this.fail(
+          'The dedicated server did not admit this connection. Check its URL and invite.',
+        );
     }, 160000);
   }
   async dial(request) {
@@ -79,27 +92,35 @@ export class DedicatedRoom extends PartyRoom {
     const generation = (this.dialGeneration = (this.dialGeneration || 0) + 1),
       current = () => !this.closed && generation === this.dialGeneration;
     try {
+      await this.credentials.checkVersion?.();
+      if (!current()) return;
       const ticket = await this.credentials.ticket();
       if (!current()) return;
       this.request = request;
       link = new this.Link(this.address, {
         onOpen: () => {
-          if (current()) link.send({t: 'server-auth', build: NET_BUILD, ticket});
+          if (current())
+            link.send({t: 'server-auth', build: NET_BUILD, ticket});
         },
         onPacket: (packet) => {
           if (current() && this.link === link) this.serverPacket(packet);
         },
         onClose: () => {
           if (current() && this.link === link) this.lostHost();
-        }
+        },
       });
       this.link = link;
-    } catch {
+    } catch (error) {
       if (!current()) return;
+      if (error?.code === 'VERSION_MISMATCH') {
+        this.versionError = error;
+        this.fail(error.message);
+        return;
+      }
       if (this.recovering) this.recoverLink();
       else
         this.fail(
-          'Could not authenticate with the secure server. Check its URL; a free server may need a minute to wake.'
+          'Could not authenticate with the secure server. Check its URL; a free server may need a minute to wake.',
         );
     }
   }
@@ -108,7 +129,7 @@ export class DedicatedRoom extends PartyRoom {
       ...this.request,
       build: NET_BUILD,
       look: this.look,
-      matchId: this.matchId || null
+      matchId: this.matchId || null,
     });
   }
   measure() {
@@ -124,17 +145,25 @@ export class DedicatedRoom extends PartyRoom {
   serverPacket(packet) {
     if (packet.t === 'server-authenticated') {
       if (packet.build !== NET_BUILD) {
-        this.fail('The server game version differs. Reload the game.');
+        this.versionError = versionMismatch(packet.serverBuild || packet.build);
+        this.fail(this.versionError.message);
         return;
       }
       if (this.request.t === 'server-queue') {
-        this.onQueue({phase: 'checking', reason: 'Measuring your connection to the game server…'});
+        this.onQueue({
+          phase: 'checking',
+          reason: 'Measuring your connection to the game server…',
+        });
         this.measureSamples = [];
         this.measure();
       } else this.sendRequest();
       return;
     }
-    if (packet.t === 'server-measured' && packet.id === this.measureId && this.measureAt !== null) {
+    if (
+      packet.t === 'server-measured' &&
+      packet.id === this.measureId &&
+      this.measureAt !== null
+    ) {
       this.measureSamples.push(this.clock() - this.measureAt);
       this.measureAt = null;
       if (this.measureSamples.length < 3) {
@@ -148,7 +177,7 @@ export class DedicatedRoom extends PartyRoom {
         this.fail(
           'Server ping ' +
             report.ping +
-            ' ms exceeds your enforced limit. Choose Warn and Connect or another server.'
+            ' ms exceeds your enforced limit. Choose Warn and Connect or another server.',
         );
         return;
       }
@@ -161,7 +190,18 @@ export class DedicatedRoom extends PartyRoom {
       return;
     }
     if (packet.t === 'server-error') {
-      this.fail(packet.message || 'The dedicated server could not admit this connection.');
+      if (
+        packet.code === 'version-mismatch' ||
+        /versions? differ/i.test(packet.message || '')
+      ) {
+        this.versionError = versionMismatch(packet.build);
+        this.fail(this.versionError.message);
+        return;
+      }
+      this.fail(
+        packet.message ||
+          'The dedicated server could not admit this connection.',
+      );
       return;
     }
     if (packet.t === 'server-welcome') {
@@ -189,7 +229,10 @@ export class DedicatedRoom extends PartyRoom {
       this.token = packet.token;
       this.ownerId = packet.ownerId;
       this.matchmade = packet.matchmade === true;
-      if (this.recovering && (!this.matchId || packet.matchId !== this.matchId)) {
+      if (
+        this.recovering &&
+        (!this.matchId || packet.matchId !== this.matchId)
+      ) {
         this.recovering = false;
         this.matchId = null;
         this.presentedMatch = null;
@@ -217,12 +260,16 @@ export class DedicatedRoom extends PartyRoom {
       : false;
   }
   startMatch() {
-    return this.canManage && this.connected ? this.link.send({t: 'server-start'}) : false;
+    return this.canManage && this.connected
+      ? this.link.send({t: 'server-start'})
+      : false;
   }
   lostHost() {
     if (this.closed) return;
     if (!this.admitted) {
-      this.fail('The server connection was interrupted. Please search or join again.');
+      this.fail(
+        'The server connection was interrupted. Please search or join again.',
+      );
       return;
     }
     const old = this.link;
@@ -248,7 +295,8 @@ export class DedicatedRoom extends PartyRoom {
     this.retryScheduled = true;
     this.later(() => {
       this.retryScheduled = false;
-      if (!this.closed && this.recovering) this.dial({t: 'server-resume', code: this.code});
+      if (!this.closed && this.recovering)
+        this.dial({t: 'server-resume', code: this.code});
     }, 500);
   }
   retryRecovery() {

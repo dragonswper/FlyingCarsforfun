@@ -82,7 +82,7 @@ export class ServerSession extends PartyRoom {
     }
     const resuming =
         !!entry.recovering && !!this.matchId && packet.matchId === this.matchId,
-      link = new SocketLink(socket);
+      link = new SocketLink(socket, {build: packet.build || NET_BUILD});
     entry.link = link;
     entry.lastReceive = entry.lastRealtimeAt = this.clock();
     entry.remote = new ServerInputs();

@@ -1,0 +1,20 @@
+{
+  "build": "boost-circuit-1.27.0",
+  "commit": "df6de0ae658122ff60be7e0e2f425194a1c74b51",
+  "sha256": {
+    "dist/physics.js": "529959b7839a4c63dec716339e63e487be3ab249eac6591fc0b78e4f28c8967e",
+    "dist/constants.js": "af924193b00c1a4738641f28372cf0c8a4a2b88cd85f9c1235bbce4931e17d38",
+    "dist/arena.js": "d48b05d09efc2fc30dd979b1eab3ff3ed1789244fec621718c49a1d0c3424cc5",
+    "dist/ball.js": "db22990a455c05fe3af6d8de989cbfb08a5210ed12574a834127c97fb980ae36",
+    "dist/bots.js": "47ffa9ec46b5ff731211009a6efe9f7f2b76abf89db6ae9c63cf809d86f586e4",
+    "dist/scoring.js": "ed24fe60580b3e574505ccd102ea6fed7dc99318d4903e481e27877b3a7fb675",
+    "dist/field-profile.js": "ef30e331fac21e7befec38420e09a0c6f445b3c5f9e4f94f2a46b59ebdd5493a",
+    "dist/state-schema.js": "27896dc4019f2e5ca3ef1b63492d395a33440154611605cd4bb3ae5669965427",
+    "dist/snapshot-wire.js": "44500720c1d5502eead0de49b5754fa193552740dc80eaa901ec7f3e07bcd34f",
+    "dist/server-options.js": "a98b4b85f6498d03aa89f8ba64bdc165620d93fa740e5a410e9942210df5c922",
+    "dist/arenas.js": "cf09888e4dd946216a5f908f8ed0ecd72188948436c4185bc0967da959207fe9",
+    "dist/bodies.js": "904b0c397428400b89fbd7438d45eceb7699ffe11f6d8785bf00acd4f9a9a2d7",
+    "dist/network-state.js": "95327c62a1ba2f05acb5e38f095f58200a291968a8762eb7d4d09cf95dac3f63",
+    "dist/party-room.js": "c4c5b0bd66e3da80de837e99ac30ecffec9a7d1247ae332a6073b0e236fe7807"
+  }
+}

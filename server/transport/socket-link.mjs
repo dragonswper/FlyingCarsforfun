@@ -1,13 +1,14 @@
 import {Buffer} from 'node:buffer';
-import {MAX_PACKET} from '../../dist/network-protocol.js';
+import {MAX_PACKET, NET_BUILD} from '../../dist/network-protocol.js';
 import {snapshotForPeer} from '../../dist/snapshot-wire.js';
 
 export class SocketLink {
-  constructor(socket) {
+  constructor(socket, {build = NET_BUILD} = {}) {
     this.socket = socket;
     this.open = true;
     this.closed = false;
     this.wire = 0;
+    this.build = build;
   }
   send(packet, realtime = false) {
     if (
@@ -17,8 +18,14 @@ export class SocketLink {
       this.socket.bufferedAmount > (realtime ? 8192 : 65536)
     )
       return false;
+    // Negotiate only the build tag for explicitly compatible clients. Binary
+    // snapshots and simulation data are identical; never translate game rules.
+    const message =
+      packet.build === NET_BUILD && this.build !== NET_BUILD
+        ? {...packet, build: this.build, serverBuild: NET_BUILD}
+        : packet;
     const sequence = this.wire + 1,
-      data = JSON.stringify(realtime ? {...packet, w: sequence} : packet);
+      data = JSON.stringify(realtime ? {...message, w: sequence} : message);
     if (Buffer.byteLength(data) > MAX_PACKET) return false;
     try {
       this.socket.send(data);

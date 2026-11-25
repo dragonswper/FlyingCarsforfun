@@ -1,6 +1,8 @@
 // Tickets travel in an encrypted first WebSocket message, never in an invite,
 // query string, localStorage, analytics or logs. A room owns this credential for
 // its lifetime so brief disconnects authenticate as the same guest.
+import {NET_BUILD} from './network-protocol.js';
+import {versionMismatch} from './build-compatibility.js';
 export class ServerCredentials {
   constructor(endpoint, {fetcher = globalThis.fetch} = {}) {
     const url = new URL(endpoint);
@@ -20,24 +22,58 @@ export class ServerCredentials {
       cache: 'no-store',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? {Authorization: 'Bearer ' + token} : {})
+        ...(token ? {Authorization: 'Bearer ' + token} : {}),
       },
       body: '{}',
-      signal: AbortSignal.timeout(75000)
+      signal: AbortSignal.timeout(75000),
     });
-    return {ok: response.ok, status: response.status, value: await response.json()};
+    return {
+      ok: response.ok,
+      status: response.status,
+      value: await response.json(),
+    };
+  }
+  async checkVersion() {
+    let config;
+    try {
+      const response = await this.fetcher(
+        new URL('/server-config.json', this.base).href,
+        {
+          credentials: 'omit',
+          cache: 'no-store',
+          signal: AbortSignal.timeout(5000),
+        },
+      );
+      if (!response.ok) return;
+      config = await response.json();
+    } catch {
+      return;
+    } // Older servers may lack discovery; admission still checks.
+    if (
+      typeof config?.build === 'string' &&
+      config.build !== NET_BUILD &&
+      !(
+        Array.isArray(config.compatibleBuilds) &&
+        config.compatibleBuilds.includes(NET_BUILD)
+      )
+    )
+      throw versionMismatch(config.build);
   }
   async ticket() {
     if (!this.session || this.session.expires < Date.now() + 30000) {
       const reply = await this.post('session');
       if (!reply.ok || typeof reply.value.token !== 'string')
-        throw Error('The server could not create a guest session. Try again shortly.');
+        throw Error(
+          'The server could not create a guest session. Try again shortly.',
+        );
       this.session = reply.value;
     }
     const reply = await this.post('ticket', this.session.token);
     if (!reply.ok) {
       if (reply.status === 401) this.session = null;
-      throw Error('The guest session could not be authenticated. Reconnect and try again.');
+      throw Error(
+        'The guest session could not be authenticated. Reconnect and try again.',
+      );
     }
     if (typeof reply.value.ticket !== 'string')
       throw Error('The server returned an invalid connection ticket.');

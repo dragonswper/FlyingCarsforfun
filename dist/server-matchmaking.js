@@ -11,7 +11,7 @@ export class DedicatedMatchmaker {
     onDisconnect = () => {},
     onEvents = () => {},
     onChat = () => {},
-    onChatState = () => {}
+    onChatState = () => {},
   } = {}) {
     Object.assign(this, {
       address,
@@ -24,7 +24,7 @@ export class DedicatedMatchmaker {
       onDisconnect,
       onEvents,
       onChat,
-      onChatState
+      onChatState,
     });
     this.finished = false;
   }
@@ -42,7 +42,10 @@ export class DedicatedMatchmaker {
             this.finished = true;
             this.onLobby(room);
           } else if (['starting', 'lobby'].includes(room.status))
-            this.onChange({phase: 'preparing', reason: 'Preparing the arena and vehicles…'});
+            this.onChange({
+              phase: 'preparing',
+              reason: 'Preparing the arena and vehicles…',
+            });
         },
         onMatch: (sim) => {
           // Search has ended, but this session still owns subsequent rematches.
@@ -57,16 +60,19 @@ export class DedicatedMatchmaker {
         onDisconnect: (reason) => {
           if (this.finished) this.onDisconnect(reason, session);
           else {
-            this.onChange({phase: 'cancelled', reason});
+            this.onChange({
+              phase: session.versionError ? 'update' : 'cancelled',
+              reason,
+            });
             this.cancel();
           }
-        }
+        },
       });
       this.session = session;
       this.onChange({
         phase: 'connecting',
         reason:
-          'Connecting to the secure game server. A free server may need about a minute to wake.'
+          'Connecting to the secure game server. A free server may need about a minute to wake.',
       });
       session.matchmake(look, options, options.network);
       return true;

@@ -1,4 +1,5 @@
 import {CAPABILITIES} from '../runtime/capabilities.mjs';
+import {COMPATIBLE_BUILDS} from '../../dist/build-compatibility.js';
 import {handleAPI, jsonHeaders} from '../http/api.mjs';
 import {createServer as createHTTPServer} from 'node:http';
 import {createServer as createHTTPSServer} from 'node:https';
@@ -105,13 +106,19 @@ export function createGameServer({
       return;
     }
     if (url.pathname === '/server-config.json' && request.method === 'GET') {
-      json(response, 200, {
-        build: NET_BUILD,
-        server: publicOrigin || 'https://' + request.headers.host,
-        region,
-        social: true,
-        capabilities: CAPABILITIES,
-      });
+      json(
+        response,
+        200,
+        {
+          build: NET_BUILD,
+          server: publicOrigin || 'https://' + request.headers.host,
+          region,
+          social: true,
+          compatibleBuilds: COMPATIBLE_BUILDS,
+          capabilities: CAPABILITIES,
+        },
+        originOK(request) ? origin : undefined,
+      );
       return;
     }
     if (url.pathname.startsWith('/api/')) {

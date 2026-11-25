@@ -10,6 +10,8 @@ The live Cloudflare game includes the dedicated server. Choose **Online Match �
 
 **Source:** https://github.com/dragonswper/FlyingCarsforfun
 
+**1.28.1 — matchmaking version fix:** Compatible v1.27/v1.28 clients can play together after visual updates. Truly incompatible servers show an update action with Reload Game and visible connection settings. [Compatibility and verification](docs/release-1.28.1.md).
+
 **1.28.0 — motion, menus and server runtime:** A dedicated animation system, original Blender pennants, better vehicle/pickup motion, reduced-motion controls, refined desktop/mobile menus and a modular authoritative server with bounded scheduling, shared APIs and reliable profile saves. [Update details and checks](docs/release-1.28.md).
 
 **1.27.0 — skies for all eleven maps:** Original Blender sky domes with themed clouds, sunsets, moons, stars and a winter aurora. One lightweight background draw per field. [Skies, editable artwork and verification](docs/release-1.27.md).

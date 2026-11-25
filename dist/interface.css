@@ -150,3 +150,6 @@ body.garage-open #lobby { visibility: hidden; }
 }
 @media (max-width:360px) { .compact-ui .match-essentials { grid-template-columns: minmax(0,1fr); } }
 @media (prefers-reduced-motion:reduce) { button { transition: none; } }
+
+/* A version error is a terminal action state, not an active search. */
+.matchmaking-dialog[data-phase="update"] .matchmaking-pulse{display:none}

@@ -1,4 +1,5 @@
 import {CAPABILITIES} from '../runtime/capabilities.mjs';
+import {COMPATIBLE_BUILDS} from '../../dist/build-compatibility.js';
 import {handleAPI, jsonHeaders} from '../http/api.mjs';
 import {DurableObject} from 'cloudflare:workers';
 import {GameService} from '../runtime/game-service.mjs';
@@ -65,13 +66,18 @@ export class ArenaService extends DurableObject {
         runtime: this.service.metrics.snapshot(),
       });
     if (url.pathname === '/server-config.json' && request.method === 'GET')
-      return json(200, {
-        build: NET_BUILD,
-        server: url.origin,
-        region: this.service.region,
-        social: true,
-        capabilities: CAPABILITIES,
-      });
+      return json(
+        200,
+        {
+          build: NET_BUILD,
+          server: url.origin,
+          region: this.service.region,
+          social: true,
+          compatibleBuilds: COMPATIBLE_BUILDS,
+          capabilities: CAPABILITIES,
+        },
+        originOK ? origin : undefined,
+      );
     if (!originOK) return json(403, {error: 'Origin is not allowed.'});
     if (url.pathname.startsWith('/api/'))
       return this.authRequest(request, url, origin);

@@ -3,6 +3,10 @@ import {RuntimeMetrics} from './metrics.mjs';
 import {randomArena} from '../../dist/arenas.js';
 import {randomBytes} from 'node:crypto';
 import {NET_BUILD, decodePacket} from '../../dist/network-protocol.js';
+import {
+  compatibleBuild,
+  COMPATIBLE_BUILDS,
+} from '../../dist/build-compatibility.js';
 import {C} from '../../dist/physics.js';
 import {GuestAuth} from '../auth/guest-auth.mjs';
 import {ServerSession} from '../session/session.mjs';
@@ -104,9 +108,9 @@ export class GameService {
     room.sendLobby();
     if (options.mode !== 'custom') room.startMatch();
   }
-  reject(socket, message) {
+  reject(socket, message, details = {}) {
     if (socket.readyState === 1)
-      socket.send(JSON.stringify({t: 'server-error', message}));
+      socket.send(JSON.stringify({t: 'server-error', message, ...details}));
     socket.close(1008);
   }
   accept(socket, origin = '') {
@@ -167,8 +171,16 @@ export class GameService {
       return;
     }
     if (!connection.identity) {
-      if (packet.build !== NET_BUILD) {
-        this.reject(socket, 'Game versions differ. Reload all clients.');
+      if (!compatibleBuild(packet.build)) {
+        this.reject(
+          socket,
+          'Game versions differ. Reload this game or choose an updated server.',
+          {
+            code: 'version-mismatch',
+            build: NET_BUILD,
+            compatibleBuilds: COMPATIBLE_BUILDS,
+          },
+        );
         return;
       }
       const identity =
@@ -179,6 +191,7 @@ export class GameService {
         return;
       }
       connection.identity = identity;
+      connection.build = packet.build;
       clearTimeout(connection.handshake);
       connection.handshake = null;
       connection.joinTimer = setTimeout(() => {
@@ -189,7 +202,8 @@ export class GameService {
       socket.send(
         JSON.stringify({
           t: 'server-authenticated',
-          build: NET_BUILD,
+          build: connection.build,
+          serverBuild: NET_BUILD,
           region: this.region,
         }),
       );
@@ -211,7 +225,7 @@ export class GameService {
         'server-resume',
         'server-queue',
       ].includes(packet.t) ||
-      packet.build !== NET_BUILD
+      packet.build !== connection.build
     ) {
       this.reject(socket, 'Invalid room request or game version.');
       return;
