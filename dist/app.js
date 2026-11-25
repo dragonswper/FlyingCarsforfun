@@ -1,4 +1,5 @@
 import {LobbyShowroom} from './lobby-showroom.js';
+import {compatibleBuild} from './build-compatibility.js';
 import {setupLobbyPartyUI} from './lobby-party-ui.js';
 import {Simulation,C,clamp} from './physics.js';
 import {GameView} from './scene.js';
@@ -56,7 +57,7 @@ settings.interface=normalizeInterface(settings.interface);settings.network=netwo
 // A game served by the Node service can use that same secure origin without
 // asking players to copy its address. Static deployments simply return 404.
 let communityServer=null;
-try{const response=await fetch('/server-config.json',{cache:'no-store',signal:AbortSignal.timeout(1500)});if(response.ok){const config=await response.json();if(config.build===NET_BUILD||config.compatibleBuilds?.includes(NET_BUILD)){settings.serverURL||=location.origin;settings.onlineConnection||='server';settings.customConnection||='server';if(config.social)communityServer=config.server||location.origin;}}}catch{}
+try{const response=await fetch('/server-config.json',{cache:'no-store',signal:AbortSignal.timeout(1500)});if(response.ok){const config=await response.json();if(compatibleBuild(config.build)||(Array.isArray(config.compatibleBuilds)&&config.compatibleBuilds.includes(NET_BUILD))){settings.serverURL||=config.server||location.origin;settings.onlineConnection||='server';settings.customConnection||='server';if(config.social)communityServer=config.server||location.origin;}}}catch{}
 settings.history=Array.isArray(settings.history)?settings.history.filter(x=>x&&typeof x==='object').slice(0,8):[];
 const save=()=>{try{localStorage.setItem(key,JSON.stringify(settings));return true;}catch{return false;}};
 let friends=null,friendsUI=null,musicPadHeld=false,lobbyShowroom,sharedLobbyPromise;
