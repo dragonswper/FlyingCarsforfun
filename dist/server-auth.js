@@ -2,7 +2,7 @@
 // query string, localStorage, analytics or logs. A room owns this credential for
 // its lifetime so brief disconnects authenticate as the same guest.
 import {NET_BUILD} from './network-protocol.js';
-import {versionMismatch} from './build-compatibility.js';
+import {versionMismatch, compatibleBuild} from './build-compatibility.js';
 export class ServerCredentials {
   constructor(endpoint, {fetcher = globalThis.fetch} = {}) {
     const url = new URL(endpoint);
@@ -14,6 +14,7 @@ export class ServerCredentials {
     // this.fetcher() otherwise passes ServerCredentials and throws in browsers.
     this.fetcher = fetcher.bind(globalThis);
     this.session = null;
+    this.build = NET_BUILD;
   }
   async post(path, token) {
     const response = await this.fetcher(this.base + path, {
@@ -52,12 +53,14 @@ export class ServerCredentials {
     if (
       typeof config?.build === 'string' &&
       config.build !== NET_BUILD &&
+      !compatibleBuild(config.build) &&
       !(
         Array.isArray(config.compatibleBuilds) &&
         config.compatibleBuilds.includes(NET_BUILD)
       )
     )
       throw versionMismatch(config.build);
+    this.build = compatibleBuild(config?.build) ? config.build : NET_BUILD;
   }
   async ticket() {
     if (!this.session || this.session.expires < Date.now() + 30000) {

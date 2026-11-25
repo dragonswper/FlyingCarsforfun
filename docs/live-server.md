@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.28.1**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.28.2**, and its public client protocol matches the tested source.
+
+Version 1.28.2 makes friend invitations create or reuse a shared lobby and renders each joined player’s selected car in the menu. Party members can invite mutual friends; brief lobby reconnects preserve the showroom. [Friend flow, permissions and checks](release-1.28.2.md).
 
 Version 1.28.1 fixes the version-mismatch dead end in online searches, permits the verified v1.27/v1.28 clients, and adds a one-click update action for incompatible builds. [Compatibility and verification](release-1.28.1.md).
 

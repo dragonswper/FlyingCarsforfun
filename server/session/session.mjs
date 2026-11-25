@@ -1,4 +1,5 @@
 import {SocketLink} from '../transport/socket-link.mjs';
+import {sessionHeartbeat} from '../runtime/session-heartbeat.mjs';
 import {randomBytes} from 'node:crypto';
 import {randomArena} from '../../dist/arenas.js';
 import {PartyRoom} from '../../dist/party-room.js';
@@ -41,6 +42,9 @@ export class ServerSession extends PartyRoom {
   }
   normalizeOptions(value) {
     return serverOptions(value);
+  }
+  beat() {
+    sessionHeartbeat(this);
   }
   attach(socket, packet, identity) {
     let entry = [...this.entries.values()].find(
@@ -206,6 +210,13 @@ export class ServerSession extends PartyRoom {
     return {...super.config(entry, join), matchmade: this.matchmade};
   }
   receiveClient(entry, packet) {
+    if (packet.t === 'party-appearance') {
+      if (!this.matchId || this.sim?.phase === 'ended') {
+        entry.member.look = appearance({...entry.member.look, ...packet.look});
+        this.sendLobby();
+      }
+      return;
+    }
     if (packet.t === 'server-configure' || packet.t === 'server-start') {
       if (entry.id !== this.ownerId || this.matchmade) {
         entry.link?.send({

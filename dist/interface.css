@@ -153,3 +153,20 @@ body.garage-open #lobby { visibility: hidden; }
 
 /* A version error is a terminal action state, not an active search. */
 .matchmaking-dialog[data-phase="update"] .matchmaking-pulse{display:none}
+
+/* A shared showroom is visible behind dialogs and never occupies game HUD space. */
+.lobby-party{pointer-events:auto;position:absolute;z-index:7;right:28px;top:102px;width:330px;padding:14px;background:#102234ed;border:1px solid #405b70;border-radius:8px;color:var(--ui-text)}
+.lobby-party>header,.lobby-party>div{display:flex;align-items:center;gap:8px;justify-content:space-between}.lobby-party>header>strong{font:600 13px var(--ui-font)}
+.shared-lobby #network-notice{display:none}
+.lobby-party ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;padding:0;max-height:140px;overflow:auto}.lobby-party li{min-width:0;padding:8px;background:#20364a;border-radius:4px}.lobby-party li strong,.lobby-party li small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lobby-party li strong{font-size:13px}.lobby-party li small{font-size:10px;color:var(--ui-muted);margin-top:3px}.lobby-party button{font-size:11px;min-height:36px;padding:7px 10px}.lobby-party>div>button{flex:1}
+@media(max-height:540px) and (min-width:601px){.lobby-party{top:70px;right:18px;width:260px;padding:10px}.lobby-party ul{margin:8px 0;max-height:80px}.lobby-party li{padding:6px}.lobby-party button{min-height:44px}}
+@media(max-width:600px){.lobby-party{top:auto;bottom:128px;right:12px;width:calc(100% - 24px);padding:8px}.lobby-party>header{gap:6px}.lobby-party ul{display:flex;overflow-x:auto;margin:6px 0;max-height:52px}.lobby-party li{min-width:110px;padding:5px 8px}.lobby-party button{min-height:44px}.lobby-party>header>button{min-height:44px}.lobby-party>div{gap:6px}}
+@media(max-height:540px) and (min-width:601px){
+ .shared-lobby.compact-ui .home-screen{width:236px}
+ .shared-lobby.compact-ui .main-menu>.menu-row{font-size:12px}
+ .shared-lobby .lobby-party{top:54px;right:18px;width:min(440px,calc(100vw - 285px));display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 8px;padding:8px}
+ .shared-lobby .lobby-party>header{grid-column:1/-1}
+ .shared-lobby .lobby-party ul{display:flex;overflow-x:auto;margin:0;max-height:48px}
+ .shared-lobby .lobby-party li{min-width:100px;padding:4px 6px}
+ .shared-lobby .lobby-party>div{gap:5px}.shared-lobby .lobby-party>div button{min-width:78px;font-size:10px;padding:5px}
+}

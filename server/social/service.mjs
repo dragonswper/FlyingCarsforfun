@@ -119,6 +119,29 @@ export class SocialService {
     const room = this.retainedLobby(record);
     return room?.entries.get(record.memberId)?.member.connected ? room : null;
   }
+  validInvite(invite, recipient) {
+    const sender = invite.from || invite.owner,
+      profile = this.profiles.get(sender),
+      record = this.lobbies.get(invite.owner),
+      room = record && this.retainedLobby(record);
+    if (
+      !room ||
+      this.profiles.get(invite.owner)?.blocked.includes(sender) ||
+      profile?.blocked.includes(invite.owner) ||
+      invite.expires <= this.clock() ||
+      !recipient.friends.includes(sender) ||
+      !profile?.friends.includes(recipient.id) ||
+      recipient.blocked.includes(invite.owner) ||
+      this.profiles.get(invite.owner)?.blocked.includes(recipient.id)
+    )
+      return false;
+    if (
+      invite.memberId !== undefined &&
+      room.entries.get(invite.memberId)?.member.authId !== invite.authId
+    )
+      return false;
+    return true;
+  }
   summary(id) {
     const p = this.profiles.get(id),
       tabs = this.presence.get(id),
@@ -168,10 +191,10 @@ export class SocialService {
       outgoing: p.outgoing.map((id) => this.summary(id)).filter(Boolean),
       blocked: p.blocked.map((id) => this.summary(id)).filter(Boolean),
       invites: (this.invites.get(p.id) || [])
-        .filter((i) => p.friends.includes(i.owner))
+        .filter((i) => this.validInvite(i, p))
         .map((i) => ({
           id: i.id,
-          from: this.summary(i.owner),
+          from: this.summary(i.from || i.owner),
           lobby: this.lobby(this.lobbies.get(i.owner)),
           expires: i.expires,
         }))
@@ -377,11 +400,15 @@ export class SocialService {
         }
         this.invites.set(
           id,
-          (this.invites.get(id) || []).filter((i) => i.owner !== peer.id),
+          (this.invites.get(id) || []).filter(
+            (i) => i.owner !== peer.id && (i.from || i.owner) !== peer.id,
+          ),
         );
         this.invites.set(
           peer.id,
-          (this.invites.get(peer.id) || []).filter((i) => i.owner !== id),
+          (this.invites.get(peer.id) || []).filter(
+            (i) => i.owner !== id && (i.from || i.owner) !== id,
+          ),
         );
         await this.save(p, peer);
         break;
@@ -394,16 +421,41 @@ export class SocialService {
       case 'invite': {
         if (!peer || !p.friends.includes(peer.id))
           fail('Add this player as a friend first.');
-        const record = this.lobbies.get(id);
-        if (!record || !this.validLobby(record))
-          fail('Create and share a dedicated lobby first.');
+        const record = body.code
+          ? [...this.lobbies.values()].find((item) => item.code === body.code)
+          : this.lobbies.get(id);
+        const room = record && this.validLobby(record),
+          inviter =
+            room &&
+            [...room.entries.values()].find(
+              (entry) =>
+                entry.member.connected && entry.member.token === body.proof,
+            )?.member;
+        if (!record || !room) fail('Create and share a dedicated lobby first.');
+        if (
+          record.owner !== id &&
+          (!inviter ||
+            this.profiles.get(record.owner)?.blocked.includes(id) ||
+            p.blocked.includes(record.owner))
+        )
+          fail(
+            'You must be an allowed, connected member of this lobby to invite a friend.',
+            403,
+          );
+        if (
+          this.profiles.get(record.owner)?.blocked.includes(peer.id) ||
+          peer.blocked.includes(record.owner)
+        )
+          fail('This friend cannot join that lobby.', 403);
         const list = (this.invites.get(peer.id) || []).filter(
-          (i) => i.owner !== id,
+          (i) => i.owner !== record.owner || (i.from || i.owner) !== id,
         );
         if (list.length >= 16) fail('This player has too many lobby invites.');
         list.push({
           id: randomBytes(12).toString('hex'),
-          owner: id,
+          owner: record.owner,
+          from: id,
+          ...(inviter ? {memberId: inviter.id, authId: inviter.authId} : {}),
           expires: now + 120000,
         });
         this.invites.set(peer.id, list);
@@ -419,7 +471,7 @@ export class SocialService {
         const record = this.lobbies.get(String(body.lobby || '')),
           room = record && this.validLobby(record),
           invited = (this.invites.get(id) || []).some(
-            (i) => i.owner === record?.owner && i.expires > now,
+            (i) => i.owner === record?.owner && this.validInvite(i, p),
           );
         if (
           !record ||
@@ -431,7 +483,7 @@ export class SocialService {
             record.visibility === 'public' ||
             (record.visibility === 'friends' &&
               p.friends.includes(record.owner)) ||
-            (invited && p.friends.includes(record.owner))
+            invited
           )
         )
           fail('This lobby is no longer available.', 403);

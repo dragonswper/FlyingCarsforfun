@@ -15,5 +15,7 @@ export const CAPABILITIES = Object.freeze({
     'friends',
     'reconnect',
     'binary-snapshots',
+    'member-invites',
+    'lobby-appearance',
   ]),
 });

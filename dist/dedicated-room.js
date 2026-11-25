@@ -45,6 +45,36 @@ export class DedicatedRoom extends PartyRoom {
   normalizeOptions(value) {
     return serverOptions(value);
   }
+  beat() {
+    if (this.closed) return;
+    const now = this.clock();
+    if (this.recovering) {
+      if (now >= this.recoveryDeadline) {
+        this.fail(
+          'Reconnection timed out after 20 seconds. The lobby has ended.',
+        );
+        return;
+      }
+    } else if (this.link?.open && this.admitted) {
+      this.link.refreshStats?.();
+      const timeout =
+        this.matchId && this.sim?.phase !== 'ended' ? 3000 : 60000;
+      if (now - this.lastReceive > timeout) this.lostHost();
+      else {
+        this.ping(this);
+        this.link.send({t: 'probe'}, true);
+      }
+    }
+    this.change();
+    if (!this.closed) this.later(() => this.beat(), 1000);
+  }
+  updateAppearance(value) {
+    if (this.matchId && this.sim?.phase !== 'ended') return false;
+    this.look = appearance({...this.look, ...value});
+    if (this.self) this.self.look = this.look;
+    this.change();
+    return this.link?.send({t: 'party-appearance', look: this.look});
+  }
   get invite() {
     return this.code ? this.code + '@' + encodeURIComponent(this.address) : '';
   }
@@ -98,6 +128,7 @@ export class DedicatedRoom extends PartyRoom {
       if (!current()) return;
       this.request = request;
       link = new this.Link(this.address, {
+        build: this.credentials.build || NET_BUILD,
         onOpen: () => {
           if (current())
             link.send({t: 'server-auth', build: NET_BUILD, ticket});

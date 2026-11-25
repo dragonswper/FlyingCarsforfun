@@ -1,4 +1,5 @@
-import {decodePacket, MAX_PACKET} from './network-protocol.js';
+import {decodePacket, MAX_PACKET, NET_BUILD} from './network-protocol.js';
+import {compatibleBuild} from './build-compatibility.js';
 import {decodeSnapshot} from './snapshot-wire.js';
 export function serverEndpoint(value, location = globalThis.location) {
   let url;
@@ -6,13 +7,13 @@ export function serverEndpoint(value, location = globalThis.location) {
     url = new URL(String(value || '').trim());
   } catch {
     throw Error(
-      'Enter the dedicated server URL, for example wss://your-server.example/multiplayer.'
+      'Enter the dedicated server URL, for example wss://your-server.example/multiplayer.',
     );
   }
   if (url.protocol === 'https:') url.protocol = 'wss:';
   if (['http:', 'ws:'].includes(url.protocol))
     throw Error(
-      'The game needs a secure wss:// server with a trusted certificate. Plaintext connections are disabled.'
+      'The game needs a secure wss:// server with a trusted certificate. Plaintext connections are disabled.',
     );
   if (
     url.protocol !== 'wss:' ||
@@ -22,7 +23,9 @@ export function serverEndpoint(value, location = globalThis.location) {
     url.search ||
     url.href.length > 500
   )
-    throw Error('Use a wss:// server URL without a password, query or fragment.');
+    throw Error(
+      'Use a wss:// server URL without a password, query or fragment.',
+    );
   if (url.pathname === '/') url.pathname = '/multiplayer';
   return url.href;
 }
@@ -31,19 +34,21 @@ export class ServerLink {
     url,
     {
       WebSocketClass = globalThis.WebSocket,
+      build = NET_BUILD,
       onOpen = () => {},
       onPacket = () => {},
-      onClose = () => {}
-    } = {}
+      onClose = () => {},
+    } = {},
   ) {
     Object.assign(this, {url, onOpen, onPacket, onClose});
     this.closed = false;
     this.open = false;
     this.wire = 0;
+    this.build = compatibleBuild(build) ? build : NET_BUILD;
     this.connectionInfo = {
       route: 'server',
       protocol: url.startsWith('wss:') ? 'wss' : 'ws',
-      networkPing: null
+      networkPing: null,
     };
     this.socket = new WebSocketClass(url);
     this.socket.binaryType = 'arraybuffer';
@@ -55,7 +60,16 @@ export class ServerLink {
     };
     this.socket.onmessage = (event) => {
       if (!this.closed) {
-        const packet = typeof event.data === 'string' ? decodePacket(event.data) : decodeSnapshot(event.data);
+        let packet =
+          typeof event.data === 'string'
+            ? decodePacket(event.data)
+            : decodeSnapshot(event.data);
+        if (packet?.build === this.build && this.build !== NET_BUILD)
+          packet = {
+            ...packet,
+            build: NET_BUILD,
+            serverBuild: packet.serverBuild || this.build,
+          };
         if (packet) onPacket(packet);
       }
     };
@@ -73,8 +87,12 @@ export class ServerLink {
       this.socket.bufferedAmount > (realtime ? 8192 : 65536)
     )
       return false;
+    const message =
+      packet.build === NET_BUILD && this.build !== NET_BUILD
+        ? {...packet, build: this.build}
+        : packet;
     const wire = realtime ? this.wire + 1 : null,
-      data = JSON.stringify(realtime ? {...packet, w: wire} : packet);
+      data = JSON.stringify(realtime ? {...message, w: wire} : message);
     if (data.length > MAX_PACKET) return false;
     try {
       this.socket.send(data);
