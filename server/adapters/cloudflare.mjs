@@ -1,3 +1,4 @@
+import {edgePing} from '../http/edge-ping.mjs';
 import {CAPABILITIES} from '../runtime/capabilities.mjs';
 import {COMPATIBLE_BUILDS} from '../../dist/build-compatibility.js';
 import {handleAPI, jsonHeaders} from '../http/api.mjs';
@@ -25,6 +26,8 @@ export default {
     const url = new URL(request.url);
     if (url.protocol !== 'https:')
       return json(426, {error: 'HTTPS is required.'});
+    if (url.pathname === '/edge-ping')
+      return edgePing(request, env.ALLOWED_ORIGINS);
     if (!dynamicPath(url.pathname)) return env.ASSETS.fetch(request);
     // A location hint is best effort, not a promise of an Australian data centre.
     const id = env.ARENA.idFromName('flyingcarsforfun-oceania-v1');

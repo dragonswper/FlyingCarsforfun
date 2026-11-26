@@ -1,3 +1,45 @@
+# Dedicated server route check — v1.31
+
+Open [Connection Check](https://flyingcarsforfun.connstors.workers.dev/connection-test)
+or **Options → Network → Run Connection Test**. The tool separately measures the
+stateless Cloudflare entry point and the authoritative service's HTTPS endpoint.
+It discards connection warm-up, takes five samples per route and reports medians.
+It does not replace or subtract anything from the in-game WebSocket Game ping.
+
+An entry-point label such as `SIN` means Singapore; it does **not** reveal where
+the Durable Object game authority is running. `loc=AU` on Cloudflare's trace page
+identifies the visitor's country, not the server's. Do not share the full trace
+page because it includes an IP address. The new tool returns no IP, profile,
+authentication or precise-location data. Copy Results includes only route samples
+and entry-point labels. Requests omit credentials and cannot create game rooms.
+
+A 25–50 ms goal requires nearby hosting and a short route. A distant entry point
+can already exceed that goal; extra time between the entry point and the game
+service points to further routing/placement delay. HTTPS samples and live
+WebSocket RTT are different measurements and may differ due to scheduling,
+protocol handling and congestion. They do not prove the authority's exact city.
+
+Cloudflare's [location policy](https://developers.cloudflare.com/durable-objects/reference/data-location/)
+says placement hints are best effort, only the first lookup honors a hint, and
+existing objects do not automatically relocate. This deployment requests `oc`,
+uses one persistent shared object and cannot promise Australian placement.
+Changing a matchmaking region filters opponents; it does not migrate that object.
+Do not rename it as a latency shortcut: it also owns the existing social data.
+
+**Solo practice:** Training → Free Play runs on the player's own device. Using
+Dedicated Server → Free Play still connects to the remote authority, even with
+one player. Local practice avoids server round trips but does not improve online
+ping. For multiplayer, compare the route samples before choosing Australian
+hosting or a direct peer route. No paid service, PC installation or router change
+is introduced by this diagnostic patch. It leaves v1.31 physics and wire rules
+unchanged.
+
+The current server's timing counters can identify simulation backlog, but a
+healthy counter does not establish a low-latency Internet route. Do not lower
+warning thresholds, relabel edge ping as game ping or promise a global latency.
+
+---
+
 # Ping admission and connection routing — 1.13
 
 The reported failure was Australian/Oceania players seeing 300–600 ms and repeatedly being refused an online match. That reading can include both network travel and the time the browser/game takes to process messages. This release improves the connection attempt and measurement, and makes casual admission warning-based. It does not promise 100 ms for every internet connection or disguise high latency as a lower number.

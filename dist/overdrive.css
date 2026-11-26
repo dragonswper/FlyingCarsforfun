@@ -459,3 +459,5 @@
     height: 38px;
   }
 }
+/* The diagnostic action stays a full touch target inside Network settings. */
+#panel-network a[href="connection-test.html"] {display:inline-flex;align-items:center;min-height:44px;padding:0 8px;color:#c4e6ff;text-underline-offset:3px;}
