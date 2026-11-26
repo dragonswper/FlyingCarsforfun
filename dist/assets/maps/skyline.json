@@ -1,0 +1,14 @@
+{
+  "id": "skyline",
+  "originalArtwork": true,
+  "license": "MIT",
+  "blenderVersion": "4.3.2",
+  "sourceBlend": "art/skyline.blend",
+  "generator": "scripts/create-overdrive-venues.py",
+  "sourceProps": 1440,
+  "bytes": 941264,
+  "sha256": "68b2ce6a61d3c15b171191a5265a2fd78fa0a02e6004f1d58ae90f387e00513e",
+  "triangles": 17280,
+  "materialBatches": 8,
+  "textures": 0
+}

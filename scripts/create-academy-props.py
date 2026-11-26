@@ -21,7 +21,8 @@ bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
 verts=[(-.7,-.8,.03),(0,-.3,.03),(.7,-.8,.03),(.7,-.3,.03),(0,.3,.03),(-.7,-.3,.03)]
 mesh=bpy.data.meshes.new('Direction_chevron_mesh');mesh.from_pydata(verts,[],[(0,1,2,3,4,5)]);mesh.update()
 arrow=bpy.data.objects.new('Academy_Chevron',mesh);bpy.context.collection.objects.link(arrow);arrow.data.materials.append(white)
-for o in [gate,cone,arrow]:o['originalArtwork']=True;o['purpose']='Non-colliding solo training guide'
+bpy.ops.mesh.primitive_cube_add(size=1,location=(0,0,.7));hurdle=bpy.context.object;hurdle.name='Academy_Hurdle';hurdle.dimensions=(6,.7,1.4);hurdle.data.materials.append(orange);bpy.ops.object.transform_apply(location=True,rotation=True,scale=True)
+for o in [gate,cone,arrow,hurdle]:o['originalArtwork']=True;o['purpose']='Non-colliding solo training guide'
 scene=bpy.context.scene;scene.world.color=(.1,.13,.18)
 bpy.ops.wm.save_as_mainfile(filepath=str(ROOT/'art/academy-guides.blend'),compress=True)
 bpy.ops.export_scene.gltf(filepath=str(ROOT/'dist/assets/academy/guides.glb'),export_format='GLB',export_animations=False,export_yup=True,export_extras=True)

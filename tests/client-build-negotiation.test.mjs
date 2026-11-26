@@ -3,15 +3,14 @@ import assert from 'node:assert/strict';
 import {ServerCredentials} from '../dist/server-auth.js';
 import {ServerLink} from '../dist/server-link.js';
 import {NET_BUILD} from '../dist/network-protocol.js';
-test('a new client negotiates a verified older server during a frontend/backend rollout gap', async () => {
+test('new physics rejects pre-v1.31 servers before requesting credentials', async () => {
   const credentials = new ServerCredentials('wss://old.example/multiplayer', {
     fetcher: async () => ({
       ok: true,
       json: async () => ({build: 'boost-circuit-1.28.1'}),
     }),
   });
-  await credentials.checkVersion();
-  assert.equal(credentials.build, 'boost-circuit-1.28.1');
+  await assert.rejects(credentials.checkVersion(),error=>error.code==='VERSION_MISMATCH');
   credentials.fetcher = async () => ({
     ok: true,
     json: async () => ({build: 'boost-circuit-1.20.0'}),
@@ -21,7 +20,7 @@ test('a new client negotiates a verified older server during a frontend/backend 
     (error) => error.code === 'VERSION_MISMATCH',
   );
 });
-test('wire tag negotiation preserves packet data and normalizes only the verified remote build', () => {
+test('only the current physics build is selected; unverified packet tags stay unmodified', () => {
   const sent = [],
     received = [];
   class Socket {
@@ -48,7 +47,7 @@ test('wire tag negotiation preserves packet data and normalizes only the verifie
     options: {mode: 'custom'},
   };
   link.send(packet);
-  assert.equal(sent[0].build, 'boost-circuit-1.28.1');
+  assert.equal(sent[0].build, NET_BUILD);
   assert.equal(packet.build, NET_BUILD);
   link.socket.onmessage({
     data: JSON.stringify({
@@ -57,8 +56,8 @@ test('wire tag negotiation preserves packet data and normalizes only the verifie
       roster: [],
     }),
   });
-  assert.equal(received[0].build, NET_BUILD);
-  assert.equal(received[0].serverBuild, 'boost-circuit-1.28.1');
+  assert.equal(received[0].build, 'boost-circuit-1.28.1');
+  assert.equal(received[0].serverBuild, undefined);
   link.socket.onmessage({
     data: JSON.stringify({t: 'server-authenticated', build: 'unverified'}),
   });

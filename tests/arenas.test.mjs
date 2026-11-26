@@ -11,7 +11,7 @@ import {ServerMatchQueue} from '../server/matchmaking.mjs';
 test('all match contracts preserve valid arenas and safely migrate old/invalid values',()=>{
  for(const id of ARENA_IDS){
   assert.equal(roomOptions({arena:id}).arena,id);assert.equal(partyOptions({arena:id}).arena,id);
-  for(const mode of SERVER_MODES)assert.equal(serverOptions({mode,arena:id}).arena,id);
+  for(const mode of SERVER_MODES)assert.equal(serverOptions({mode,arena:id}).arena,mode==='hoops'?'skyline':id);
  }
  for(const value of [undefined,null,{},'__proto__','constructor','../../secrets'])assert.equal(normalizeArena(value),'champions');
  assert.equal(roomOptions(null).arena,'champions');assert.equal(serverOptions().arena,'champions');

@@ -23,6 +23,9 @@ export class ServerSession extends PartyRoom {
     matchmade = false,
     onEmpty = () => {},
     chooseArena = randomArena,
+    canStart = () => true,
+    onMemberRemoved = () => {},
+    onLoadingAborted = () => {},
     ...callbacks
   } = {}) {
     super(callbacks);
@@ -38,7 +41,30 @@ export class ServerSession extends PartyRoom {
     this.ownerId = null;
     this.onEmpty = onEmpty;
     this.chooseArena = chooseArena;
+    this.canStart = canStart;
+    this.onMemberRemoved = onMemberRemoved;
+    this.onLoadingAborted = onLoadingAborted;
     this.beat();
+  }
+  abortLoading(message) {
+    super.abortLoading(message);
+    this.onLoadingAborted(this);
+  }
+  startMatch() {
+    if (!this.canStart(this)) {
+      this.notice =
+        'The free arena is in use. Wait for it to finish, or join the matchmaking queue.';
+      this.sendLobby();
+      return false;
+    }
+    return super.startMatch();
+  }
+  sendLobby() {
+    super.sendLobby();
+    if (this.notice && this.notice !== this.lastNotice) {
+      this.lastNotice = this.notice;
+      this.broadcast({t: 'party-notice', message: this.notice});
+    }
   }
   normalizeOptions(value) {
     return serverOptions(value);
@@ -115,7 +141,7 @@ export class ServerSession extends PartyRoom {
       entry.member.connected = true;
       entry.recovering = false;
       this.sendLobby();
-      if (this.matchId) this.sendConfig(entry, true);
+      if (this.matchId) this.sendConfig(entry, !this.pendingMatch);
     }
     this.recovering =
       !!this.matchId &&
@@ -183,6 +209,11 @@ export class ServerSession extends PartyRoom {
     return true;
   }
   selectMatchArena() {
+    if (this.options.mode === 'hoops') {
+      this.options = {...this.options, arena: 'skyline'};
+      return;
+    }
+
     if (this.options.randomArena)
       this.options = {
         ...this.options,
@@ -211,7 +242,10 @@ export class ServerSession extends PartyRoom {
   }
   receiveClient(entry, packet) {
     if (packet.t === 'party-appearance') {
-      if (!this.matchId || this.sim?.phase === 'ended') {
+      if (
+        !this.pendingMatch &&
+        (!this.matchId || this.sim?.phase === 'ended')
+      ) {
         entry.member.look = appearance({...entry.member.look, ...packet.look});
         this.sendLobby();
       }
@@ -270,6 +304,7 @@ export class ServerSession extends PartyRoom {
   }
   remove(id, reason) {
     if (!this.entries.has(id)) return;
+    const member = this.entries.get(id).member;
     super.remove(id, reason);
     if (this.ownerId === id) {
       this.ownerId =
@@ -278,6 +313,7 @@ export class ServerSession extends PartyRoom {
         null;
       this.broadcast({t: 'server-owner', ownerId: this.ownerId});
     }
+    this.onMemberRemoved(member, this);
     if (!this.entries.size) this.onEmpty(this);
   }
   publish(force = false) {

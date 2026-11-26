@@ -74,7 +74,7 @@ Do not run system/network setup on the user's PC without their separate approval
 | --- | --- | --- |
 | `PORT` | `8787` | Listener port; Render supplies its own |
 | `BIND_ADDRESS` | `127.0.0.1` | Listener interface; Render template explicitly uses `0.0.0.0` inside its managed service |
-| `MAX_ROOMS` | `8` | Room cap, 1–64; Free template deliberately sets 1 |
+| `MAX_ROOMS` | `8` | Active/preparing match cap, 1–64; Free template deliberately sets 1. Lightweight lobbies have a separate bounded admission cap. |
 | `SERVER_REGION` | `singapore` | Health metadata, not a traffic-routing mechanism |
 | `TLS_CERT_FILE`, `TLS_KEY_FILE` | unset | Direct TLS certificate chain/private key paths |
 | `TLS_PROXY` | unset | `render` for Render's ingress; `trusted` only behind your own protected HTTPS reverse proxy |

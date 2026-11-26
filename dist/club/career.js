@@ -111,7 +111,7 @@ export function careerSave(raw = {}, baseline = {}) {
   for (const key of fields)
     totals[key] = n(raw?.totals?.[key] ?? baseline[key]);
   const modes = {};
-  for (const key of ['duel', 'doubles', 'custom']) {
+  for (const key of ['duel', 'doubles', 'custom','hoops']) {
     const source = raw?.modes?.[key];
     modes[key] = {
       matches: n(source?.matches),
@@ -180,7 +180,7 @@ export class Career {
       !match ||
       !/^[-\w:]{1,100}$/.test(match.id || '') ||
       this.data.seen.includes(match.id) ||
-      !['duel', 'doubles', 'custom'].includes(match.mode) ||
+      !['duel', 'doubles', 'custom','hoops'].includes(match.mode) ||
       typeof match.won !== 'boolean'
     )
       return {xp: 0, unlocked: []};

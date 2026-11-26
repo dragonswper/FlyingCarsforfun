@@ -35,6 +35,9 @@ SKIES = {
     'coast': ('#304e80','#c68aa0','#ffcd8d','#c895a5',.40,18,'sun',.075,2.5),
     'canyon': ('#23749e','#8abbd1','#efdbb4','#f6eee0',.26,0,'sun',.66,-.6),
     'orbital': ('#01040e','#080e24','#152543','#152240',0,1800,'sun',.40,1.8),
+    'skyline': ('#10243e','#5e7a9c','#e5bdad','#c7cad4',.35,180,'moon',.56,1.3),
+    'range': ('#315f78','#9dbab2','#f0d8ae','#e5e9d5',.45,0,'sun',.5,-1.3),
+    'velocity': ('#292a56','#a18fae','#f4bd8d','#b4a3bd',.30,60,'sun',.15,2.2),
 }
 
 def color(value):
@@ -158,7 +161,7 @@ for index,id in enumerate(SKIES):
     mat.node_tree.links.new(emission.outputs[0],output.inputs['Surface']);dome.data.materials.append(mat)
 
 bpy.context.scene['sky_arenas']=','.join(SKIES)
-bpy.context.scene['description']='Eleven original packed panoramic sky paintings and the exported unit sphere. Assign a Sky material to the sphere to preview that arena.'
+bpy.context.scene['description']='Fourteen original packed panoramic sky paintings and the exported unit sphere. Assign a Sky material to the sphere to preview that arena.'
 bpy.context.scene.world=bpy.data.worlds.new('Sky_Preview_World')
 bpy.context.scene.view_settings.view_transform='Standard'
 camera_data=bpy.data.cameras.new('Inside_Dome_Preview');camera_data.lens=22;camera_data.clip_start=.001;camera_data.clip_end=5

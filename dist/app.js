@@ -1,3 +1,11 @@
+import {matchRules, botStyle} from './match-rules.js';
+import {garageStyle} from './garage-style.js';
+import {MatchOptionsUI, PartyQueueUI} from './overdrive/match-ui.js';
+import {GarageLoadouts} from './overdrive/loadouts.js';
+import {MobileOptions} from './overdrive/mobile.js';
+import {ArcadeUI} from './overdrive/arcade-ui.js';
+import {NetworkGraph} from './overdrive/network-graph.js';
+import {ReplayStudio} from './replays/studio.js';
 import {Clubhouse} from './club/ui.js';
 import {AcademyUI} from './academy/ui.js';
 import {LobbyShowroom} from './lobby-showroom.js';
@@ -73,6 +81,7 @@ const paints = {
 };
 const names = {
   custom: 'CUSTOM PRIVATE',
+  hoops: 'HOOPS · 2v2',
   duel: 'DUEL · 1v1',
   doubles: 'DOUBLES · 2v2',
   free: 'FREE PLAY',
@@ -123,6 +132,9 @@ if (settings.performanceRevision !== 1) {
 const compactUI = new CompactUI();
 const mobileClient = mobileDevice();
 document.body.classList.toggle('mobile-device', mobileClient);
+settings.matchRules = matchRules(settings.matchRules);
+settings.botStyle = botStyle(settings.botStyle);
+settings.garageStyle = garageStyle(settings.garageStyle);
 settings.touch = touchPreferences(settings.touch);
 settings.hudLayouts = hudPreferences(settings.hudLayouts);
 settings.screen = screenPreferences(settings.screen);
@@ -152,6 +164,7 @@ try {
   if (response.ok) {
     const config = await response.json();
     if (
+      /^boost-circuit-\d+\.\d+\.\d+$/.test(config.build) ||
       compatibleBuild(config.build) ||
       (Array.isArray(config.compatibleBuilds) &&
         config.compatibleBuilds.includes(NET_BUILD))
@@ -179,7 +192,14 @@ let friends = null,
   musicPadHeld = false,
   academy,
   clubhouse,
+  arcadeUI,
+  replayStudio,
+  partyQueueUI,
+  networkGraph,
+  loadoutsUI,
+  mobileOptions,
   careerMatchId,
+  lastPreparationError,
   lobbyShowroom,
   sharedLobbyPromise;
 let hudLayout,
@@ -275,6 +295,8 @@ function syncSettings() {
     preview.querySelector('span').textContent = theme.subtitle;
   }
   const practice = ['free', 'training'].includes(settings.mode);
+  const rulesForm = matchOptions?.forms.get('solo');
+  if (rulesForm) rulesForm.hidden = practice;
   $('duration').disabled = practice;
   $('difficulty').disabled = practice;
   $('play-screen').dataset.category = practice ? 'practice' : 'match';
@@ -325,6 +347,7 @@ function syncSettings() {
   text('arena-name', arenaName(settings.arena));
 }
 const lobbyUI = setupLobby(settings, {save, sync: syncSettings});
+const matchOptions = new MatchOptionsUI(settings, save);
 const lobbyMusic = setupLobbyMusic(settings, {
   save,
   allowed: () => !document.hidden && (!started || sim?.phase === 'ended'),
@@ -415,6 +438,7 @@ const partyUI = setupPartyUI({
   dismiss: () => close('party-dialog'),
   preferences: settings,
   save,
+  extras: (prefix) => matchOptions.read(prefix),
   create: (options) => openParty('host', options),
   join: (code) => openParty('guest', code),
   team: (team) => room?.party && room.chooseTeam(team),
@@ -541,6 +565,9 @@ const networkUI = setupNetworkUI({
   recoveryStates = new WeakMap();
 function roomChanged(session) {
   if (room !== session) return;
+  if (started && !session.matchId && session.status === 'lobby') menu(false);
+  matchOptions.renderRoom(session);
+  partyQueueUI?.render(session, sim, started);
   if (!started) refreshLobbyCars();
   const recovering = !!session.recovering,
     previous = recoveryStates.get(session);
@@ -558,6 +585,10 @@ function roomChanged(session) {
 }
 function findNextMatch() {
   if (sim?.phase !== 'ended') return;
+  if (room?.dedicated && room.party) {
+    room.nextPartyMatch();
+    return;
+  }
   room?.close(true, 'next');
   menu();
   beginMatchmaking();
@@ -596,6 +627,7 @@ function appendRoomEvents(session, events) {
   }
 }
 function roomDisconnected(session, reason) {
+  lastPreparationError = session?.preparationError || lastPreparationError;
   if (room !== session) return;
   if (started && sim.phase === 'ended') {
     networkUI.render(session, sim);
@@ -638,16 +670,11 @@ function beginMatchmaking() {
   current = new Queue({
     address: route.address,
     prepareBodies: (bodies, options) =>
-      prepareMatchView(
-        view,
+      prepareSessionView(
+        current.session,
+        bodies,
         options,
-        () =>
-          Promise.all(
-            [...new Set(bodies)].map((body) => view.ensureBody(body)),
-          ),
-        () =>
-          !current.session?.closed &&
-          (matchmaking === current || room === current.session),
+        () => matchmaking === current || room === current.session,
       ),
     prepare: (session) =>
       prepareMatchView(
@@ -712,7 +739,13 @@ function beginMatchmaking() {
   matchmaking = current;
   dialog('matchmaking-dialog');
   current.start(
-    {body: settings.body, paint: settings.paint, name: settings.username},
+    {
+      body: settings.body,
+      paint: settings.paint,
+      style: settings.garageStyle,
+      name: settings.username,
+      style: settings.garageStyle,
+    },
     {
       mode: route.mode,
       arena: route.arena,
@@ -740,6 +773,27 @@ function openMatchmaking() {
   }
   matchUI.render({phase: 'idle'});
   matchUI.open();
+}
+function prepareSessionView(
+  session,
+  bodies,
+  options,
+  current = () => room === session,
+) {
+  const code = session?.code,
+    generation = session?.loadGeneration;
+  return prepareMatchView(
+    view,
+    options || session?.options,
+    () =>
+      Promise.all([...new Set(bodies)].map((body) => view.ensureBody(body))),
+    () =>
+      session &&
+      !session.closed &&
+      session.code === code &&
+      session.loadGeneration === generation &&
+      current(),
+  );
 }
 function prepareRoomBodies(session, retry = false) {
   return prepareMatchView(
@@ -814,6 +868,7 @@ async function chooseBody(body) {
       room.updateAppearance?.({
         body,
         paint: settings.paint,
+        style: settings.garageStyle,
         name: settings.username,
       });
       await lobbyShowroom?.sync(room);
@@ -858,15 +913,7 @@ function openParty(role, value, {showDialog = true, autoTeam = false} = {}) {
     }
     const callbacks = {
       prepare: (bodies, options) =>
-        prepareMatchView(
-          view,
-          options || session?.options,
-          () =>
-            Promise.all(
-              [...new Set(bodies)].map((body) => view.ensureBody(body)),
-            ),
-          () => room === session && !session.closed,
-        ),
+        prepareSessionView(session, bodies, options, () => room === session),
       onChange: (state) => {
         if (room === state) {
           if (autoTeam && state.admitted && state.self?.team === null) {
@@ -900,12 +947,14 @@ function openParty(role, value, {showDialog = true, autoTeam = false} = {}) {
       session.create(value, {
         body: settings.body,
         paint: settings.paint,
+        style: settings.garageStyle,
         name: settings.username,
       });
     else
       session.join(value, {
         body: settings.body,
         paint: settings.paint,
+        style: settings.garageStyle,
         name: settings.username,
       });
     return session;
@@ -961,12 +1010,14 @@ function openRoom(role, value) {
     session.create(value, {
       body: settings.body,
       paint: settings.paint,
+      style: settings.garageStyle,
       name: settings.username,
     });
   else
     session.join(value, {
       body: settings.body,
       paint: settings.paint,
+      style: settings.garageStyle,
       name: settings.username,
     });
 }
@@ -978,6 +1029,7 @@ const sound = new GameSound(
     return {
       active:
         started &&
+        !replayStudio?.active &&
         !paused &&
         !room?.hostPaused &&
         !room?.recovering &&
@@ -1075,6 +1127,10 @@ function toggleCamera() {
   );
 }
 function action(name) {
+  if (replayStudio?.active) {
+    if (name === 'pause') replayStudio.exit();
+    return;
+  }
   if (name === 'pause' && !$('score-panel').hidden) {
     setScoreboard(false);
     return;
@@ -1089,7 +1145,7 @@ function action(name) {
     return;
   }
   if (!started || paused) return;
-  if (academy?.action(name)) return;
+  if (arcadeUI?.action(name) || academy?.action(name)) return;
   if (name === 'camera') toggleCamera();
   if (name === 'recenter' && view.recenterCamera()) feed('CAMERA RECENTERED');
   if (room?.dedicated && ['reset', 'next'].includes(name)) {
@@ -1144,6 +1200,10 @@ async function startBotRematch() {
   }
 }
 function start() {
+  if (arcadeUI?.active) {
+    arcadeUI.retry();
+    return;
+  }
   if (clubhouse?.isCup()) {
     clubhouse.openCup();
     return;
@@ -1172,6 +1232,9 @@ function start() {
       duration: settings.duration,
       difficulty: settings.difficulty,
       arena: settings.arena,
+      ...(['free', 'training'].includes(settings.mode)
+        ? {}
+        : matchOptions.read('solo')),
     }),
   );
 }
@@ -1180,6 +1243,8 @@ function clearScoreToast() {
   show('score-toast', false);
 }
 function presentMatch(newSim) {
+  if (sim && replayStudio?.recorder.active) replayStudio.finish(sim);
+  arcadeUI?.worldChanged(newSim);
   clubhouse?.worldChanged(newSim);
   careerMatchId =
     online() && room.matchId
@@ -1193,7 +1258,8 @@ function presentMatch(newSim) {
   clearScoreToast();
   renderPacer.reset();
   sim = newSim;
-  if (!online()) sim.cars[0].playerName = settings.username;
+  if (!online() && !sim.options.replay)
+    sim.cars[0].playerName = settings.username;
   closeAll();
   motion = new MotionBuffer(sim);
   view.graphics.resetTiming();
@@ -1208,6 +1274,12 @@ function presentMatch(newSim) {
   input.clear();
   view.sync(sim, paints[settings.paint].hex, settings.body);
   view.cameraMode = !!settings.ballcam;
+  replayStudio?.startRecording(sim, {
+    body: settings.body,
+    paint: settings.paint,
+    name: settings.username,
+    style: settings.garageStyle,
+  });
   $('hud').dataset.mode = sim.options.mode;
   $('hud').dataset.replay = 'false';
   nameplates.hide();
@@ -1248,6 +1320,7 @@ function presentMatch(newSim) {
   hudLayout?.apply();
 }
 function pause() {
+  if (replayStudio?.active) return;
   if (!started || paused || sim.phase === 'ended') return;
   paused = true;
   input.clear();
@@ -1273,6 +1346,8 @@ function resume() {
   $('arena').focus();
 }
 function menu(leaveNetwork = true) {
+  if (sim && replayStudio?.recorder.active) replayStudio.finish(sim);
+  arcadeUI?.clear();
   clubhouse?.leaveWorld();
   academy?.clear();
   lobbyShowroom?.clear(false);
@@ -1306,6 +1381,7 @@ function menu(leaveNetwork = true) {
 function result() {
   if (resultSaved) return;
   resultSaved = true;
+  replayStudio?.finish(sim);
   paused = false;
   input.clear();
   close('pause-dialog');
@@ -1501,12 +1577,16 @@ function updateHUD() {
       (active && announcement.kind ? ' ' + announcement.kind : '');
   }
   if (!$('score-panel').hidden) renderScore();
+  arcadeUI?.renderHUD();
+  partyQueueUI?.render(room, sim, started);
 }
 function handleEvents() {
   const events = sim.events.splice(0);
   if (online() && room.role === 'host') room.events(events);
   for (const e of events) {
     if (academy?.active && ['goal', 'score', 'end'].includes(e.type)) continue;
+    if (arcadeUI?.active && ['goal', 'score', 'end'].includes(e.type)) continue;
+    replayStudio?.event(e, sim);
     view.animateEvent(e);
     if (e.type === 'score') {
       if (e.car === localId()) {
@@ -1605,7 +1685,11 @@ function frame(now) {
     frames = 0;
     fpsTime = 0;
   }
-  if (started) {
+  if (replayStudio?.active) {
+    replayStudio.update(dt);
+    if (draw)
+      view.update(sim, renderPacer.dt, false, replayStudio.sample(), false);
+  } else if (started) {
     const controls = input.read(dt),
       net = online(),
       guest = net && room.role === 'guest';
@@ -1636,8 +1720,10 @@ function frame(now) {
       while (accumulator >= C.step && iterations++ < 12) {
         if (net) room.hostStep(controls, C.step);
         else {
-          if (academy?.canStep() !== false) sim.step(controls, C.step);
+          if (academy?.canStep() !== false && arcadeUI?.canStep() !== false)
+            sim.step(controls, C.step);
           academy?.step(C.step);
+          arcadeUI?.step(C.step);
         }
         motion.capture(sim);
         accumulator -= C.step;
@@ -1674,6 +1760,7 @@ function frame(now) {
                 ? 1
                 : accumulator / C.step,
             );
+      replayStudio?.capture(replay ? sim.snapshot() : state, sim);
       view.update(
         sim,
         room?.recovering || (paused && !guest) ? 0 : renderPacer.dt,
@@ -1697,8 +1784,12 @@ function frame(now) {
   } else if (!matchmaking && draw) view.update(sim, renderPacer.dt, true); // Leave the showroom still while finding/preparing a peer.
 
   if (draw) clubhouse?.draw(started);
+  networkGraph?.update(room, now);
   if (draw)
-    academy?.draw(sim, started && !online() && sim.options.mode === 'free');
+    academy?.draw(
+      sim,
+      started && !online() && !arcadeUI?.active && sim.options.mode === 'free',
+    );
   sound.update(dt);
   lobbyMusic.update(dt);
 }
@@ -1745,6 +1836,10 @@ $('camera-button').addEventListener('click', toggleCamera);
 $('reset-button').addEventListener('click', () => action('reset'));
 $('next-shot-button').addEventListener('click', () => action('next'));
 $('end-practice-button').addEventListener('click', () => {
+  if (arcadeUI?.active) {
+    arcadeUI.exit();
+    return;
+  }
   if (academy?.active) {
     academy.exit();
     return;
@@ -1870,6 +1965,7 @@ document.querySelectorAll('[data-paint]').forEach((button) =>
         room.updateAppearance?.({
           body: settings.body,
           paint: settings.paint,
+          style: settings.garageStyle,
           name: settings.username,
         });
       else view.sync(sim, paints[settings.paint].hex, settings.body);
@@ -1959,6 +2055,9 @@ window.addEventListener('pagehide', (event) => {
   hudLayout?.dispose();
   screenUI?.dispose();
   input?.dispose();
+  networkGraph?.dispose();
+  replayStudio?.dispose();
+  arcadeUI?.dispose();
   clubhouse?.dispose();
   academy?.dispose();
   view?.dispose();
@@ -1988,6 +2087,7 @@ window.addEventListener('pageshow', (event) => {
 });
 try {
   view = new GameView($('arena'), {mobile: mobileClient});
+  view.garageStyle = settings.garageStyle;
   view.setCamera(settings.camera);
   view.setRendering(settings.rendering);
   view.quality(settings.quality);
@@ -2072,6 +2172,7 @@ try {
     controls: settings.controls,
     gamepad: settings.gamepad,
     active: () =>
+      !replayStudio?.active &&
       started &&
       !paused &&
       sim.phase !== 'ended' &&
@@ -2106,6 +2207,7 @@ try {
   for (const id of ['touch-mode', 'touch-scale'])
     $(id).addEventListener('change', () => {
       settings.touch = touchPreferences({
+        ...settings.touch,
         mode: $('touch-mode').value,
         scale: $('touch-scale').value,
       });
@@ -2141,8 +2243,13 @@ try {
   });
   controllerUI = new ControllerUI({
     consume: (ids) => input.consumeButtons(ids),
-    playing: () => started && !paused && sim.phase !== 'ended',
+    playing: () =>
+      started && !replayStudio?.active && !paused && sim.phase !== 'ended',
     back: () => {
+      if (replayStudio?.active) {
+        replayStudio.exit();
+        return;
+      }
       if (started) pause();
       else lobbyUI.home();
     },
@@ -2179,6 +2286,113 @@ try {
       return true;
     },
   });
+  const launchSolo = async (world, current, bodies = [settings.body]) => {
+    if (
+      !(await prepareMatchView(
+        view,
+        world.options,
+        () =>
+          Promise.all(
+            [...new Set(bodies)].map((body) => view.ensureBody(body)),
+          ),
+        current,
+      )) ||
+      !current()
+    )
+      return false;
+    sound.start();
+    presentMatch(world);
+    return true;
+  };
+  replayStudio = new ReplayStudio(view, settings, {
+    online,
+    save,
+    notice: feed,
+    launch: (world, roster, current) =>
+      launchSolo(
+        world,
+        current,
+        roster.map((p) => p.body),
+      ),
+    hideHUD: () => {
+      show('hud', false);
+      show('lobby', false);
+      input.clear();
+      sound.silence();
+    },
+    leave: () => menu(false),
+  });
+  arcadeUI = new ArcadeUI(view, {
+    settings,
+    online,
+    launch: launchSolo,
+    clearInput: () => input.clear(),
+    carCamera: () => (view.cameraMode = false),
+    resetView: () => {
+      motion.reset(sim);
+      view.resetCamera();
+      input.clear();
+      accumulator = 0;
+    },
+    resume,
+    leave: () => menu(false),
+  });
+  partyQueueUI = new PartyQueueUI(settings, {room: () => room});
+  networkGraph = new NetworkGraph({enabled: () => !!settings.networkGraph});
+  const graphLabel = document.createElement('label');
+  graphLabel.className = 'overdrive-check';
+  graphLabel.innerHTML =
+    '<input id="network-graph-toggle" type="checkbox"> SHOW LIVE NETWORK GRAPH';
+  $('panel-interface').append(graphLabel);
+  graphLabel.querySelector('input').checked = !!settings.networkGraph;
+  graphLabel.querySelector('input').onchange = (e) => {
+    settings.networkGraph = e.target.checked;
+    save();
+  };
+  loadoutsUI = new GarageLoadouts(settings, {
+    club: () => clubhouse.style,
+    apply: async (slot) => {
+      if (started) throw Error('Return to the menu first.');
+      const request = ++bodySelection;
+      await view.ensureBody(slot.body);
+      if (request !== bodySelection || started) return;
+      Object.assign(settings, {
+        body: slot.body,
+        paint: slot.paint,
+        garageStyle: garageStyle(slot.style),
+      });
+      view.garageStyle = settings.garageStyle;
+      clubhouse.style = slot.club;
+      clubhouse.applyStyle();
+      clubhouse.persist();
+      view.sync(sim, paints[settings.paint].hex, settings.body);
+      room?.updateAppearance?.({
+        body: settings.body,
+        paint: settings.paint,
+        name: settings.username,
+        style: settings.garageStyle,
+      });
+      save();
+      syncSettings();
+    },
+  });
+  mobileOptions = new MobileOptions(settings, {
+    touch: (p) => touch.setPreferences(p),
+    save,
+    preset: (p) => {
+      settings.quality = p.quality;
+      settings.rendering = {...settings.rendering, ...p.rendering};
+      view.quality(p.quality);
+      view.setRendering(settings.rendering);
+      save();
+      syncSettings();
+    },
+    prompts: (p) => (controllerUI.preferredFamily = p),
+    family: () => controllerUI.family,
+  });
+  controllerUI.preferredFamily = settings.promptFamily;
+  controllerUI.customRoot = () =>
+    replayStudio.active ? replayStudio.toolbar : null;
   syncSettings();
   save();
   text('loading-label', 'WARMING UP THE ARENA');
@@ -2189,7 +2403,15 @@ try {
   if (vehicleWarning) text('menu-help', vehicleWarning);
   Object.defineProperty(window, 'boostCircuit', {
     value: Object.freeze({
-      version: '1.30.0',
+      version: '1.31.0',
+      getOverdrive: () =>
+        structuredClone({
+          assetsError: room?.preparationError || lastPreparationError || null,
+          arcade: arcadeUI.state(),
+          replay: replayStudio.state(),
+          squad: room?.squad || null,
+          queue: room?.squadQueue || null,
+        }),
       getClubhouse: () => structuredClone(clubhouse?.state()),
       getAcademy: () => structuredClone(academy?.state()),
       getLobby: () =>

@@ -4,17 +4,17 @@ const UP=new V(0,1,0),FWD=new V(0,0,1),RIGHT=new V(1,0,0);
 // Support queries return a number; their basis vectors never escape. Reuse
 // them and rotate once per distinct orientation, including mid-solve turns.
 const supportRight=new V(),supportUp=new V(),supportForward=new V(),supportRotation=new Q(NaN,NaN,NaN,NaN);
-export function arenaPlanes(p){
- const planes=[{n:new V(-Math.sign(p.x||1),0,0),d:C.halfWidth-Math.abs(p.x)}],opening=Math.abs(p.x)<C.goalWidth+.2&&p.y<C.goalHeight+.2;
+export function arenaPlanes(p,sealed=false){
+ const planes=[{n:new V(-Math.sign(p.x||1),0,0),d:C.halfWidth-Math.abs(p.x)}],opening=!sealed&&Math.abs(p.x)<C.goalWidth+.2&&p.y<C.goalHeight+.2;
  if(!opening)planes.push({n:new V(0,0,-Math.sign(p.z||1)),d:C.halfLength-Math.abs(p.z)});
  else if(Math.abs(p.z)>C.halfLength){planes.push({n:new V(-Math.sign(p.x||1),0,0),d:C.goalWidth-Math.abs(p.x),goal:true},{n:new V(0,0,-Math.sign(p.z)),d:C.halfLength+C.goalDepth-Math.abs(p.z),goal:true});}
  if(Math.abs(p.x)>C.cornerX&&Math.abs(p.z)>C.cornerZ)for(const plane of CORNER_PLANES){const d=plane.nx*Math.abs(p.x)+plane.nz*Math.abs(p.z)-plane.boundary;if(d<C.ramp+2)planes.push({n:new V(plane.nx*Math.sign(p.x),0,plane.nz*Math.sign(p.z)),d});}return planes;
 }
-export function arenaCeiling(p){return Math.abs(p.z)>C.halfLength+.15&&Math.abs(p.x)<C.goalWidth+.2?C.goalHeight:C.height;}
+export function arenaCeiling(p,sealed=false){return !sealed&& Math.abs(p.z)>C.halfLength+.15&&Math.abs(p.x)<C.goalWidth+.2?C.goalHeight:C.height;}
 // Signed curved contact for lower and upper quarter-pipes. Goal interiors use
 // a smaller radius; the authoritative simulation and camera share this shape.
-export function roundedSurface(p,n,d,goal=false){
- const lower=goal?C.goalRamp:C.ramp,upper=goal?C.goalRamp:C.ceilingRamp,ceiling=arenaCeiling(p);
+export function roundedSurface(p,n,d,goal=false,sealed=false){
+ const lower=goal?C.goalRamp:C.ramp,upper=goal?C.goalRamp:C.ceilingRamp,ceiling=arenaCeiling(p,sealed);
  let horizontal,vertical,sign,radius;
  if(d<lower&&p.y<lower&&(goal||Math.abs(p.z)<C.halfLength+.1)){radius=lower;horizontal=radius-d;vertical=radius-p.y;sign=1;}
  else if(d<upper&&p.y>ceiling-upper){radius=upper;horizontal=radius-d;vertical=p.y-(ceiling-radius);sign=-1;}
@@ -43,10 +43,10 @@ function collideCarArena(body){
  const constrain=(normal,gap)=>{const retained=body.grounded&&body.noContact===0&&up.dot(normal)>.55,skin=retained?.06:CAR_CONTACT_SKIN;if(gap>skin)return;if(gap<0||retained){body.p.addScaledVector(normal,-gap);impact=Math.max(impact,bounce(body,normal,0));}contacts.push({normal,gap});};
  for(let iteration=0;iteration<3;iteration++){
   contacts=[];const origin=body.p.clone();
-  for(const {n,d:initialDistance,goal}of arenaPlanes(body.p).sort((a,b)=>a.d-b.d)){
+  for(const {n,d:initialDistance,goal}of arenaPlanes(body.p,body.hoops===true).sort((a,b)=>a.d-b.d)){
    const d=initialDistance+n.x*(body.p.x-origin.x)+n.z*(body.p.z-origin.z);
    if(d>farPlane)continue;
-   const rounded=roundedSurface(body.p,n,d,goal);
+   const rounded=roundedSurface(body.p,n,d,goal,body.hoops===true);
    if(rounded){
     if(rounded.upper&&body.grounded&&body.noContact===0&&!body.flipActive&&up.dot(rounded.normal)>.55&&Math.abs(rounded.gap-carSupport(body,rounded.normal))<.25){
      // Parallel-transport rolling wheels around a concave transition. Merely
@@ -60,10 +60,10 @@ function collideCarArena(body){
    else constrain(n,d-carSupport(body,n));
   }
   if(body.p.y<=maxSupport)constrain(UP.clone(),body.p.y-carSupport(body,UP));
-  const ceiling=arenaCeiling(body.p);
+  const ceiling=arenaCeiling(body.p,body.hoops===true);
   if(ceiling-body.p.y<=maxSupport){const down=new V(0,-1,0);constrain(down,ceiling-body.p.y-carSupport(body,down));}
   const post=(a,b)=>{const segment=b.clone().sub(a),t=clamp(body.p.clone().sub(a).dot(segment)/segment.lengthSq(),0,1),delta=body.p.clone().sub(a.addScaledVector(segment,t)),length=delta.length();if(length>1e-7){delta.divideScalar(length);constrain(delta,length-carSupport(body,delta)-.12);}};
-  for(const sign of [-1,1])if(Math.abs(body.p.z-sign*C.halfLength)<1.2){for(const x of [-C.goalWidth,C.goalWidth])post(new V(x,0,sign*C.halfLength),new V(x,C.goalHeight,sign*C.halfLength));post(new V(-C.goalWidth,C.goalHeight,sign*C.halfLength),new V(C.goalWidth,C.goalHeight,sign*C.halfLength));}
+  for(const sign of [-1,1])if(!body.hoops&&Math.abs(body.p.z-sign*C.halfLength)<1.2){for(const x of [-C.goalWidth,C.goalWidth])post(new V(x,0,sign*C.halfLength),new V(x,C.goalHeight,sign*C.halfLength));post(new V(-C.goalWidth,C.goalHeight,sign*C.halfLength),new V(C.goalWidth,C.goalHeight,sign*C.halfLength));}
  }
  const score=normal=>up.dot(normal)+(body.grounded?.08*body.normal.dot(normal):0);
  let contact=null,best=-Infinity;for(const {normal}of contacts){const value=score(normal);if(value>best){best=value;contact=normal;}}
@@ -71,13 +71,13 @@ function collideCarArena(body){
 }
 export function collideArena(body,radius,restitution=C.ballRestitution,car=false){
  if(car)return collideCarArena(body);
- let contact=null,impact=0;const origin=body.p.clone();for(const {n,d:initialDistance,goal}of arenaPlanes(body.p).sort((a,b)=>a.d-b.d)){const d=initialDistance+n.x*(body.p.x-origin.x)+n.z*(body.p.z-origin.z),rounded=roundedSurface(body.p,n,d,goal);
+ let contact=null,impact=0;const origin=body.p.clone();for(const {n,d:initialDistance,goal}of arenaPlanes(body.p,body.hoops===true).sort((a,b)=>a.d-b.d)){const d=initialDistance+n.x*(body.p.x-origin.x)+n.z*(body.p.z-origin.z),rounded=roundedSurface(body.p,n,d,goal,body.hoops===true);
   if(rounded){if(rounded.gap<radius){body.p.addScaledVector(rounded.normal,radius-rounded.gap);impact=Math.max(impact,bounce(body,rounded.normal,restitution));contact=rounded.normal;}}
   else{const support=car?carSupport(body,n):radius;if(d<support){body.p.addScaledVector(n,support-d);impact=Math.max(impact,bounce(body,n,restitution));contact=n;}}
  }
  const floor=car?carSupport(body,UP):radius;if(body.p.y<floor){body.p.y=floor;impact=Math.max(impact,bounce(body,UP,restitution));contact=UP.clone();if(!car&&Math.abs(body.v.y)<.38)body.v.y=0;}
- const ceiling=arenaCeiling(body.p),down=new V(0,-1,0),top=car?carSupport(body,down):radius;
+ const ceiling=arenaCeiling(body.p,body.hoops===true),down=new V(0,-1,0),top=car?carSupport(body,down):radius;
  if(body.p.y>ceiling-top){body.p.y=ceiling-top;impact=Math.max(impact,bounce(body,down,restitution));contact=down;}
- for(const sign of [-1,1])if(Math.abs(body.p.z-sign*C.halfLength)<(car?1.2:radius+.45)){for(const x of [-C.goalWidth,C.goalWidth])capsule(body,new V(x,0,sign*C.halfLength),new V(x,C.goalHeight,sign*C.halfLength),radius+.12,restitution,car);capsule(body,new V(-C.goalWidth,C.goalHeight,sign*C.halfLength),new V(C.goalWidth,C.goalHeight,sign*C.halfLength),radius+.12,restitution,car);}
+ for(const sign of [-1,1])if(!body.hoops&&Math.abs(body.p.z-sign*C.halfLength)<(car?1.2:radius+.45)){for(const x of [-C.goalWidth,C.goalWidth])capsule(body,new V(x,0,sign*C.halfLength),new V(x,C.goalHeight,sign*C.halfLength),radius+.12,restitution,car);capsule(body,new V(-C.goalWidth,C.goalHeight,sign*C.halfLength),new V(C.goalWidth,C.goalHeight,sign*C.halfLength),radius+.12,restitution,car);}
  return {contact,impact};
 }

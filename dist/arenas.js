@@ -33,7 +33,11 @@ export const ARENAS = Object.freeze({
     stripes:['#8d7954','#826e4b'],ink:'#fff0cbe0',caption:'RED ROCK CANYON',trim:'#4b4136',ramp:'#a38965',surround:'#9f744d'}),
   orbital:Object.freeze({name:'ORBITAL STATION',subtitle:'Observation ring · Solar wings · Earthrise',model:'orbital.glb',cover:'orbital-cover.webp',
     sky:'#050c1d',fog:'#101d34',sun:'#d6e7ff',ambient:'#b7d3eb',ground:'#122b3e',
-    stripes:['#214251','#1d3a49'],ink:'#cdf0f5e0',caption:'ORBITAL STATION',trim:'#172738',ramp:'#425f70',surround:'#121f31'})
+    stripes:['#214251','#1d3a49'],ink:'#cdf0f5e0',caption:'ORBITAL STATION',trim:'#172738',ramp:'#425f70',surround:'#121f31'}),
+  skyline:Object.freeze({name:'SKYLINE COURT',subtitle:'Original Blender city arena · Hoops court',model:'skyline.glb',sky:'#192f53',fog:'#6a7c96',sun:'#e4d9d0',ambient:'#b9d0e5',ground:'#182c40',stripes:['#37627a','#315970'],ink:'#e8f3fce0',caption:'SKYLINE COURT',trim:'#1c354c',ramp:'#53778b',surround:'#263d54'}),
+  range:Object.freeze({name:'THE FOUNDRY',subtitle:'Original Blender training and target venue',model:'range.glb',sky:'#547c84',fog:'#acc1bb',sun:'#fff0c5',ambient:'#cee4da',ground:'#263c34',stripes:['#41654e','#385b45'],ink:'#eff7dce0',caption:'THE FOUNDRY',trim:'#304e49',ramp:'#627f70',surround:'#3c5c4e',grass:true}),
+  velocity:Object.freeze({name:'VELOCITY PARK',subtitle:'Original Blender precision-driving venue',model:'velocity.glb',sky:'#484b77',fog:'#9897b8',sun:'#efc5aa',ambient:'#d7d4e9',ground:'#2e3048',stripes:['#485670','#424f68'],ink:'#f3e9dbe0',caption:'VELOCITY PARK',trim:'#333a55',ramp:'#68748d',surround:'#41445f'})
+
 });
 export const ARENA_IDS = Object.freeze(Object.keys(ARENAS));
 export const normalizeArena = value => typeof value==='string'&&Object.hasOwn(ARENAS,value)?value:'champions';

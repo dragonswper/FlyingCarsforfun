@@ -3,7 +3,11 @@
 export function sessionHeartbeat(room) {
   if (room.closed) return;
   const now = room.clock(),
-    active = !!room.matchId && room.sim?.phase !== 'ended',
+    active =
+      !!room.matchId &&
+      !room.pendingMatch &&
+      room.status !== 'starting' &&
+      room.sim?.phase !== 'ended',
     timeout = active ? 3000 : 60000;
   for (const entry of room.entries.values()) {
     if (entry.recovering) {

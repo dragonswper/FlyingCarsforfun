@@ -216,9 +216,11 @@ export class AcademyUI {
       this.hud.hidden = true;
       this.guides.hide();
     }
-    this.toolsButton.hidden = sim.options.mode !== 'free';
+    this.toolsButton.hidden =
+      sim.options.mode !== 'free' || !!sim.options.arcade;
     this.retryButton.hidden = !this.active;
-    this.pauseButton.hidden = !['free', 'training'].includes(sim.options.mode);
+    this.pauseButton.hidden =
+      !['free', 'training'].includes(sim.options.mode) || !!sim.options.arcade;
   }
   clear() {
     this.generation++;
@@ -259,7 +261,8 @@ export class AcademyUI {
     if (
       this.hooks.isOnline() ||
       this.active ||
-      this.hooks.getSim()?.options.mode !== 'free'
+      this.hooks.getSim()?.options.mode !== 'free' ||
+      this.hooks.getSim()?.options.arcade
     )
       return;
     this.hooks.pause();
@@ -311,10 +314,14 @@ export class AcademyUI {
       hint.lastChild.textContent = this.active
         ? ' TO RETRY DRILL'
         : ' TO RESET BALL';
+    const end = document.getElementById('end-practice-button');
+    if (end) end.textContent = 'END TRAINING';
     this.hud.hidden = !this.active;
     this.retryButton.hidden = !this.active;
     this.toolsButton.hidden =
-      this.active || this.hooks.getSim()?.options.mode !== 'free';
+      this.active ||
+      this.hooks.getSim()?.options.mode !== 'free' ||
+      !!this.hooks.getSim()?.options.arcade;
     if (!this.active) return;
     const d = this.director;
     this.hud.querySelector('strong').textContent =

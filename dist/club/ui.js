@@ -462,7 +462,7 @@ export class Clubhouse {
     if (
       sim.phase !== 'ended' ||
       !player ||
-      !['duel', 'doubles', 'custom'].includes(sim.options.mode)
+      !['duel', 'doubles', 'custom','hoops'].includes(sim.options.mode)
     )
       return {xp: 0, unlocked: []};
     const cupWorld = this.isCup(sim),

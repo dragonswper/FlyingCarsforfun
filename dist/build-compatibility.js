@@ -1,16 +1,8 @@
 import {NET_BUILD} from './network-protocol.js';
 
-// These releases share the same simulation, car catalog and binary state schema.
-// Remove legacy entries whenever those rules or the wire format change. Tests
-// pin the shared gameplay files to the legacy release's hashes.
-export const COMPATIBLE_BUILDS = Object.freeze([
-  NET_BUILD,
-  'boost-circuit-1.29.0',
-  'boost-circuit-1.28.2',
-  'boost-circuit-1.28.1',
-  'boost-circuit-1.28.0',
-  'boost-circuit-1.27.0',
-]);
+// v1.31 adds per-match physics, arenas and roster transfers. Older clients
+// must reload; admitting them would predict different collisions and goals.
+export const COMPATIBLE_BUILDS = Object.freeze([NET_BUILD]);
 export const compatibleBuild = (build) =>
   typeof build === 'string' && COMPATIBLE_BUILDS.includes(build);
 const label = (build) =>

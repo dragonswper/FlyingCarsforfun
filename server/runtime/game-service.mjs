@@ -1,3 +1,4 @@
+import {SquadService} from '../matchmaking/squads.mjs';
 import {FixedStepScheduler} from './scheduler.mjs';
 import {RuntimeMetrics} from './metrics.mjs';
 import {randomArena} from '../../dist/arenas.js';
@@ -17,6 +18,7 @@ import {ServerMatchQueue} from '../matchmaking/queue.mjs';
 export class GameService {
   constructor({
     maxRooms = 8,
+    maxLobbies = 8,
     region = 'oceania',
     queueClock,
     clock = () => performance.now(),
@@ -27,6 +29,7 @@ export class GameService {
   } = {}) {
     Object.assign(this, {
       maxRooms,
+      maxLobbies,
       region,
       clock,
       autostart,
@@ -44,20 +47,31 @@ export class GameService {
     this.scheduler = new FixedStepScheduler({step: C.step});
     this.metrics = new RuntimeMetrics();
     this.arenaRandom = arenaRandom;
+    this.squads = new SquadService(this);
     this.queue = new ServerMatchQueue({
       clock: queueClock,
       onMatch: (players, options, bots) => this.matched(players, options, bots),
     });
   }
-  makeRoom(options, matchmade = false) {
-    if (this.rooms.size >= this.maxRooms)
-      throw Error('This server has no free rooms.');
+  makeRoom(options, matchmade = false, returning = false) {
+    const idle = [...this.rooms.values()].filter(
+      (r) => !r.pendingMatch && (!r.matchId || r.sim?.phase === 'ended'),
+    ).length;
+    if (
+      (!matchmade && !returning && idle >= this.maxLobbies) ||
+      this.rooms.size >= this.maxLobbies + this.maxRooms * 3
+    )
+      throw Error('This server has no free lobby slots. Try again shortly.');
     const code = 'BCS-' + randomBytes(16).toString('base64url');
     const room = new ServerSession({
       code,
       options,
       matchmade,
       clock: this.clock,
+      canStart: (session) => this.canStart(session),
+      onLoadingAborted: (session) => this.squads.returnAll(session),
+      onMemberRemoved: (member, session) =>
+        this.squads.removed(member, session),
       chooseArena: (previous) => {
         const arena = randomArena(
           previous || this.lastOnlineArena,
@@ -75,38 +89,35 @@ export class GameService {
     this.rooms.set(code, room);
     return room;
   }
+  canStart(candidate = null) {
+    return (
+      [...this.rooms.values()].filter(
+        (room) =>
+          room !== candidate &&
+          !room.closed &&
+          (room.pendingMatch || (room.matchId && room.sim?.phase !== 'ended')),
+      ).length < this.maxRooms
+    );
+  }
   matched(players, options, bots) {
+    if (!this.canStart()) return false;
     const room = this.makeRoom(options, options.mode !== 'custom');
-    for (const [index, player] of players.entries()) {
+    for (const player of players) {
+      this.squads.single(player);
       player.socket.send(
         JSON.stringify({
-          t: 'server-queue',
+          t: this.bindings.has(player.socket) ? 'party-queue' : 'server-queue',
           phase: 'preparing',
           remaining: 0,
           reason: bots
-            ? 'Search finished after 60 seconds. Empty driving slots will use bots.'
-            : 'Players found. Preparing a random arena…',
+            ? 'Search finished after 60 seconds. Empty driving slots use bots.'
+            : 'Players found. Preparing a shared arena…',
         }),
       );
-      const attached = room.attach(
-        player.socket,
-        player.packet,
-        player.identity,
-      );
-      this.bindings.set(player.socket, {room, ...attached});
-      const perTeam = options.mode === 'doubles' ? 2 : 1;
-      attached.entry.member.team =
-        options.mode === 'custom'
-          ? null
-          : ['free', 'training'].includes(options.mode)
-            ? 0
-            : index < perTeam
-              ? 0
-              : 1;
-      attached.entry.member.ready = true;
     }
-    room.sendLobby();
+    this.squads.transfer(players, room);
     if (options.mode !== 'custom') room.startMatch();
+    return true;
   }
   reject(socket, message, details = {}) {
     if (socket.readyState === 1)
@@ -163,9 +174,57 @@ export class GameService {
     const current = this.bindings.get(socket);
     if (current) {
       try {
+        if (
+          [
+            'squad-search',
+            'squad-next',
+            'squad-return',
+            'squad-cancel',
+          ].includes(packet.t)
+        ) {
+          if (packet.t === 'squad-cancel') {
+            const group = this.squads.groups.get(current.entry.member.squadId);
+            if (
+              current.entry.id !== current.room.ownerId &&
+              group?.owner !== connection.identity.id
+            )
+              throw Error('Only the party leader can cancel the search.');
+            this.queue.remove(current.room);
+          } else if (packet.t === 'squad-return')
+            this.squads.returnParty(current.room, current.entry);
+          else
+            this.squads.search(
+              current.room,
+              current.entry,
+              packet.t === 'squad-next'
+                ? {
+                    ...packet,
+                    options: {...current.room.options, rules: undefined},
+                  }
+                : packet,
+            );
+          this.updateCadence();
+          return;
+        }
+        if (
+          this.queue.waiting.has(current.room) &&
+          [
+            'party-choice',
+            'party-ready',
+            'server-configure',
+            'server-start',
+          ].includes(packet.t)
+        )
+          this.queue.remove(
+            current.room,
+            'Party choices changed. Start a fresh search when everyone is ready.',
+          );
         current.room.receiveClient(current.entry, packet);
-      } catch {
-        this.reject(socket, 'The game packet could not be applied.');
+      } catch (error) {
+        current.link.send({
+          t: 'party-notice',
+          message: error.message || 'The game packet could not be applied.',
+        });
       }
       if (packet.t !== 'input') this.updateCadence();
       return;
@@ -257,8 +316,16 @@ export class GameService {
         throw Error(
           'That lobby does not exist on this server. Check the URL and BCS invite.',
         );
+      const count = room.members.length;
       const attached = room.attach(socket, packet, identity);
+      if (room.members.length !== count)
+        this.queue.remove(
+          room,
+          'A friend joined your party. Choose roles and search again together.',
+        );
+      this.squads.admit(room, attached.entry);
       this.bindings.set(socket, {room, ...attached});
+      this.squads.info(room);
     } catch (error) {
       this.reject(socket, error.message || 'The room could not be joined.');
     }
@@ -365,6 +432,7 @@ export class GameService {
         );
     for (const room of this.rooms.values()) room.close(false);
     this.rooms.clear();
+    this.squads.groups.clear();
     this.queue.waiting.clear();
     for (const [socket, connection] of this.connections) {
       clearTimeout(connection.handshake);

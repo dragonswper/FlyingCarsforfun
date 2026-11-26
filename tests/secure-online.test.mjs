@@ -13,7 +13,7 @@ import {
   TrustedLink as Link,
   TrustedSocket,
   secureFetch,
-  credentials
+  credentials,
 } from './helpers/secure-server.mjs';
 const until = async (check, label) => {
   const start = performance.now();
@@ -40,11 +40,16 @@ async function harness(t) {
       app.queue.pump();
     },
     client(name, auth = credentials(url), options = {}) {
-      const client = new DedicatedRoom({...options, address: url, Link, credentials: auth});
+      const client = new DedicatedRoom({
+        ...options,
+        address: url,
+        Link,
+        credentials: auth,
+      });
       client.testLook = {name};
       clients.push(client);
       return client;
-    }
+    },
   };
 }
 
@@ -70,7 +75,10 @@ test('guest credentials expire, tickets are one-use and origin-bound, and authen
 });
 test('plaintext startup is disabled and TLS certificate validation remains enabled', async (t) => {
   assert.throws(() => createGameServer(), /TLS is required/);
-  assert.throws(() => createGameServer({tlsProxy: true}), /HTTPS PUBLIC_ORIGIN/);
+  assert.throws(
+    () => createGameServer({tlsProxy: true}),
+    /HTTPS PUBLIC_ORIGIN/,
+  );
   const h = await harness(t);
   const untrusted = new (await import('ws')).default(h.url);
   t.after(() => untrusted.terminate());
@@ -78,17 +86,19 @@ test('plaintext startup is disabled and TLS certificate validation remains enabl
     untrusted.on('error', (error) => {
       assert.match(error.code, /SELF_SIGNED|UNABLE_TO_VERIFY/);
       resolve();
-    })
+    }),
   );
 });
 test('fresh tickets are required before any lobby request and cannot be replayed', async (t) => {
   const h = await harness(t),
     base = h.url.replace('wss:', 'https:').replace('/multiplayer', ''),
-    session = await (await secureFetch(base + '/api/session', {method: 'POST'})).json(),
+    session = await (
+      await secureFetch(base + '/api/session', {method: 'POST'})
+    ).json(),
     ticket = await (
       await secureFetch(base + '/api/ticket', {
         method: 'POST',
-        headers: {Authorization: 'Bearer ' + session.token}
+        headers: {Authorization: 'Bearer ' + session.token},
       })
     ).json();
   async function exchange(packet) {
@@ -96,16 +106,28 @@ test('fresh tickets are required before any lobby request and cannot be replayed
     t.after(() => socket.terminate());
     await new Promise((resolve) => socket.once('open', resolve));
     const reply = new Promise((resolve) =>
-      socket.once('message', (data) => resolve(JSON.parse(String(data))))
+      socket.once('message', (data) => resolve(JSON.parse(String(data)))),
     );
     socket.send(JSON.stringify(packet));
     return {socket, packet: await reply};
   }
-  const first = await exchange({t: 'server-auth', ticket: ticket.ticket, build: NET_BUILD});
+  const first = await exchange({
+    t: 'server-auth',
+    ticket: ticket.ticket,
+    build: NET_BUILD,
+  });
   assert.equal(first.packet.t, 'server-authenticated');
-  const replay = await exchange({t: 'server-auth', ticket: ticket.ticket, build: NET_BUILD});
+  const replay = await exchange({
+    t: 'server-auth',
+    ticket: ticket.ticket,
+    build: NET_BUILD,
+  });
   assert.match(replay.packet.message, /fresh authenticated/);
-  const noAuth = await exchange({t: 'server-create', build: NET_BUILD, token: 'a'.repeat(32)});
+  const noAuth = await exchange({
+    t: 'server-create',
+    build: NET_BUILD,
+    token: 'a'.repeat(32),
+  });
   assert.equal(noAuth.packet.t, 'server-error');
   assert.equal(h.app.rooms.size, 0);
 });
@@ -123,7 +145,7 @@ test('only the authenticated guest can resume its seat, even with the old room t
   assert.match(attacker.error, /recovery slot/);
   assert.equal(h.app.rooms.get(owner.code).members.length, 1);
 });
-for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
+for (const mode of ['duel', 'doubles', 'free', 'training', 'custom', 'hoops'])
   test(
     'secure private sessions support ' +
       mode +
@@ -142,8 +164,13 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
       assert.equal(owner.sim.options.mode, mode);
       assert.equal(session.sim.options.mode, mode);
       assert.equal(session.sim.localPlayerId, null);
-      assert.equal(session.sim.cars.length, mode === 'doubles' ? 4 : mode === 'duel' ? 2 : 1);
-      assert.ok(Number.isFinite(owner.replica.diagnostics().serverInputQueueMs));
+      assert.equal(
+        session.sim.cars.length,
+        ['doubles', 'hoops'].includes(mode) ? 4 : mode === 'duel' ? 2 : 1,
+      );
+      assert.ok(
+        Number.isFinite(owner.replica.diagnostics().serverInputQueueMs),
+      );
       const spectator = h.client('Spectator');
       spectator.join(owner.invite, spectator.testLook);
       await until(() => spectator.active, 'spectator');
@@ -151,7 +178,7 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
       assert.equal(spectator.sim.options.mode, mode);
       assert.equal(
         session.sim.cars.filter((car) => car.bot).length,
-        mode === 'doubles' ? 3 : mode === 'duel' ? 1 : 0
+        ['doubles', 'hoops'].includes(mode) ? 3 : mode === 'duel' ? 1 : 0,
       );
       if (['free', 'training'].includes(mode)) {
         const before = session.sim.cars[0].p.clone();
@@ -161,11 +188,14 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
         assert.ok(
           mode === 'free'
             ? Math.abs(session.sim.cars[0].p.x) < 0.01
-            : session.sim.cars[0].p.distanceTo(before) < 1
+            : session.sim.cars[0].p.distanceTo(before) < 1,
         );
         if (mode === 'training') {
           owner.practice('next');
-          await until(() => owner.sim.trainingIndex === 1, 'next drill replicated');
+          await until(
+            () => owner.sim.trainingIndex === 1,
+            'next drill replicated',
+          );
           assert.equal(owner.sim.drillName, session.sim.drillName);
         }
       }
@@ -175,13 +205,17 @@ for (const mode of ['duel', 'doubles', 'free', 'training', 'custom'])
         matchId: owner.matchId,
         cars: [{p: [999, 999, 999]}],
         score: [999, 0],
-        dt: 10000
+        dt: 10000,
       });
       await delay(15);
       assert.ok(session.sim.cars[0].p.distanceTo(before) < 2);
       assert.deepEqual(session.sim.score, [0, 0]);
-      assert.ok(owner.members.every((member) => !('token' in member) && !('authId' in member)));
-    }
+      assert.ok(
+        owner.members.every(
+          (member) => !('token' in member) && !('authId' in member),
+        ),
+      );
+    },
   );
 test('two players find the same dedicated 1v1 without a browser host', async (t) => {
   const h = await harness(t),
@@ -195,7 +229,11 @@ test('two players find the same dedicated 1v1 without a browser host', async (t)
   assert.equal(a.canManage, false);
   assert.equal(b.canManage, false);
   assert.deepEqual([a.sim.localPlayerId, b.sim.localPlayerId], [0, 1]);
-  assert.ok([...h.app.rooms.values()].every((room) => room.sim.cars.every((car) => !car.bot)));
+  assert.ok(
+    [...h.app.rooms.values()].every((room) =>
+      room.sim.cars.every((car) => !car.bot),
+    ),
+  );
 });
 test('2v2 uses a separate queue and fills missing players with server bots only after 60 seconds', async (t) => {
   const h = await harness(t),
@@ -215,7 +253,10 @@ test('2v2 uses a separate queue and fills missing players with server bots only 
   const doubles = h.app.rooms.get(a.code);
   assert.equal(doubles.sim.cars.length, 4);
   assert.equal(doubles.sim.cars.filter((car) => car.bot).length, 2);
-  assert.equal(h.app.rooms.get(duel.code).sim.cars.filter((car) => car.bot).length, 1);
+  assert.equal(
+    h.app.rooms.get(duel.code).sim.cars.filter((car) => car.bot).length,
+    1,
+  );
 });
 test('cancelling a server search removes it, and practice modes immediately create server sessions', async (t) => {
   const h = await harness(t),
@@ -248,9 +289,9 @@ test('server input acknowledgements advance only when a fixed-step input is cons
   inputs.receive(
     [
       {n: 1, i: {throttle: 4, boost: true, dt: 999}},
-      {n: 2, i: {throttle: -1}}
+      {n: 2, i: {throttle: -1}},
     ],
-    0
+    0,
   );
   assert.equal(inputs.ack, 0);
   assert.equal(inputs.next(1).throttle, 1);
@@ -261,11 +302,11 @@ test('server input acknowledgements advance only when a fixed-step input is cons
     inputs.receive(
       [
         {n: 1, i: {throttle: 1}},
-        {n: 2 ** 32, i: {throttle: 1}}
+        {n: 2 ** 32, i: {throttle: 1}},
       ],
-      3
+      3,
     ),
-    false
+    false,
   );
   assert.equal(inputs.next(1000).throttle, 0);
   assert.ok(inputs.queue.length <= 120);
@@ -306,11 +347,15 @@ for (const rtt of [50, 100, 150])
     for (const changing of [false, true]) {
       const metrics = trial(rtt, 0.03, changing);
       assert.ok(metrics.received > 210);
-      assert.ok(metrics.maxInstant < 1e-8, 'a snapshot visibly moved the own car');
+      assert.ok(
+        metrics.maxInstant < 1e-8,
+        'a snapshot visibly moved the own car',
+      );
       assert.ok(metrics.maxStep < 0.29, JSON.stringify(metrics));
       assert.ok(metrics.maxCorrection < 1, JSON.stringify(metrics));
       assert.ok(metrics.pendingInputs < 40);
-      if (!changing) assert.ok(metrics.ignoredCorrections > 200, JSON.stringify(metrics));
+      if (!changing)
+        assert.ok(metrics.ignoredCorrections > 200, JSON.stringify(metrics));
     }
   });
 
@@ -327,7 +372,7 @@ test('the actual matchmaking menu adapter carries a custom lobby through to a pl
     address: h.url,
     Room,
     onLobby: (room) => (lobby = room),
-    onMatch: (sim) => (playing = sim)
+    onMatch: (sim) => (playing = sim),
   });
   maker.start({name: 'Adapter'}, {mode: 'custom'});
   await until(() => lobby?.admitted, 'adapter lobby');
@@ -352,9 +397,13 @@ test('the real server matchmaking adapter gives both players the same match and 
   const a = new DedicatedMatchmaker({
       address: h.url,
       Room,
-      onMatch: (sim, room) => matches.push(room)
+      onMatch: (sim, room) => matches.push(room),
     }),
-    b = new DedicatedMatchmaker({address: h.url, Room, onMatch: (sim, room) => matches.push(room)});
+    b = new DedicatedMatchmaker({
+      address: h.url,
+      Room,
+      onMatch: (sim, room) => matches.push(room),
+    });
   a.start({name: 'First'}, {mode: 'duel'});
   b.start({name: 'Second'}, {mode: 'duel'});
   await until(() => matches.length === 2, 'adapter duel');
@@ -368,7 +417,7 @@ test('the real server matchmaking adapter gives both players the same match and 
   session.events([{type: 'end'}]);
   await until(
     () => matches.slice(0, 2).every((room) => room.sim.phase === 'ended'),
-    'adapter results'
+    'adapter results',
   );
   for (const room of matches.slice(0, 2)) room.requestRematch();
   await until(() => matches.length === 4, 'rematch callbacks');
@@ -385,11 +434,11 @@ test('a four-second input outage resumes at fresh controls without FIFO delay or
     inputs.receive(
       [
         {n: 500, i: {throttle: -1}},
-        {n: 501, i: {throttle: -1}}
+        {n: 501, i: {throttle: -1}},
       ],
-      4001
+      4001,
     ),
-    true
+    true,
   );
   assert.equal(inputs.ack, 1);
   assert.equal(inputs.next(4002).throttle, -1);

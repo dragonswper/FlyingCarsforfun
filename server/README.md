@@ -12,11 +12,26 @@ session/    Authoritative game session and shared match lifecycle
 transport/  Reliable and binary snapshot sending/backpressure
 input/      Validated 120 Hz control timeline
 auth/       Anonymous guest sessions and single-use origin-bound tickets
-matchmaking/ Mode/region grouping and 60-second bot fallback
+matchmaking/ Whole-party tickets, team packing, socket transfers and 60-second bot fallback
 social/     Profiles, friends, presence, invitations and lobby discovery
 storage/    Serialized atomic Node profile persistence
 cli.mjs     Standalone configuration and graceful shutdown
 ```
+
+`GameService` owns the squad registry. `SquadCoordinator` preserves authenticated
+membership while moving live sockets between lobby and match sessions. Queue
+packing places a two-person party on one team; arrivals, role changes and
+connection loss cancel its ticket. Only its leader can search or move the group.
+Public searches use regulation rules. Private Custom/Hoops options are normalized
+by the same whitelist used by browser prediction.
+
+`maxRooms` bounds active/preparing matches. Ordinary lobby admissions are separately
+bounded (eight by default), with reserved bounded capacity for returning groups.
+A busy authority keeps searches waiting. Transfers and load aborts invalidate
+client preparation generations; loaders must check both generation and live link
+before acknowledging. Preparation/reconnect uses a 60-second grace, while live
+play retains its short watchdog. Never reset the Durable Object name/migration
+to deploy this change: it would split discovery and existing profiles.
 
 Physics remains 120 Hz, inputs are sent at up to 60 Hz and snapshots at 30 Hz.
 Idle/lobby cadence is 10 Hz. `FixedStepScheduler` permits at most 12 fixed steps

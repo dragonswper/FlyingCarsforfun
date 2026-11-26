@@ -11,7 +11,7 @@ import {C} from '../dist/constants.js';
 const root=new URL('../',import.meta.url),loader=new GLTFLoader();
 const expected=['yuletide','halloween','coast','canyon','orbital'];
 test('five Blender venues include two holiday themes and appear in every arena picker and online rotation',()=>{
- assert.deepEqual(BLENDER_ARENA_IDS,expected);
+ assert.deepEqual(BLENDER_ARENA_IDS,[...expected,'skyline','range','velocity']);
  assert.equal(ARENAS.yuletide.holiday,'Christmas');assert.equal(ARENAS.halloween.holiday,'Halloween');
  const html=fs.readFileSync(new URL('dist/index.html',root),'utf8');
  for(const picker of ['arena-select','room-arena','party-arena','party-live-arena']){

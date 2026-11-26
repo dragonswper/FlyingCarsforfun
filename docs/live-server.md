@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.30.0**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.31.0**, and its public client protocol matches the tested source.
+
+Version 1.31 Overdrive adds party matchmaking, adaptive network smoothing, smarter aerial bots, Replay Studio, private mutators, garage loadouts, mobile tuning, Hoops and two solo challenges in three original Blender venues. Refresh every player’s tab for the new shared rules. [Details and checks](release-1.31.md).
 
 Version 1.30 adds the solo Circuit Cup, local career milestones, daily challenges, cosmetics and progress backups. [Details and checks](release-1.30.md).
 

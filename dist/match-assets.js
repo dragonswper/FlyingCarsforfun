@@ -1,7 +1,7 @@
 // Finish GPU preparation while the room still shows its loading state. The
 // owner check also prevents an old download from changing a newer menu/match.
 export async function prepareMatchView(view,options,prepareBodies=async()=>{},isCurrent=()=>true){
- await Promise.all([view.ensureArena(options?.arena),prepareBodies()]);
+ await Promise.all([view.ensureArena(options?.arena),view.ensureMode?.(options?.arcade||options?.mode),prepareBodies()]);
  if(!isCurrent())return false;
  view.setArena(options?.arena);
  const fieldMap=view.arena?.field?.material?.map;

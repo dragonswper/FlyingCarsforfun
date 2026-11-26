@@ -57,7 +57,7 @@ const until = async (check, label) => {
 for (const adapter of ['node', 'cloudflare'])
   test(
     adapter +
-      ' accepts pinned legacy and current clients in one authoritative game',
+      ' current clients share the authoritative v1.31 rules',
     async (t) => {
       let endpoint;
       if (adapter === 'node') {
@@ -82,7 +82,7 @@ for (const adapter of ['node', 'cloudflare'])
       const errors = [],
         owner = new DedicatedRoom({
           address: endpoint,
-          Link: legacyLink(TrustedLink, 'boost-circuit-1.27.0'),
+          Link: legacyLink(TrustedLink, NET_BUILD),
           credentials: credentials(endpoint),
           onDisconnect: (reason) => errors.push(reason),
         }),
@@ -98,7 +98,7 @@ for (const adapter of ['node', 'cloudflare'])
       });
       owner.create(
         {mode: 'custom', maxPeople: 4, duration: 60},
-        {name: 'Older Client'},
+        {name: 'Current Owner'},
       );
       await until(() => owner.admitted, 'legacy admission');
       guest.join(owner.invite, {name: 'Current Client'});
@@ -263,17 +263,17 @@ test('build authentication rejects unknown versions and changing builds within a
     socket,
     JSON.stringify({
       t: 'server-auth',
-      build: 'boost-circuit-1.27.0',
+      build: NET_BUILD,
       ticket: ticket.ticket,
     }),
   );
-  assert.equal(out.at(-1).build, 'boost-circuit-1.27.0');
+  assert.equal(out.at(-1).build, NET_BUILD);
   assert.equal(out.at(-1).serverBuild, NET_BUILD);
   service.receive(
     socket,
     JSON.stringify({
       t: 'server-create',
-      build: NET_BUILD,
+      build: 'boost-circuit-1.30.0',
       options: {mode: 'duel'},
     }),
   );

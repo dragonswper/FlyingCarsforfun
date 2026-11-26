@@ -6,14 +6,14 @@ const base=new URL('../dist/assets/skies/',import.meta.url),report=JSON.parse(fs
 const template=(await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.length),'')).scene;
 const geometry=template.getObjectByName('Original_Sky_Dome').geometry;
 
-test('all eleven arenas have distinct original Blender skies with complete source and bounded downloads',()=>{
+test('all fourteen arenas have distinct original Blender skies with complete source and bounded downloads',()=>{
  assert.deepEqual(Object.keys(SKY_STYLES),ARENA_IDS);assert.deepEqual(report.arenas,ARENA_IDS);assert.equal(report.license,'MIT');assert.equal(report.originalArtwork,true);
  assert.ok(fs.statSync(new URL('../art/sky-domes.blend',import.meta.url)).size>100000);assert.match(fs.readFileSync(new URL('../scripts/create-sky-domes.py',import.meta.url),'utf8'),/bpy\.ops\.export_scene\.gltf/);
- assert.equal(report.files.length,12);const hashes=new Set();let total=0;
+ assert.equal(report.files.length,ARENA_IDS.length+1);const hashes=new Set();let total=0;
  for(const entry of report.files){const file=fs.readFileSync(new URL(entry.file,base));assert.equal(file.length,entry.bytes);assert.equal(createHash('sha256').update(file).digest('hex'),entry.sha256);hashes.add(entry.sha256);total+=file.length;
   if(entry.file.endsWith('.webp')){assert.equal(file.toString('ascii',0,4),'RIFF');assert.equal(file.toString('ascii',8,12),'WEBP');assert.equal(file.toString('ascii',12,16),'VP8 ');assert.equal(file.readUInt16LE(26)&0x3fff,1024);assert.equal(file.readUInt16LE(28)&0x3fff,512);}
  }
- assert.equal(hashes.size,12);assert.ok(total<200000);for(const id of ARENA_IDS)assert.ok(report.files.some(row=>row.file===id+'.webp'));
+ assert.equal(hashes.size,ARENA_IDS.length+1);assert.ok(total<200000);for(const id of ARENA_IDS)assert.ok(report.files.some(row=>row.file===id+'.webp'));
 });
 test('the actual Blender dome is a seamless UV sphere with a 960-triangle draw budget',()=>{
  assert.equal(validateSkyGeometry(geometry),true);assert.equal(geometry.index.count/3,960);assert.ok(SKY_RADIUS<360);

@@ -1,38 +1,64 @@
+import {matchRules, botStyle} from './match-rules.js';
 import {normalizeArena} from './arenas.js';
 // This contract is shared by the headless server and the browser. Private
 // rooms may contain spectators; competitive/practice modes cap active drivers.
-export const SERVER_MODES = Object.freeze(['duel', 'doubles', 'free', 'training', 'custom']);
+export const SERVER_MODES = Object.freeze([
+  'duel',
+  'doubles',
+  'free',
+  'training',
+  'custom',
+  'hoops',
+]);
 export const modePlayers = (mode) =>
-  ({duel: 2, doubles: 4, free: 1, training: 1, custom: 8})[mode] || 2;
+  ({duel: 2, doubles: 4, hoops: 4, free: 1, training: 1, custom: 8})[mode] || 2;
 export function serverOptions(value = {}) {
   value ||= {};
   const mode = SERVER_MODES.includes(value.mode) ? value.mode : 'custom';
   return {
     dedicated: true,
-    ...(value.randomArena===true?{randomArena:true}:{}),
-    arena: normalizeArena(value.arena),
+    ...(value.randomArena === true ? {randomArena: true} : {}),
+    arena: mode === 'hoops' ? 'skyline' : normalizeArena(value.arena),
+    rules: matchRules(
+      ['custom', 'hoops'].includes(mode) ? value.rules : undefined,
+    ),
+    botStyle: botStyle(value.botStyle),
     mode,
-    duration: Math.max(60, Math.min(1800, Math.round(Number(value.duration) || 300))),
-    maxPeople: Math.max(2, Math.min(8, Math.round(Number(value.maxPeople) || 4))),
-    difficulty: ['rookie', 'pro', 'allstar', 'expert'].includes(value.difficulty)
+    duration: Math.max(
+      60,
+      Math.min(1800, Math.round(Number(value.duration) || 300)),
+    ),
+    maxPeople: Math.max(
+      2,
+      Math.min(8, Math.round(Number(value.maxPeople) || 4)),
+    ),
+    difficulty: ['rookie', 'pro', 'allstar', 'expert'].includes(
+      value.difficulty,
+    )
       ? value.difficulty
-      : 'pro'
+      : 'pro',
   };
 }
 export function serverPlayers(options, humans) {
   const players = humans.map((player) => ({...player, bot: false}));
-  if (!['duel', 'doubles'].includes(options.mode)) return players;
+  if (!['duel', 'doubles', 'hoops'].includes(options.mode)) return players;
   const perTeam = modePlayers(options.mode) / 2,
     used = new Set(players.map((player) => player.id));
   for (const team of [0, 1])
-    for (let n = players.filter((player) => player.team === team).length; n < perTeam; n++) {
-      const id = Array.from({length: 8}, (_, i) => i).find((id) => !used.has(id));
+    for (
+      let n = players.filter((player) => player.team === team).length;
+      n < perTeam;
+      n++
+    ) {
+      const id = Array.from({length: 8}, (_, i) => i).find(
+        (id) => !used.has(id),
+      );
       used.add(id);
       players.push({
         id,
         team,
         bot: true,
-        look: {body: 'fennec', paint: 'blue', name: 'Circuit Bot ' + (id + 1)}
+        look: {body: 'fennec', paint: 'blue', name: 'Circuit Bot ' + (id + 1)},
       });
     }
   return players.sort((a, b) => a.id - b.id);

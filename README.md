@@ -8,7 +8,7 @@ It includes Champions Field and many more arenas, 16 selectable vehicles, the su
  
 **Hosted game:** https://flyingcarsforfun.connstors.workers.dev
 
-**Latest update — 1.30:** Circuit Cup adds an eight-car solo knockout, saved brackets and an original Blender trophy. The new Clubhouse adds 20 milestones, daily challenges, cosmetic styles and local save backups. [v1.30 notes](docs/release-1.30.md). [v1.29 Academy: 24 drills and practice tools](docs/release-1.29.md).
+**Latest update — 1.31 Overdrive:** Party matchmaking, adaptive networking, aerial bot tactics, Replay Studio, private mutators, saved garage loadouts, mobile tuning and three new modes with original Blender venues. Refresh all players’ tabs. [v1.31 notes and testing](docs/release-1.31.md). [v1.30 Cup & Clubhouse](docs/release-1.30.md).
  
 The live Cloudflare game includes the dedicated server. Choose **Online Match → Dedicated Server**, then pick the same mode and **Oceania** on both PCs.
  

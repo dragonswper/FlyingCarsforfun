@@ -9,7 +9,7 @@ import {ServerLink} from '../dist/server-link.js';
 import {drivingTrial} from './helpers/driving-trial.mjs';
 
 function frame(state,ack=3){return snapshotForPeer(encodeSnapshotWorld(state),{n:4,ack,w:5,net:{inputTick:ack+1,inputQueueMs:8}});}
-for(const mode of ['duel','doubles','free','training','custom'])test(`binary snapshot preserves complete ${mode} authority state and training metadata`,()=>{
+for(const mode of ['duel','doubles','free','training','custom','hoops'])test(`binary snapshot preserves complete ${mode} authority state and training metadata`,()=>{
  const sim=new Simulation({mode,players:Array.from({length:8},(_,id)=>({id,team:id%2}))});
  sim.phase='playing';for(let tick=0;tick<7;tick++)sim.step({throttle:1,jump:tick>2},C.step);
  const state=makeState(sim,4,3,'test-match'),bytes=frame(state),out=decodeSnapshot(bytes);

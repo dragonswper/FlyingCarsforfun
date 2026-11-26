@@ -4,7 +4,11 @@ import {NET_BUILD, appearance} from './network-protocol.js';
 import {serverOptions} from './server-options.js';
 import {ServerCredentials} from './server-auth.js';
 import {versionMismatch} from './build-compatibility.js';
-import {networkPreferences, assessConnection} from './network-quality.js';
+import {
+  ConnectionQuality,
+  networkPreferences,
+  assessConnection,
+} from './network-quality.js';
 export const serverCode = (value) => {
   const code = String(value || '').trim();
   if (!/^BCS-[A-Za-z0-9_-]{22}$/.test(code))
@@ -58,7 +62,13 @@ export class DedicatedRoom extends PartyRoom {
     } else if (this.link?.open && this.admitted) {
       this.link.refreshStats?.();
       const timeout =
-        this.matchId && this.sim?.phase !== 'ended' ? 3000 : 60000;
+        this.matchId &&
+        !this.pendingMatch &&
+        !this.preparing &&
+        this.status !== 'starting' &&
+        this.sim?.phase !== 'ended'
+          ? 3000
+          : 60000;
       if (now - this.lastReceive > timeout) this.lostHost();
       else {
         this.ping(this);
@@ -69,7 +79,12 @@ export class DedicatedRoom extends PartyRoom {
     if (!this.closed) this.later(() => this.beat(), 1000);
   }
   updateAppearance(value) {
-    if (this.matchId && this.sim?.phase !== 'ended') return false;
+    if (
+      this.preparing ||
+      this.pendingMatch ||
+      (this.matchId && this.sim?.phase !== 'ended')
+    )
+      return false;
     this.look = appearance({...this.look, ...value});
     if (this.self) this.self.look = this.look;
     this.change();
@@ -235,6 +250,35 @@ export class DedicatedRoom extends PartyRoom {
       );
       return;
     }
+    if (packet.t === 'server-transfer') {
+      if (packet.build !== NET_BUILD) return;
+      this.loadGeneration = (this.loadGeneration || 0) + 1;
+      this.matchId =
+        this.pendingMatch =
+        this.presentedMatch =
+        this.loadingArenaMatch =
+          null;
+      this.replica = this.sim = null;
+      this.admitted = false;
+      this.recovering = false;
+      this.members = [];
+      this.preparing = false;
+      this.quality = new ConnectionQuality();
+      this.chat.clear();
+      this.squadQueue = null;
+      this.change('transferring');
+      return;
+    }
+    if (packet.t === 'party-squad') {
+      this.squad = packet.squad;
+      this.change();
+      return;
+    }
+    if (packet.t === 'party-queue') {
+      this.squadQueue = packet;
+      this.change();
+      return;
+    }
     if (packet.t === 'server-welcome') {
       if (
         packet.build !== NET_BUILD ||
@@ -279,6 +323,22 @@ export class DedicatedRoom extends PartyRoom {
       return;
     }
     this.receiveGuest(packet);
+  }
+  queueParty(options, network) {
+    return this.link?.send({
+      t: 'squad-search',
+      options: serverOptions(options),
+      network: networkPreferences(network),
+    });
+  }
+  cancelPartyQueue() {
+    return this.link?.send({t: 'squad-cancel'});
+  }
+  nextPartyMatch() {
+    return this.link?.send({t: 'squad-next'});
+  }
+  returnParty() {
+    return this.link?.send({t: 'squad-return'});
   }
   configure(options) {
     return this.canManage && this.connected

@@ -13,7 +13,7 @@ test('Node HTTPS returns bounded API errors without dropping the response connec
  const response=await secureFetch(base+'/api/session',{method:'POST',body:'x'.repeat(5000)});
  assert.equal(response.status,413);assert.equal((await response.json()).error,'Request too large.');
  assert.equal((await secureFetch(base+'/api/session',{method:'POST'})).status,201);
- const config=await (await secureFetch(base+'/server-config.json')).json();assert.equal(config.capabilities.physicsHz,120);assert.deepEqual(config.capabilities.modes,['duel','doubles','free','training','custom']);
+ const config=await (await secureFetch(base+'/server-config.json')).json();assert.equal(config.capabilities.physicsHz,120);assert.deepEqual(config.capabilities.modes,['duel','doubles','free','training','custom','hoops']);
 });
 test('long scheduling stalls have bounded work, fresh publishes and recover short debt', () => {
   const scheduler = new FixedStepScheduler(),

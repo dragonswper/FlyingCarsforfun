@@ -9,7 +9,7 @@ export const SKY_STYLES=Object.freeze({
   woods:'Golden woodland afternoon',harbour:'Coastal cloud banks',
   festival:'Winter aurora',yuletide:'Rose winter twilight',
   halloween:'Harvest moon',coast:'Apricot sunset',
-  canyon:'High desert daylight',orbital:'Deep-space starfield'
+  canyon:'High desert daylight',orbital:'Deep-space starfield',skyline:'City blue hour',range:'Training-ground daylight',velocity:'Park sunset'
 });
 export const SKY_RADIUS=300;
 const assets=new Map(),pending=new Map();

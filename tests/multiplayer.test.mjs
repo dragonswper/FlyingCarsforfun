@@ -74,7 +74,7 @@ test('a guest can self-right with one jump press and keep its recovery target th
  const packet=makeState(p.host.sim,999,p.host.remote.ack,p.host.matchId);packet.cars[1].selfRightTarget=[0,0,0,0];assert.equal(validState(packet,p.guest.sim),false);packet.cars[1].selfRightTarget=[0,0,0,1];packet.cars[1].selfRightTime=10;assert.equal(validState(packet,p.guest.sim),false);
 });
 test('remote cars interpolate while the predicted ball responds promptly and kickoff teleports snap',()=>{
- const host=new Simulation(),guest=new Simulation(),replica=new GuestReplica(guest,1);host.phase=guest.phase='playing';host.elapsed=0;replica.receive(makeState(host,1,0,'match'),0);host.ball.p.x=2;host.cars[0].p.x=2;host.elapsed=.1;replica.receive(makeState(host,2,0,'match'),100);const pose=replica.sample(100,1/60);near(pose.cars[0].p[0],.3);assert.ok(pose.ball.p[0]>.3&&pose.ball.p[0]<2);
+ const host=new Simulation(),guest=new Simulation(),replica=new GuestReplica(guest,1);host.phase=guest.phase='playing';host.elapsed=0;replica.receive(makeState(host,1,0,'match'),0);host.ball.p.x=2;host.cars[0].p.x=2;host.elapsed=.1;replica.receive(makeState(host,2,0,'match'),100);const pose=replica.sample(100,1/60);assert.ok(pose.cars[0].p[0]>.85&&pose.cars[0].p[0]<1.1,'Adaptive buffer presents a steady link sooner without a teleport');assert.ok(pose.ball.p[0]>.3&&pose.ball.p[0]<2);
  host.kickoff();host.ball.p.x=20;host.elapsed=.2;replica.receive(makeState(host,3,0,'match'),200);near(replica.sample(200,1/60).ball.p[0],20);assert.equal(replica.sim.replay.length,0);
 });
 test('goals, final stats, host pause, rematches and disconnects propagate in room order',async t=>{

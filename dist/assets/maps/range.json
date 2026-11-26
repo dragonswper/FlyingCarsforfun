@@ -1,0 +1,14 @@
+{
+  "id": "range",
+  "originalArtwork": true,
+  "license": "MIT",
+  "blenderVersion": "4.3.2",
+  "sourceBlend": "art/range.blend",
+  "generator": "scripts/create-overdrive-venues.py",
+  "sourceProps": 1108,
+  "bytes": 723492,
+  "sha256": "b1a59ab0677e2e033c83713fb293a3f7ce42032941e733afbfbfdf5a23b1fa06",
+  "triangles": 13296,
+  "materialBatches": 8,
+  "textures": 0
+}

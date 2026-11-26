@@ -1,0 +1,14 @@
+{
+  "id": "velocity",
+  "originalArtwork": true,
+  "license": "MIT",
+  "blenderVersion": "4.3.2",
+  "sourceBlend": "art/velocity.blend",
+  "generator": "scripts/create-overdrive-venues.py",
+  "sourceProps": 1108,
+  "bytes": 724536,
+  "sha256": "d1bcb2f90299299f86fa7818ee1c33bd5aeb141a17db40cb8f50d1feca4a4522",
+  "triangles": 13296,
+  "materialBatches": 8,
+  "textures": 0
+}

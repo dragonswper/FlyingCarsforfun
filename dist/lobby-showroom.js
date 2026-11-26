@@ -32,6 +32,7 @@ export function lobbyDisplayScene(
     car.appearance = {
       body: fallbacks.has(member.id) ? 'striker' : member.look.body,
       color: PAINT_COLORS[member.look.paint],
+      style: member.look.style,
     };
     car.playerName = member.look.name;
     return car;

@@ -17,7 +17,10 @@
     "halloween",
     "coast",
     "canyon",
-    "orbital"
+    "orbital",
+    "skyline",
+    "range",
+    "velocity"
   ],
   "files": [
     {
@@ -61,14 +64,29 @@
       "sha256": "366a724a1e08e7cd35a726632d05423f46feeab86cfaa1b397dbc4ce4d62dc0c"
     },
     {
+      "file": "range.webp",
+      "bytes": 5862,
+      "sha256": "f49b82c4771bf4407fb3339b3023c0c53d9e08fed1a3fa26648c7d1ee9bc404a"
+    },
+    {
       "file": "sky-dome.glb",
-      "bytes": 24988,
-      "sha256": "f191d03e31c29819a9e564209d8fae6ebc6918b075c1cdd2f05206900f98f3b0"
+      "bytes": 25016,
+      "sha256": "ef1d9c6865628e43ec48f28accfbba82153514ae9710d353c194a6fcf3ff02a3"
+    },
+    {
+      "file": "skyline.webp",
+      "bytes": 7474,
+      "sha256": "624f2d75e6d378cab195d78dadcffed4d628ec1c8ccb43574e9ba599a84aff00"
     },
     {
       "file": "snow.webp",
       "bytes": 8558,
       "sha256": "da9a5340c5f53e0aeec088a67711849401a20c14ad690c19fe05f33eaf43fa9d"
+    },
+    {
+      "file": "velocity.webp",
+      "bytes": 5374,
+      "sha256": "8709e9b95b96dd92202026b1ac45b38282bcf6d2d49d8bff0fc3d1b465b212b8"
     },
     {
       "file": "woods.webp",
