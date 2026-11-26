@@ -288,3 +288,267 @@
     display: none;
   }
 }
+/* Clubhouse: numerical hierarchy, honest local progression and clear fixtures. */
+.club-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 18px;
+}
+.club-tabs button {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 5px;
+  border: 1px solid #4a637a;
+  background: #1a2e43;
+  font: 600 12px var(--ui-heading);
+  color: #c8d9eb;
+}
+.club-tabs button[aria-pressed='true'] {
+  background: #286589;
+  border-color: #9fd8f1;
+  color: white;
+}
+.club-level {
+  padding: 12px;
+  border-left: 3px solid #9cd9eb;
+  background: #1c3247;
+  color: #d5eaf7;
+  font: 600 15px var(--ui-heading);
+}
+.club-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 0 0 18px;
+}
+.club-stats > div {
+  padding: 16px 10px;
+  border: 1px solid #38516a;
+  background: #142a3c;
+  border-radius: 6px;
+  text-align: center;
+  display: grid;
+  gap: 7px;
+}
+.club-stats strong {
+  font: 600 30px var(--ui-heading);
+  color: #e5f4ff;
+}
+.club-stats small {
+  font: 10px var(--ui-font);
+  letter-spacing: 0.08em;
+  color: #a7c6db;
+}
+.club-row {
+  display: flex;
+  gap: 15px;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #334c61;
+  font: 12px var(--ui-font);
+}
+.club-content > p {
+  margin: 18px 0;
+}
+.club-progress {
+  padding: 14px;
+  margin: 10px 0;
+  border: 1px solid #375167;
+  border-radius: 6px;
+  background: #14293a;
+}
+.club-progress h3 {
+  margin: 0 0 5px !important;
+  font: 600 18px var(--ui-heading) !important;
+  color: #d7ecfa !important;
+  letter-spacing: 0 !important;
+}
+.club-progress p {
+  font: 12px var(--ui-font);
+  color: #a8c5db;
+  margin: 4px 0 10px;
+}
+.club-progress progress {
+  width: calc(100% - 76px);
+  height: 8px;
+  accent-color: #82d2e8;
+  vertical-align: middle;
+}
+.club-progress small {
+  display: inline-block;
+  width: 65px;
+  text-align: right;
+  color: #c4e1f1;
+  font: 11px var(--ui-font);
+}
+.club-style-field {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #334c61;
+  font: 600 12px var(--ui-font);
+}
+.club-style-field select,
+.cup-options select {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #58758c;
+  border-radius: 5px;
+  color: #e0edfa;
+  background: #0e2234;
+  font: 14px var(--ui-heading);
+}
+.club-style-field select {
+  width: 55%;
+}
+.club-status {
+  color: #c4dcf0;
+  font-size: 12px;
+}
+.club-title {
+  display: block;
+  color: #b2d9ea;
+  font: 9px var(--ui-font);
+  letter-spacing: 0.06em;
+}
+.profile {
+  background: var(--club-banner, #24465e) !important;
+}
+.cup-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 10px 0 18px;
+}
+.cup-options label {
+  display: grid;
+  gap: 7px;
+  color: #b0cddd;
+  font: 11px var(--ui-font);
+}
+.cup-bracket {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.cup-round > h3 {
+  margin: 0 0 12px !important;
+  font: 600 13px var(--ui-heading) !important;
+  color: #97d4ed !important;
+}
+.cup-round > p {
+  font: 12px var(--ui-font);
+  color: #879fb7;
+}
+.cup-game {
+  background: #162c40;
+  border: 1px solid #49677f;
+  border-radius: 5px;
+  margin: 0 0 12px;
+  overflow: hidden;
+}
+.cup-game > div {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  font: 12px var(--ui-font);
+}
+.cup-game > div + div {
+  border-top: 1px solid #3b546a;
+}
+.cup-game span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cup-game .cup-winner {
+  background: #244b57;
+  color: #c2ffed;
+}
+.cup-status {
+  font: 12px/1.6 var(--ui-font);
+  color: #b5cfe0;
+  margin: 10px 0 0;
+}
+.cup-hud {
+  position: absolute;
+  top: 88px;
+  left: 18px;
+  padding: 9px 12px;
+  border-left: 3px solid #ebc782;
+  background: #13283be8;
+  color: #f0d39f;
+  font: 600 12px var(--ui-heading);
+  pointer-events: none;
+}
+#result-cup {
+  min-height: 44px;
+  margin: 12px 0 0;
+  width: 100%;
+  border: 1px solid #8fc4df;
+  border-radius: 5px;
+  background: #255778;
+  color: #e6f2fd;
+  font: 600 14px var(--ui-heading);
+}
+@media (max-width: 600px) {
+  .club-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .club-stats strong {
+    font-size: 25px;
+  }
+  .club-stats > div {
+    padding: 12px 8px;
+  }
+  .cup-bracket {
+    grid-template-columns: 1fr;
+  }
+  .cup-options {
+    grid-template-columns: 1fr;
+  }
+  .club-tabs button {
+    flex: 1 1 40%;
+  }
+  .club-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .club-style-field {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .club-style-field select {
+    width: 100%;
+  }
+  .cup-hud {
+    top: 60px;
+    left: 8px;
+    font-size: 10px;
+    padding: 7px 9px;
+  }
+  .club-title {
+    font-size: 8px;
+  }
+}
+@media (max-height: 500px) and (min-width: 601px) {
+  .club-stats > div {
+    padding: 9px;
+  }
+  .cup-hud {
+    top: 57px;
+    left: 10px;
+  }
+  .club-tabs {
+    margin: 8px 0;
+  }
+  .club-level {
+    padding: 8px;
+  }
+}

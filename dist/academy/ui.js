@@ -124,6 +124,7 @@ export class AcademyUI {
   }
   record(progress) {
     this.progress = academyProgress(progress);
+    this.hooks.onRecord?.(this.progress);
     try {
       localStorage.setItem(storageKey, JSON.stringify(this.progress));
     } catch {}
@@ -192,6 +193,11 @@ export class AcademyUI {
           progress: this.progress,
           onRecord: (p) => this.record(p),
         });
+      if (
+        this.director &&
+        ['route', 'recover'].includes(this.director.drill.objective)
+      )
+        this.hooks.carCamera?.();
       this.hooks.resetView();
       this.catalog.close();
       this.renderHUD();
@@ -300,6 +306,11 @@ export class AcademyUI {
     }
   }
   renderHUD() {
+    const hint = document.querySelector('#practice-tools > span');
+    if (hint?.lastChild)
+      hint.lastChild.textContent = this.active
+        ? ' TO RETRY DRILL'
+        : ' TO RESET BALL';
     this.hud.hidden = !this.active;
     this.retryButton.hidden = !this.active;
     this.toolsButton.hidden =
@@ -329,3 +340,5 @@ export class AcademyUI {
     return this.director?.state() ?? null;
   }
 }
+
+export {mount as expansionDialog, node as uiNode};

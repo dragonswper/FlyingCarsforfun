@@ -1,3 +1,4 @@
+import {Clubhouse} from './club/ui.js';
 import {AcademyUI} from './academy/ui.js';
 import {LobbyShowroom} from './lobby-showroom.js';
 import {compatibleBuild} from './build-compatibility.js';
@@ -177,6 +178,8 @@ let friends = null,
   friendsUI = null,
   musicPadHeld = false,
   academy,
+  clubhouse,
+  careerMatchId,
   lobbyShowroom,
   sharedLobbyPromise;
 let hudLayout,
@@ -1141,6 +1144,10 @@ async function startBotRematch() {
   }
 }
 function start() {
+  if (clubhouse?.isCup()) {
+    clubhouse.openCup();
+    return;
+  }
   if (academy?.active) {
     academy.retry();
     return;
@@ -1173,6 +1180,14 @@ function clearScoreToast() {
   show('score-toast', false);
 }
 function presentMatch(newSim) {
+  clubhouse?.worldChanged(newSim);
+  careerMatchId =
+    online() && room.matchId
+      ? 'online:' +
+        String(room.matchId)
+          .replace(/[^\w:-]/g, '')
+          .slice(0, 80)
+      : crypto.randomUUID();
   academy?.worldChanged(newSim);
   lobbyShowroom?.clear(false);
   clearScoreToast();
@@ -1258,6 +1273,7 @@ function resume() {
   $('arena').focus();
 }
 function menu(leaveNetwork = true) {
+  clubhouse?.leaveWorld();
   academy?.clear();
   lobbyShowroom?.clear(false);
   clearScoreToast();
@@ -1325,6 +1341,14 @@ function result() {
     });
     settings.history = settings.history.slice(0, 8);
   }
+  const progression =
+    !practice && !spectator
+      ? clubhouse?.matchResult(sim, p, {
+          online: online(),
+          won,
+          id: careerMatchId,
+        })
+      : null;
   save();
   text('result-eyebrow', practice ? 'SESSION COMPLETE' : 'WINNER');
   text(
@@ -1371,7 +1395,17 @@ function result() {
       ? 'MVP · ' + driverName(mvp, localId()) + ' · ' + mvp.score + ' POINTS'
       : '',
   );
-  text('result-xp', spectator ? 0 : xp);
+  text('result-xp', spectator ? 0 : xp + (progression?.xp || 0));
+  if (progression?.unlocked.length)
+    text(
+      'result-mvp',
+      (mvp ? 'MVP · ' + driverName(mvp, localId()) + ' · ' : '') +
+        progression.unlocked.slice(0, 2).join(' · ') +
+        (progression.unlocked.length > 2
+          ? ` · +${progression.unlocked.length - 2} more`
+          : ''),
+    );
+  if (progression?.unlocked.length) show('result-mvp', true);
   dialog('result-dialog');
   networkUI.render(room, sim);
   syncSettings();
@@ -1490,6 +1524,7 @@ function handleEvents() {
         }
       }
     } else if (e.type === 'goal') {
+      clubhouse?.goal(e, sim);
       sound.effect('goal');
       view.burst(sim.ball.p.toArray(), e.team ? '#ff9944' : '#65bbff', 70);
       const scorer =
@@ -1661,6 +1696,7 @@ function frame(now) {
     }
   } else if (!matchmaking && draw) view.update(sim, renderPacer.dt, true); // Leave the showroom still while finding/preparing a peer.
 
+  if (draw) clubhouse?.draw(started);
   if (draw)
     academy?.draw(sim, started && !online() && sim.options.mode === 'free');
   sound.update(dt);
@@ -1886,28 +1922,7 @@ for (const id of ['quality', 'sound', 'ballcam', 'fps-toggle'])
     view.cameraMode = settings.ballcam;
     if (settings.sound) sound.start();
   });
-$('career-button').addEventListener('click', () => {
-  text('career-matches', settings.matches);
-  text('career-wins', settings.wins);
-  text('career-goals', settings.goals);
-  text('career-touches', settings.touches);
-  const list = $('history');
-  list.replaceChildren();
-  if (!settings.history.length)
-    list.textContent = 'Your first match is the start of your story.';
-  for (const h of settings.history) {
-    const row = document.createElement('div');
-    row.className = 'history-row';
-    const label = document.createElement('strong'),
-      score = document.createElement('span');
-    label.textContent =
-      (names[h.mode] || 'MATCH') + (h.won ? ' · WIN' : ' · LOSS');
-    score.textContent = `${Math.max(0, Number(h.blue) || 0)} — ${Math.max(0, Number(h.orange) || 0)}`;
-    row.append(label, score);
-    list.append(row);
-  }
-  dialog('career-dialog');
-});
+$('career-button').addEventListener('click', () => clubhouse?.openCareer());
 $('retry-button').addEventListener('click', () => location.reload());
 window.addEventListener('resize', () => view?.resize());
 document.addEventListener('visibilitychange', () => {
@@ -1944,6 +1959,7 @@ window.addEventListener('pagehide', (event) => {
   hudLayout?.dispose();
   screenUI?.dispose();
   input?.dispose();
+  clubhouse?.dispose();
   academy?.dispose();
   view?.dispose();
   sound.dispose();
@@ -2042,6 +2058,10 @@ try {
       input?.clear();
       accumulator = 0;
     },
+    carCamera: () => {
+      view.cameraMode = false;
+    },
+    onRecord: (p) => clubhouse?.syncAcademy(p),
     clearInput: () => input?.clear(),
     pause,
     resume,
@@ -2127,6 +2147,38 @@ try {
       else lobbyUI.home();
     },
   });
+  clubhouse = new Clubhouse(view, settings, {
+    getSim: () => sim,
+    localId,
+    isPlaying: () => started,
+    isOnline: online,
+    save: () => {
+      save();
+      syncSettings();
+    },
+    notice: feed,
+    pause,
+    resume,
+    restoreAcademy: (progress) => {
+      academy.progress = progress;
+      academy.renderCatalog();
+    },
+    launch: async (world, current) => {
+      if (
+        !(await prepareMatchView(
+          view,
+          world.options,
+          () => view.ensureBody(settings.body),
+          current,
+        )) ||
+        !current()
+      )
+        return false;
+      sound.start();
+      presentMatch(world);
+      return true;
+    },
+  });
   syncSettings();
   save();
   text('loading-label', 'WARMING UP THE ARENA');
@@ -2137,7 +2189,8 @@ try {
   if (vehicleWarning) text('menu-help', vehicleWarning);
   Object.defineProperty(window, 'boostCircuit', {
     value: Object.freeze({
-      version: '1.29.0',
+      version: '1.30.0',
+      getClubhouse: () => structuredClone(clubhouse?.state()),
       getAcademy: () => structuredClone(academy?.state()),
       getLobby: () =>
         structuredClone({

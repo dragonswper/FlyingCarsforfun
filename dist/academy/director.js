@@ -69,7 +69,11 @@ export class AcademyDirector {
     c.p.set(d.car[0], d.height ?? C.carHeight, d.car[1]);
     c.q.setFromAxisAngle(
       up,
-      d.yaw ?? Math.atan2(d.ball[0] - d.car[0], d.ball[2] - d.car[1]),
+      d.yaw ??
+        Math.atan2(
+          (d.checkpoints?.[0]?.[0] ?? d.ball[0]) - d.car[0],
+          (d.checkpoints?.[0]?.[2] ?? d.ball[2]) - d.car[1],
+        ),
     );
     if (d.upsideDown)
       c.q.multiply(new Quaternion().setFromAxisAngle(forward, Math.PI));

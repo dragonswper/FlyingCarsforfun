@@ -165,3 +165,26 @@ test('practice pass and pop are relative to car heading, and exported Blender as
       .length > 1000,
   );
 });
+
+test('a real simulated drive scores the opening drill without a fabricated touch', () => {
+  const sim = world(),
+    d = new AcademyDirector(sim);
+  for (let tick = 0; tick < 120 * 12 && d.status === 'running'; tick++) {
+    sim.step({throttle: 1, boost: true}, C.step);
+    d.step(C.step);
+  }
+  assert.equal(d.outcome?.success, true);
+  assert.equal(d.outcome.medal, 3);
+  assert.ok(sim.cars[0].touches > 0);
+  assert.equal(sim.score[0], 1);
+});
+test('the roof-recovery drill can be completed with the existing jump self-right mechanic', () => {
+  const sim = world(),
+    d = new AcademyDirector(sim, {pack: 'control', index: 3});
+  for (let tick = 0; tick < 120 * 12 && d.status === 'running'; tick++) {
+    sim.step({jump: tick >= 240 && tick < 264}, C.step);
+    d.step(C.step);
+  }
+  assert.equal(d.outcome?.success, true);
+  assert.ok(sim.cars[0].grounded);
+});
