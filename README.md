@@ -8,7 +8,7 @@ It includes Champions Field and many more arenas, 16 selectable vehicles, the su
  
 **Hosted game:** https://flyingcarsforfun.connstors.workers.dev
 
-**Latest update — 1.28.2:** Invite friends directly into one shared lobby and see their selected cars beside yours. Lobby members can invite mutual friends, and brief reconnects preserve the showroom. [Release details and verification](docs/release-1.28.2.md).
+**Latest update — 1.29:** Circuit Academy adds 24 original drills, saved medals and best times, a solo practice toolbox, ball-path guides and original Blender training props. [Release notes](docs/release-1.29.md).
  
 The live Cloudflare game includes the dedicated server. Choose **Online Match → Dedicated Server**, then pick the same mode and **Oceania** on both PCs.
  

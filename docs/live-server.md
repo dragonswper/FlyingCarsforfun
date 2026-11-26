@@ -2,7 +2,9 @@
 
 **Play:** https://flyingcarsforfun.connstors.workers.dev
 
-The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.28.2**, and its public client protocol matches the tested source.
+The same address serves the updated browser game and its secure dedicated game service. The older ChatGPT-hosted link remains on its previous build; use the Cloudflare address for the current client/server. The server reports **boost-circuit-1.29.0**, and its public client protocol matches the tested source.
+
+Version 1.29 adds a 24-drill offline Academy, local medals, practice tools and original Blender training guides. [Details and checks](release-1.29.md).
 
 Version 1.28.2 makes friend invitations create or reuse a shared lobby and renders each joined player’s selected car in the menu. Party members can invite mutual friends; brief lobby reconnects preserve the showroom. [Friend flow, permissions and checks](release-1.28.2.md).
 

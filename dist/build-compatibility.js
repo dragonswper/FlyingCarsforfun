@@ -5,6 +5,7 @@ import {NET_BUILD} from './network-protocol.js';
 // pin the shared gameplay files to the legacy release's hashes.
 export const COMPATIBLE_BUILDS = Object.freeze([
   NET_BUILD,
+  'boost-circuit-1.28.2',
   'boost-circuit-1.28.1',
   'boost-circuit-1.28.0',
   'boost-circuit-1.27.0',
