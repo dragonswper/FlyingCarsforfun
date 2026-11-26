@@ -15,9 +15,15 @@ certs/
 secrets/
 .wrangler/
 .social-data/
+.admin-data/
+.admin-setup/
 *.log
 .DS_Store
 
 # Blender backup copies; keep the editable .blend sources.
 *.blend1
 *.blend2
+
+# Private admin setup and authentication state.
+.admin-setup/
+.admin-data/

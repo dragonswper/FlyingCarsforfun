@@ -1,3 +1,7 @@
+import {AdminAuth} from '../admin/auth.mjs';
+import {adminMailer} from '../admin/mail.mjs';
+import {handleAdmin, adminJSON} from '../admin/http.mjs';
+import {secureResponse, privatePath} from '../http/security.mjs';
 import {edgePing} from '../http/edge-ping.mjs';
 import {CAPABILITIES} from '../runtime/capabilities.mjs';
 import {COMPATIBLE_BUILDS} from '../../dist/build-compatibility.js';
@@ -23,17 +27,21 @@ function json(status, value, origin) {
 // edge; all players reach this named object so they can find each other.
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.protocol !== 'https:')
-      return json(426, {error: 'HTTPS is required.'});
-    if (url.pathname === '/edge-ping')
-      return edgePing(request, env.ALLOWED_ORIGINS);
-    if (!dynamicPath(url.pathname)) return env.ASSETS.fetch(request);
-    // A location hint is best effort, not a promise of an Australian data centre.
-    const id = env.ARENA.idFromName('flyingcarsforfun-oceania-v1');
-    return env.ARENA.get(id, {locationHint: 'oc'}).fetch(request);
+    return secureResponse(await route(request, env));
   },
 };
+async function route(request, env) {
+  const url = new URL(request.url);
+  if (url.protocol !== 'https:')
+    return json(426, {error: 'HTTPS is required.'});
+  if (privatePath(url.pathname)) return json(404, {error: 'Not found.'});
+  if (url.pathname === '/edge-ping')
+    return edgePing(request, env.ALLOWED_ORIGINS);
+  if (!dynamicPath(url.pathname)) return env.ASSETS.fetch(request);
+  // A location hint is best effort, not a promise of an Australian data centre.
+  const id = env.ARENA.idFromName('flyingcarsforfun-oceania-v1');
+  return env.ARENA.get(id, {locationHint: 'oc'}).fetch(request);
+}
 
 export class ArenaService extends DurableObject {
   constructor(ctx, env) {
@@ -43,6 +51,13 @@ export class ArenaService extends DurableObject {
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean);
+    this.admin = new AdminAuth({
+      pinHash: env.ADMIN_PIN_HASH,
+      email: env.ADMIN_EMAIL,
+      secret: env.ADMIN_SECRET,
+      store: ctx.storage,
+      sendMail: adminMailer(env),
+    });
     this.service = new GameService({
       maxRooms: Math.max(1, Math.min(8, Number(env.MAX_ROOMS) || 1)),
       region: 'oceania (location requested)',
@@ -66,7 +81,6 @@ export class ArenaService extends DurableObject {
         region: this.service.region,
         rooms: this.service.rooms.size,
         queued: this.service.queue.waiting.size,
-        runtime: this.service.metrics.snapshot(),
       });
     if (url.pathname === '/server-config.json' && request.method === 'GET')
       return json(
@@ -82,6 +96,21 @@ export class ArenaService extends DurableObject {
         originOK ? origin : undefined,
       );
     if (!originOK) return json(403, {error: 'Origin is not allowed.'});
+    if (url.pathname.startsWith('/api/admin/')) {
+      const result = await handleAdmin({
+        method: request.method,
+        path: url.pathname,
+        origin,
+        serverOrigin: url.origin,
+        cookieHeader: request.headers.get('Cookie') || '',
+        address: request.headers.get('CF-Connecting-IP') || 'unknown',
+        contentType: request.headers.get('Content-Type') || '',
+        body: request.body,
+        admin: this.admin,
+        service: this.service,
+      });
+      return adminJSON(result);
+    }
     if (url.pathname.startsWith('/api/'))
       return this.authRequest(request, url, origin);
     if (url.pathname === '/multiplayer') {

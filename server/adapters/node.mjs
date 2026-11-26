@@ -1,3 +1,7 @@
+import {AdminAuth, MemoryAdminStore} from '../admin/auth.mjs';
+import {adminMailer} from '../admin/mail.mjs';
+import {handleAdmin} from '../admin/http.mjs';
+import {SECURITY_HEADERS, privatePath} from '../http/security.mjs';
 import {CAPABILITIES} from '../runtime/capabilities.mjs';
 import {COMPATIBLE_BUILDS} from '../../dist/build-compatibility.js';
 import {handleAPI, jsonHeaders} from '../http/api.mjs';
@@ -46,6 +50,8 @@ export function createGameServer({
   queueClock,
   arenaRandom,
   socialStore = null,
+  adminConfig = {},
+  adminStore = new MemoryAdminStore(),
 } = {}) {
   if (!tls && !tlsProxy)
     throw Error(
@@ -67,6 +73,13 @@ export function createGameServer({
     store: socialStore,
     room: (code) => rooms.get(code),
   });
+  const admin = new AdminAuth({
+    pinHash: adminConfig.ADMIN_PIN_HASH,
+    email: adminConfig.ADMIN_EMAIL,
+    secret: adminConfig.ADMIN_SECRET,
+    store: adminStore,
+    sendMail: adminConfig.sendMail || adminMailer(adminConfig),
+  });
   let closed = false;
   const secure = (request) =>
     !!request.socket.encrypted ||
@@ -82,6 +95,9 @@ export function createGameServer({
   };
   const httpHandler = async (request, response) => {
     const origin = request.headers.origin;
+    if (secure(request))
+      for (const [key, value] of Object.entries(SECURITY_HEADERS))
+        response.setHeader(key, value);
     // The provider's health probe may be local HTTP. It carries no game data.
     let url;
     try {
@@ -97,12 +113,33 @@ export function createGameServer({
         region,
         rooms: rooms.size,
         queued: queue.waiting.size,
-        runtime: service.metrics.snapshot(),
       });
       return;
     }
     if (!secure(request)) {
       json(response, 426, {error: 'HTTPS is required.'});
+      return;
+    }
+    if (privatePath(url.pathname)) {
+      json(response, 404, {error: 'Not found.'});
+      return;
+    }
+    if (url.pathname.startsWith('/api/admin/')) {
+      const result = await handleAdmin({
+        method: request.method,
+        path: url.pathname,
+        origin: origin || '',
+        serverOrigin: publicOrigin || 'https://' + request.headers.host,
+        cookieHeader: request.headers.cookie || '',
+        address: request.socket.remoteAddress,
+        contentType: request.headers['content-type'] || '',
+        body: request,
+        admin,
+        service,
+      });
+      if (result.setCookies?.length)
+        response.setHeader('Set-Cookie', result.setCookies);
+      json(response, result.status, result.data);
       return;
     }
     if (url.pathname === '/server-config.json' && request.method === 'GET') {
@@ -154,7 +191,11 @@ export function createGameServer({
         root,
         '.' +
           decodeURIComponent(
-            url.pathname === '/' ? '/index.html' : url.pathname,
+            url.pathname === '/'
+              ? '/index.html'
+              : url.pathname === '/admin'
+                ? '/admin.html'
+                : url.pathname,
           ),
       );
     } catch {

@@ -37,14 +37,15 @@ export const until = async (check, label, timeout = 8000) => {
     await delay(10);
   }
 };
-export async function cloudflareServer(t) {
+export async function cloudflareServer(t, {bindings={},outboundService}={}) {
   const mf = new Miniflare({
     modules: true,
     scriptPath: join(output, 'cloudflare-worker.js'),
     compatibilityDate: config.compatibility_date,
     compatibilityFlags: config.compatibility_flags,
     durableObjects: {ARENA: {className: 'ArenaService', useSQLite: true}},
-    bindings: config.vars,
+    bindings: {...config.vars,...bindings},
+    ...(outboundService?{outboundService}:{}),
     assets: {
       directory: resolve(root, config.assets.directory),
       binding: config.assets.binding,

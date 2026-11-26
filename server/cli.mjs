@@ -15,7 +15,15 @@ export async function runServer() {
     const tlsProxy =
       (process.env.TLS_PROXY === 'render' && process.env.RENDER === 'true') ||
       process.env.TLS_PROXY === 'trusted';
+    const adminFiles = new FileProfileStore(
+      process.env.ADMIN_DATA_DIR || resolve('.admin-data'),
+    );
     app = createGameServer({
+      adminConfig: process.env,
+      adminStore: {
+        get: async (key) => (await adminFiles.list({prefix: key})).get(key),
+        put: (key, value) => adminFiles.put(key, value),
+      },
       tls,
       tlsProxy,
       publicOrigin:

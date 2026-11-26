@@ -12,6 +12,7 @@ session/    Authoritative game session and shared match lifecycle
 transport/  Reliable and binary snapshot sending/backpressure
 input/      Validated 120 Hz control timeline
 auth/       Anonymous guest sessions and single-use origin-bound tickets
+admin/      PIN verification, expiring email codes and private operational APIs
 matchmaking/ Whole-party tickets, team packing, socket transfers and 60-second bot fallback
 social/     Profiles, friends, presence, invitations and lobby discovery
 storage/    Serialized atomic Node profile persistence
@@ -39,7 +40,7 @@ per callback and retains up to 150 ms of short debt; time beyond that is counted
 as discarded debt rather than causing an unbounded catch-up spiral. Rooms publish
 the freshest state once after catch-up. Paused/lobby time is never simulated.
 
-`/health` includes anonymous bounded-window timing/debt counters. No player names,
+`/api/admin/overview` includes bounded-window timing/debt counters after two-step admin authentication. Public `/health` keeps minimal build/room/queue status. No player names,
 addresses, credentials, invite codes or positions appear there. `/server-config.json`
 advertises supported modes and protocol features for future clients. HTTP bodies
 are limited to 4096 bytes in both adapters; WebSocket packets and input queues
@@ -59,3 +60,5 @@ backpressure. Do not accept client positions or client time deltas as authority.
 Checks: `npm test`, `npm run check`, `npm run cloudflare:check`.
 CPU benchmark: `node scripts/benchmark-runtime.mjs output.json` on an idle machine.
 Deployment and two-PC verification: [`docs/dedicated-server.md`](../docs/dedicated-server.md).
+
+Admin setup and security boundaries: [admin-security.md](../docs/admin-security.md). Private settings are required; no PIN-only or development bypass is available.

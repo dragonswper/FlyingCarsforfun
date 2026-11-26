@@ -16,3 +16,8 @@ secrets
 tests
 docs
 *.log
+
+# Private admin setup and persisted authentication state.
+.admin-setup
+.admin-data
+.social-data

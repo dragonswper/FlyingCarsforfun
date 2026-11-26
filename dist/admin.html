@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin · Boost Circuit</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="stylesheet" href="admin.css" />
+    <script src="admin.js" type="module"></script>
+  </head>
+  <body>
+    <main>
+      <a class="back" href="/">← BACK TO GAME</a>
+      <header>
+        <p class="eyebrow">BOOST CIRCUIT · PRIVATE ACCESS</p>
+        <h1>Server admin</h1>
+        <p>
+          Sign in with your PIN and the one-time code sent to the configured
+          admin email.
+        </p>
+      </header>
+      <p id="status" role="status" aria-live="polite">
+        Checking secure admin access…
+      </p>
+      <section id="setup" hidden>
+        <h2>Admin access is locked</h2>
+        <p>
+          The private server secrets and email service must be configured before
+          sign-in is available. The game remains available.
+        </p>
+        <p>
+          Do not enter API keys, email passwords or server secrets on this page.
+        </p>
+      </section>
+      <form id="pin-form" hidden>
+        <label for="pin">ADMIN PIN</label
+        ><input
+          id="pin"
+          type="password"
+          inputmode="numeric"
+          pattern="[0-9]{4,12}"
+          minlength="4"
+          maxlength="12"
+          autocomplete="current-password"
+          required
+        /><button type="submit">EMAIL A SIGN-IN CODE</button
+        ><small>The PIN alone does not open the dashboard.</small>
+      </form>
+      <form id="code-form" hidden>
+        <label for="code">8-DIGIT EMAIL CODE</label
+        ><input
+          id="code"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]{8}"
+          minlength="8"
+          maxlength="8"
+          autocomplete="one-time-code"
+          required
+        /><button type="submit">VERIFY & OPEN ADMIN</button
+        ><button id="restart" type="button" class="secondary">
+          USE PIN AGAIN</button
+        ><small>Codes expire after five minutes and can be used once.</small>
+      </form>
+      <section id="dashboard" hidden>
+        <div class="dashboard-heading">
+          <h2>Server overview</h2>
+          <button id="logout" type="button" class="secondary">SIGN OUT</button>
+        </div>
+        <p>
+          Anonymous operational metrics. Player names, messages and credentials
+          are excluded.
+        </p>
+        <dl id="metrics"></dl>
+        <button id="refresh" type="button">REFRESH METRICS</button
+        ><small
+          >Admin sessions expire after 15 minutes. Sign in again when
+          needed.</small
+        >
+      </section>
+      <footer>HTTPS · Expiring email codes · Server-side access checks</footer>
+    </main>
+  </body>
+</html>
