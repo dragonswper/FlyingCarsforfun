@@ -175,6 +175,9 @@ try {
           [mobile ? "tap" : "click"]();
         await waitRandom(p, "training");
         if (!mobile) {
+          // Keep synthetic repeated clicks off the HUD. Native pointer-lock
+          // movement/attacks are covered in the separate desktop mode case.
+          await p.mouse.move(500, 325);
           await p.mouse.down({ button: "right" });
           await p.mouse.up({ button: "right" });
           await p.waitForFunction(
@@ -194,6 +197,7 @@ try {
           await p.waitForFunction(
             () =>
               randomEras.getState().player.phase === "IDLE" &&
+              !randomEras.getState().player.guarding &&
               randomEras.getState().player.stamina >= 22,
           );
           const previous = await p.evaluate(
@@ -243,6 +247,7 @@ try {
         await p.waitForFunction(
           () =>
             randomEras.getState().player.phase === "IDLE" &&
+            !randomEras.getState().player.guarding &&
             randomEras.getState().player.stamina >= 22,
         );
         const hits = await p.evaluate(
@@ -274,7 +279,10 @@ try {
       },
       {
         mobile,
-        init: () =>
+        init: () => {
+          // CDP mouse presses can warp the native locked cursor in headless
+          // Chromium. Exercise Focus with real drag-look input instead.
+          HTMLCanvasElement.prototype.requestPointerLock = undefined;
           localStorage.setItem(
             "random-eras.settings.v2",
             JSON.stringify({
@@ -283,7 +291,8 @@ try {
               attackInput: "click",
               master: 0,
             }),
-          ),
+          );
+        },
       },
     );
 

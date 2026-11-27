@@ -82,13 +82,19 @@ export async function browserFixture() {
         pass: false,
         error: e.message,
         stack: e.stack,
+        gameState: await page
+          .evaluate(() => window.randomEras?.getState() ?? null)
+          .catch(() => null),
         errors,
         consoleErrors,
       });
       console.log("FAIL " + name + ": " + e.message);
     } finally {
       // Keep completed results even if a later GPU test or runner is interrupted.
-      await writeFile(resolve(out, 'results.json'), JSON.stringify({browser: 'Chromium', results}, null, 2));
+      await writeFile(
+        resolve(out, "results.json"),
+        JSON.stringify({ browser: "Chromium", results }, null, 2),
+      );
       await context.close();
     }
   }

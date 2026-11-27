@@ -59,7 +59,9 @@ the browser tests.
 
 These are functional tests using Chromium's software WebGL renderer, plus touch
 event emulation. They are not a measurement of physical phone performance,
-Safari behaviour, controller hardware or real cross-house NAT/latency. The local
+Safari behaviour, controller hardware or real cross-house NAT/latency. The repeated
+Focus attack scenario uses drag-look to avoid CDP cursor warps under native
+pointer lock; native capture remains covered by the general desktop case. The local
 Arena test uses its documented two-tab transport; the dedicated-server test uses
 two separate browser profiles. Real WebRTC connectivity still depends on the
 players' networks and available ICE routes. Browser autoplay and fullscreen
