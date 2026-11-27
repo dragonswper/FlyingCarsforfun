@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#101315" />
+    <meta
+      name="description"
+      content="Your browser arcade. Jump into Boost Circuit, explore your games, and build a personal collection with Playdock."
+    />
+    <meta name="referrer" content="no-referrer" />
+    <title>Playdock — Your browser arcade</title>
+    <link rel="icon" type="image/svg+xml" href="assets/icon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to games</a>
+    <svg
+      class="icon-sprite"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <symbol id="i-grid" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" />
+          <rect x="14" y="3" width="7" height="7" rx="1.5" />
+          <rect x="3" y="14" width="7" height="7" rx="1.5" />
+          <rect x="14" y="14" width="7" height="7" rx="1.5" />
+        </symbol>
+        <symbol id="i-heart" viewBox="0 0 24 24">
+          <path
+            d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"
+          />
+        </symbol>
+        <symbol id="i-clock" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </symbol>
+        <symbol id="i-search" viewBox="0 0 24 24">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </symbol>
+        <symbol id="i-plus" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </symbol>
+        <symbol id="i-close" viewBox="0 0 24 24">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </symbol>
+        <symbol id="i-play" viewBox="0 0 24 24">
+          <path d="m8 4 12 8L8 20Z" />
+        </symbol>
+        <symbol id="i-game" viewBox="0 0 24 24">
+          <path d="M7 7h10c3 0 4 4 4 8s-3 4-5 0H8c-2 4-5 4-5 0S4 7 7 7Z" />
+          <path d="M8 9v5M5.5 11.5h5M16 10h.01M18 13h.01" />
+        </symbol>
+        <symbol id="i-settings" viewBox="0 0 24 24">
+          <path
+            d="m9 3-.8 3-2.6.8L3 5.9l-1 3 2.2 2v2.2L2 15l1 3 3-.7L8 19l1 3h4l1-3 2-1.7 3 .7 1-3-2.2-1.9v-2.2L20 9l-1-3-2.7.9L14 6l-1-3Z"
+          />
+          <circle cx="11" cy="12.5" r="3" />
+        </symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </symbol>
+        <symbol id="i-sport" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path
+            d="m12 7 4 3-1.5 4h-5L8 10ZM12 3v4M21 9l-5 1M18 19l-3.5-5M6 19l3.5-5M3 9l5 1"
+          />
+        </symbol>
+        <symbol id="i-bolt" viewBox="0 0 24 24">
+          <path d="m13 2-9 12h7l-1 8 10-13h-7Z" />
+        </symbol>
+        <symbol id="i-compass" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="m16 8-2 6-6 2 2-6Z" />
+        </symbol>
+      </defs>
+    </svg>
+    <div id="nav-shade" hidden></div>
+    <aside class="sidebar" id="sidebar" aria-label="Game navigation">
+      <a class="brand" href="#library" aria-label="Playdock home"
+        ><span class="brand-mark"
+          ><svg><use href="#i-game" /></svg></span
+        >playdock<span class="brand-period">.</span></a
+      >
+      <button
+        class="mobile-close icon-button"
+        id="nav-close"
+        aria-label="Close navigation"
+      >
+        <svg><use href="#i-close" /></svg>
+      </button>
+      <span class="nav-label">YOUR SPACE</span>
+      <nav class="main-nav">
+        <button class="nav-item active" data-view="library" aria-current="page">
+          <svg><use href="#i-grid" /></svg>Game library<span id="nav-count"
+            >4</span
+          >
+        </button>
+        <button class="nav-item" data-view="favourites">
+          <svg><use href="#i-heart" /></svg>Favourites<span id="favourite-count"
+            >0</span
+          >
+        </button>
+        <button class="nav-item" data-view="recent">
+          <svg><use href="#i-clock" /></svg>Recently played
+        </button>
+      </nav>
+      <span class="nav-label explore-label">EXPLORE</span>
+      <nav class="genre-nav" aria-label="Browse by game style">
+        <button class="nav-item" data-genre="Sports">
+          <svg><use href="#i-sport" /></svg>Sports
+        </button>
+        <button class="nav-item" data-genre="Action">
+          <svg><use href="#i-bolt" /></svg>Action
+        </button>
+        <button class="nav-item" data-genre="Adventure">
+          <svg><use href="#i-compass" /></svg>Adventure
+        </button>
+      </nav>
+      <div class="sidebar-note">
+        <span class="note-decoration">✳</span
+        ><strong>Less downloading.<br />More playing.</strong>
+        <p>Your next game is a click away.</p>
+      </div>
+      <button
+        class="profile"
+        id="profile-button"
+        aria-label="Open player preferences"
+      >
+        <span class="avatar" id="profile-initial">P</span
+        ><span
+          ><strong id="profile-name">Player</strong
+          ><small>LOCAL PROFILE</small></span
+        ><svg><use href="#i-settings" /></svg>
+      </button>
+    </aside>
+    <div class="app-shell">
+      <header class="app-header">
+        <button
+          class="mobile-menu icon-button"
+          id="nav-open"
+          aria-label="Open navigation"
+          aria-controls="sidebar"
+          aria-expanded="false"
+        >
+          <svg><use href="#i-menu" /></svg>
+        </button>
+        <div class="breadcrumb">
+          <span>Your browser arcade</span
+          ><span class="breadcrumb-divider">/</span
+          ><strong id="breadcrumb-view">Library</strong>
+        </div>
+        <form class="search" role="search" id="search-form">
+          <svg aria-hidden="true"><use href="#i-search" /></svg
+          ><label class="sr-only" for="search-input">Search your games</label
+          ><input
+            type="search"
+            id="search-input"
+            placeholder="Search games…"
+            autocomplete="off"
+            maxlength="80"
+          /><kbd>/</kbd>
+        </form>
+        <button class="header-add" id="add-game-top">
+          <svg aria-hidden="true"><use href="#i-plus" /></svg
+          ><span>Add game</span>
+        </button>
+      </header>
+      <main class="app-main" id="main" tabindex="-1">
+        <section class="welcome" id="welcome">
+          <div>
+            <p class="eyebrow">PICK UP. PLAY ON.</p>
+            <h1>Good games. <span>Great company.</span></h1>
+          </div>
+          <span class="welcome-note"
+            ><svg aria-hidden="true"><use href="#i-game" /></svg
+            ><span id="collection-count">4 games in your collection</span></span
+          >
+        </section>
+        <section class="featured" id="feature" aria-labelledby="feature-title">
+          <img
+            class="feature-art"
+            src="assets/hero.jpg"
+            alt="An original blue rocket car launching across a colourful arena toward a football"
+            width="1600"
+            height="900"
+            fetchpriority="high"
+          />
+          <div class="feature-content">
+            <span class="feature-label"><span></span>IN THE SPOTLIGHT</span>
+            <div class="feature-genres">SPORTS <b>·</b> MULTIPLAYER</div>
+            <h2 id="feature-title">BOOST<br /><span>CIRCUIT</span></h2>
+            <p>
+              Big boosts. Bigger plays.<br />Your field. Your next highlight.
+            </p>
+            <a
+              class="play-main launch-link"
+              href="https://flyingcarsforfun.connstors.workers.dev/"
+              data-game="boost-circuit"
+              target="_blank"
+              rel="noopener noreferrer"
+              ><svg aria-hidden="true"><use href="#i-play" /></svg>Play now</a
+            ><span class="launch-note" id="launch-note"
+              >Opens in a new tab · No install</span
+            >
+          </div>
+          <div class="feature-bottom">
+            <span>CAR SOCCER <i>/</i> HOOPS <i>/</i> FREE PLAY</span
+            ><span class="feature-device"
+              ><svg aria-hidden="true"><use href="#i-game" /></svg>Keyboard ·
+              Controller · Touch</span
+            >
+          </div>
+        </section>
+        <section class="library-section" aria-labelledby="library-title">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow" id="section-eyebrow">
+                FIND YOUR NEXT FAVOURITE
+              </p>
+              <h2 id="library-title">
+                Your game library <span id="result-count">4</span>
+              </h2>
+            </div>
+            <button class="text-button" id="reset-filters" hidden>
+              Clear filters
+            </button>
+          </div>
+          <div class="filter-row" aria-label="Filter games by style">
+            <button class="filter active" data-filter="All" aria-pressed="true">
+              All games</button
+            ><button class="filter" data-filter="Sports" aria-pressed="false">
+              Sports</button
+            ><button class="filter" data-filter="Action" aria-pressed="false">
+              Action</button
+            ><button
+              class="filter"
+              data-filter="Adventure"
+              aria-pressed="false"
+            >
+              Adventure</button
+            ><button class="filter" data-filter="Puzzle" aria-pressed="false">
+              Puzzle</button
+            ><button
+              class="filter"
+              data-filter="Other"
+              aria-pressed="false"
+              hidden
+            >
+              Other
+            </button>
+          </div>
+          <div class="game-grid" id="game-grid"></div>
+          <div class="empty-state" id="empty-state" hidden>
+            <svg aria-hidden="true"><use href="#i-game" /></svg>
+            <h3 id="empty-title">No games found</h3>
+            <p id="empty-description">Try another title or game style.</p>
+            <button class="button primary" id="empty-action">
+              Show all games
+            </button>
+          </div>
+          <p class="access-note" id="access-note">
+            <span>GOOD TO KNOW</span> Private prototypes keep their existing
+            access settings. Sign in with an invited account to play them.
+          </p>
+        </section>
+        <section
+          class="continue-section"
+          id="continue-section"
+          hidden
+          aria-labelledby="continue-title"
+        >
+          <div class="section-title">
+            <h2 id="continue-title">Jump back in</h2>
+            <button class="text-button" id="show-recent">
+              View recently played
+            </button>
+          </div>
+          <div id="continue-list" class="continue-list"></div>
+        </section>
+        <section class="collection-callout">
+          <div class="callout-icon">
+            <svg aria-hidden="true"><use href="#i-plus" /></svg>
+          </div>
+          <div>
+            <h2>Make room for more play.</h2>
+            <p>Got another browser game? Add its link to your collection.</p>
+          </div>
+          <button class="button secondary" id="add-game-bottom">
+            Add a game
+          </button>
+        </section>
+      </main>
+      <footer class="app-footer">
+        <a href="#library" class="footer-logo">playdock<span>.</span></a
+        ><span>Different worlds. One place to play.</span
+        ><button id="privacy-button">Local data &amp; preferences</button>
+      </footer>
+    </div>
+    <dialog id="add-dialog" aria-labelledby="add-title">
+      <form id="add-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">YOUR COLLECTION</p>
+            <h2 id="add-title">Add a game</h2>
+          </div>
+          <button
+            type="button"
+            class="icon-button"
+            data-close="add-dialog"
+            aria-label="Close add game"
+          >
+            <svg><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <p>
+          Save a browser game link on this device. It stays in your personal
+          library.
+        </p>
+        <label for="game-title">Game name</label
+        ><input
+          id="game-title"
+          required
+          maxlength="60"
+          placeholder="What are we playing?"
+          autocomplete="off"
+        /><label for="game-url">Game URL</label
+        ><input
+          type="url"
+          id="game-url"
+          required
+          maxlength="2048"
+          placeholder="https://…"
+          autocomplete="off"
+        /><label for="game-genre">Game style</label
+        ><select id="game-genre">
+          <option>Action</option>
+          <option>Adventure</option>
+          <option>Sports</option>
+          <option>Puzzle</option>
+          <option>Other</option>
+        </select>
+        <p id="add-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button
+            type="button"
+            class="button secondary"
+            data-close="add-dialog"
+          >
+            Cancel</button
+          ><button class="button primary" type="submit">Add to library</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="details-dialog" aria-labelledby="detail-title">
+      <div id="details-content"></div>
+    </dialog>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <form id="settings-form">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">MAKE YOURSELF AT HOME</p>
+            <h2 id="settings-title">Your preferences</h2>
+          </div>
+          <button
+            class="icon-button"
+            type="button"
+            data-close="settings-dialog"
+            aria-label="Close preferences"
+          >
+            <svg><use href="#i-close" /></svg>
+          </button>
+        </div>
+        <label for="player-name">Hub display name</label
+        ><input
+          id="player-name"
+          maxlength="30"
+          required
+          autocomplete="nickname"
+        />
+        <p class="input-help">
+          Your name here. Each game keeps its own player profile.
+        </p>
+        <label class="checkbox-label"
+          ><input type="checkbox" id="new-tab" /><span
+            >Open games in a new tab</span
+          ></label
+        >
+        <div class="local-note">
+          <strong>Saved on this device</strong>
+          <p>
+            Your name, favourite games, added links and launch history stay in
+            this browser. No account is created, and no game passwords or admin
+            codes are stored here.
+          </p>
+        </div>
+        <button type="button" id="clear-history" class="text-button">
+          Clear recently played
+        </button>
+        <div class="dialog-actions">
+          <button class="button primary" type="submit">Save preferences</button>
+        </div>
+      </form>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <noscript
+      ><p class="noscript">
+        JavaScript is needed for your library. You can still
+        <a href="https://flyingcarsforfun.connstors.workers.dev/"
+          >open Boost Circuit</a
+        >.
+      </p></noscript
+    >
+  </body>
+</html>

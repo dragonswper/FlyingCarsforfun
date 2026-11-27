@@ -8,6 +8,8 @@ It includes Champions Field and many more arenas, 16 selectable vehicles, the su
  
 **Hosted game:** https://flyingcarsforfun.connstors.workers.dev
 
+**Game hub:** [Playdock](https://flyingcarsforfun.connstors.workers.dev/hub/) brings Boost Circuit and your other browser games into one library, with search, favourites, recently played and personal game links. [Hub source and local data](docs/game-hub.md).
+
 **Private admin:** `/admin` uses a PIN plus an expiring email code. [Private setup and transport security](docs/admin-security.md). Admin access stays locked until the server secrets and email service are configured.
 
 **Latest update — 1.31 Overdrive:** Party matchmaking, adaptive networking, aerial bot tactics, Replay Studio, private mutators, saved garage loadouts, mobile tuning and three new modes with original Blender venues. Refresh all players’ tabs. [v1.31 notes and testing](docs/release-1.31.md). [v1.30 Cup & Clubhouse](docs/release-1.30.md). [Connection route test](https://flyingcarsforfun.connstors.workers.dev/connection-test).
