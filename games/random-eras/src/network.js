@@ -1,4 +1,4 @@
-const CODE_VERSION = 'RE3';
+const CODE_VERSION = 'RE4';
 const CHANNEL_LABEL = 'random-eras-arena';
 const ICE_TIMEOUT = 7_000;
 const MAX_CODE_LENGTH = 24_000;

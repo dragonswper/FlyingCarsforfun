@@ -109,5 +109,5 @@ export function createRelativeMouse(canvas) {
     }
   }
 
-  return { isCaptured, capture, sample: motion.sample, reset: motion.reset };
+  return { isCaptured, capture, sample: motion.sample, reset: motion.reset, addDelta: motion.addDelta };
 }

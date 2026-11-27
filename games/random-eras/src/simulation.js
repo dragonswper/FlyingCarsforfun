@@ -1,4 +1,5 @@
 import { AttackPhase, CombatTuning, Cuts, advanceCombat, createCombatState, isSwinging, makeFlick } from './combat.js';
+import { createCombatFlow, advanceCombatFlow, recordCleanHit, breakHitCombo, actorTimeScale, FlowTuning } from './combat-flow.js';
 
 export const WEAPONS = Object.freeze([
   { id: 'bronze-sword', name: 'Bronze Sword', era: 'Bronze Age', weight: 1.3, damage: 24, reach: 2.85, windup: 0.17, swing: 0.24, recovery: 0.26, stamina: 17, color: '#ddad6b', description: 'Quick strikes with a short reach.' },
@@ -56,7 +57,7 @@ function makeActor(id, team, spawn, weaponId, region, name) {
     health: 100, maxHealth: 100, stamina: 100, maxStamina: 100,
     stats: { swings: 0, hits: 0, damage: 0, blocks: 0, parries: 0, kills: 0, chain: 0, longestCombo: 0, recordedSwing: 0 },
     alive: true, guarding: false, aimX: 0.65, aimY: 0.15, speed: 0,
-    combat: createCombatState(), regenDelay: 0, guardTime: 0, guardLocked: false, stagger: 0,
+    combat: createCombatState(), flow: createCombatFlow(), clock: 0, regenDelay: 0, guardTime: 0, guardLocked: false, stagger: 0,
     weaponId, inventory: [weaponId], respawnAt: 0, attackAt: 0, routeAt: 0,
     route: [], routeGoal: null, approachSide: team % 2 ? -1 : 1,
   };
@@ -68,7 +69,7 @@ export function createGame(world, { arenaWeapon, startingWeapon = 'steel-longswo
   const game = {
     world, actors: [], cores: [], pickups: [], events: [], status: 'playing', time: 0,
     player: null, rival: null, versus: arena && (versus === 'online' || versus === true) ? 'online' : 'bot',
-    randomState: seedValue(world.seed), hitStop: 0,
+    randomState: seedValue(world.seed), hitStop: 0, sceneTime: 0,
     training: training ? { swings: 0, fixedHits: 0, movingHits: 0, combos: 0, guardUsed: false } : null,
   };
 
@@ -196,14 +197,15 @@ function findRoute(world, from, to, endClearance) {
 }
 
 function routeHeading(game, actor, target, endClearance, targetVisible) {
+  const time = actor.clock ?? game.time;
   if (targetVisible) {
     actor.route = [];
     actor.routeGoal = null;
     return heading(actor, target);
   }
-  if (game.time >= actor.routeAt && (!actor.routeGoal || distance(target, actor.routeGoal) > 2 || actor.route.length === 0)) {
+  if (time >= actor.routeAt && (!actor.routeGoal || distance(target, actor.routeGoal) > 2 || actor.route.length === 0)) {
     actor.route = findRoute(game.world, actor, target, endClearance);
-    actor.routeAt = game.time + 1.2;
+    actor.routeAt = time + 1.2;
     actor.routeGoal = { x: target.x, z: target.z };
   }
   while (actor.route.length && distance(actor, actor.route[0]) < 0.55) actor.route.shift();
@@ -230,12 +232,13 @@ const BOT_STYLES = Object.freeze({
 });
 
 function getAiInput(game, actor) {
+  const time = actor.clock ?? game.time;
   const player = game.player;
   const arena = game.world.mode === 'arena';
   const ownCore = game.cores[actor.team];
   const weapon = getWeapon(actor.weaponId);
   const playerDistance = distance(actor, player);
-  const raid = game.time > 38 + actor.team * 14;
+  const raid = time > 38 + actor.team * 14;
   const defend = playerDistance < 10 || (distance(player, ownCore || actor.spawn) < 7.5 && playerDistance < 15);
   const target = (arena || defend) && player.alive ? player : raid ? game.cores[0] : actor.spawn;
   const spacing = distance(actor, target);
@@ -252,7 +255,7 @@ function getAiInput(game, actor) {
   let attack = false;
   const swinging = isSwinging(actor.combat);
   const guard = duel && isSwinging(player.combat) && playerDistance < 4.6 && !swinging && actor.stamina > 22
-    && Math.sin(game.time / patience * 3.1 + actor.team) > 0.14;
+    && Math.sin(time / patience * 3.1 + actor.team) > 0.14;
 
   if (spacing > (fighting ? weapon.reach * 0.75 : 1.05) || (fighting && !targetVisible)) {
     const direction = routeHeading(game, actor, target, endClearance, targetVisible);
@@ -265,26 +268,27 @@ function getAiInput(game, actor) {
     moveZ = -Math.sin(facing) * actor.approachSide * orbit - Math.cos(facing) * retreat;
   }
 
-  if (fighting && reachable && targetVisible && !guard && actor.combat.phase === AttackPhase.IDLE && game.time >= actor.attackAt) {
+  if (fighting && reachable && targetVisible && !guard && actor.combat.phase === AttackPhase.IDLE && time >= actor.attackAt) {
     const feint = duel && random(game) < feintChance;
     attack = !feint && actor.stamina >= weapon.stamina;
-    actor.feintUntil = feint ? game.time + 0.22 : 0;
-    actor.attackAt = game.time + (feint ? 0.32 : patience + random(game) * 0.42) + (player.guarding && !feint ? 0.16 : 0);
+    actor.feintUntil = feint ? time + 0.22 : 0;
+    actor.attackAt = time + (feint ? 0.32 : patience + random(game) * 0.42) + (player.guarding && !feint ? 0.16 : 0);
     if (random(game) > 0.54) actor.approachSide *= -1;
   }
 
   const aimX = guard ? player.combat.gesture.x : actor.approachSide * 0.8;
-  const aimY = guard ? -player.combat.gesture.y : game.time < actor.feintUntil ? 0.95 : Math.sin(game.time * 1.8) * 0.80;
+  const aimY = guard ? -player.combat.gesture.y : time < actor.feintUntil ? 0.95 : Math.sin(time * 1.8) * 0.80;
   const gesture = attack ? makeFlick(aimX, aimY, CombatTuning.MinFlickVelocity) : null;
   return { moveX, moveZ, facing, gesture, guard, aimX, aimY };
 }
 
 function getTrainingInput(game, actor) {
+  const time = actor.clock ?? game.time;
   if (actor.drill === 'fixed') return EMPTY_INPUT;
   const facing = heading(actor, game.player);
   // Predictable strafes let players track a route and make small corrections before a flick.
   const fast = actor.drill === 'quick';
-  const phase = game.time * (fast ? 1.55 : 0.82) + actor.team;
+  const phase = time * (fast ? 1.55 : 0.82) + actor.team;
   const targetX = actor.spawn.x + Math.sin(phase) * (fast ? 2.45 : 1.45);
   const targetZ = actor.spawn.z + Math.sin(phase * 0.5) * (fast ? 0.45 : 0.2);
   return { facing, moveX: clamp((targetX - actor.x) * 0.62, -0.68, 0.68), moveZ: clamp((targetZ - actor.z) * 0.6, -0.4, 0.4) };
@@ -372,6 +376,11 @@ function damageActor(game, attacker, target, weapon, gesture) {
     target.stagger = Math.max(target.stagger, rules.stagger);
   }
   recordContact(attacker, Math.min(damage, target.health));
+  const clean = damage > 0 && (type === 'hit' || type === 'guard-break');
+  if (clean) {
+    recordCleanHit(attacker.flow, attacker.combat.swingId);
+    attacker.stats.longestHitCombo = attacker.flow.best;
+  }
   if (type === 'block') target.stats.blocks++;
   if (type === 'parry') target.stats.parries++;
   target.health = Math.max(0, target.health - damage);
@@ -384,6 +393,7 @@ function damageActor(game, attacker, target, weapon, gesture) {
   game.hitStop = Math.max(game.hitStop, (2 + Math.round(Math.min(3, weapon.weight * 0.8))) / 60);
   emit(game, type, target, { actorId: attacker.id, targetId: target.id, weaponId: weapon.id, damage, directional, surface });
   if (target.health === 0) downActor(game, target, attacker.id);
+  return clean;
 }
 
 function downActor(game, target, attackerId) {
@@ -392,6 +402,7 @@ function downActor(game, target, attackerId) {
   target.speed = 0;
   target.combat = { ...createCombatState(), swingId: target.combat.swingId };
   target.guarding = false;
+  advanceCombatFlow(target.flow, 0, {alive: false});
   target.respawnAt = game.time + (target.drill ? 1 : 2.5);
   emit(game, 'actor-down', target, { actorId: target.id, attackerId });
 }
@@ -399,6 +410,8 @@ function downActor(game, target, attackerId) {
 function damageCore(game, attacker, core, weapon) {
   const damage = Math.round(weapon.damage * (attacker.team === 0 ? 1.25 : 0.48));
   recordContact(attacker, Math.min(damage, core.health));
+  recordCleanHit(attacker.flow, attacker.combat.swingId);
+  attacker.stats.longestHitCombo = attacker.flow.best;
   core.health = Math.max(0, core.health - damage);
   emit(game, 'core-hit', core, { actorId: attacker.id, targetId: core.id, team: core.team, damage, weaponId: weapon.id, surface: 'stone' });
   if (core.health !== 0) return;
@@ -408,16 +421,19 @@ function damageCore(game, attacker, core, weapon) {
 }
 
 function connectStrike(game, actor, weapon, gesture) {
+  let clean = false;
   for (const target of game.actors) {
     if (target.team !== actor.team && target.alive && inStrike(game, actor, target, ACTOR_RADIUS, weapon, gesture)) {
-      damageActor(game, actor, target, weapon, gesture);
+      clean = damageActor(game, actor, target, weapon, gesture) || clean;
     }
   }
   for (const core of game.cores) {
     if (core.team !== actor.team && core.health > 0 && inStrike(game, actor, core, CORE_RADIUS, weapon, gesture, CORE_RADIUS + ACTOR_RADIUS)) {
       damageCore(game, actor, core, weapon);
+      clean = true;
     }
   }
+  if (!clean) breakHitCombo(actor.flow);
 }
 
 function updateActor(game, actor, input, dt) {
@@ -527,20 +543,32 @@ export function stepGame(game, elapsed, input = EMPTY_INPUT, rivalInput = EMPTY_
   game.events.length = 0;
   if (game.status !== 'playing' || !Number.isFinite(elapsed) || elapsed <= 0) return game;
   const dt = Math.min(elapsed, 0.05);
+  const humanInputs = [input, game.versus === 'online' ? rivalInput : EMPTY_INPUT];
+  for (const [index, actor] of game.actors.entries()) {
+    if (advanceCombatFlow(actor.flow, dt, {alive: actor.alive, request: humanInputs[index]?.focus === true}))
+      emit(game, 'focus', actor, {actorId: actor.id});
+  }
   if (game.hitStop > 1e-7) {
     game.hitStop = Math.max(0, game.hitStop - dt);
     return game;
   }
   game.time += dt;
+  game.sceneTime += dt * (game.actors.some(actor => actor.alive && actor.flow.remaining > 0) ? FlowTuning.SlowScale : 1);
+  for (const actor of game.actors) actor.clock += dt * actorTimeScale(game, actor);
   const actorInputs = [input];
   for (const actor of game.actors.slice(1)) {
     actorInputs.push(game.versus === 'online' ? rivalInput : actor.alive
       ? (actor.drill ? getTrainingInput(game, actor) : getAiInput(game, actor)) : EMPTY_INPUT);
   }
   // Collect both fighters' strikes before applying damage so simultaneous hits resolve together.
-  const strikes = game.actors.map((actor, index) => updateActor(game, actor, actorInputs[index], dt));
+  const strikes = game.actors.map((actor, index) => updateActor(game, actor, actorInputs[index], dt * actorTimeScale(game, actor)));
   for (const [index, strike] of strikes.entries()) {
     if (strike) connectStrike(game, game.actors[index], strike.weapon, strike.gesture);
+  }
+  // Apply damage interruptions after all simultaneous strikes, independent of order.
+  for (const event of game.events) if (event.damage > 0 && ['hit', 'guard-break', 'block'].includes(event.type)) {
+    const victim = game.actors.find(actor => actor.id === event.targetId);
+    if (victim) breakHitCombo(victim.flow);
   }
   if (input.interact) collectPickup(game);
   if (game.training && game.player.guardTime > .2) game.training.guardUsed = true;

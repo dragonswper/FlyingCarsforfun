@@ -47,7 +47,7 @@ export const GAMES = Object.freeze([
     image: 'assets/random-eras.svg',
     access: 'Public',
     tags: ['Exploration', 'Melee'],
-    controls: 'Keyboard and mouse',
+    controls: 'Keyboard, mouse and touch',
   },
   {
     id: 'skybreak-classic',

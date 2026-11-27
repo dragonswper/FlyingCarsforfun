@@ -9,6 +9,9 @@ import { WEAPONS, createGame, equipWeapon, getWeapon, nearbyPickup, stepGame } f
 import { createHostSession, createGuestSession, smoothRemoteMovement } from './network.js';
 import { AttackPhase, CombatTuning, comboProgress, isSwinging, makeFlick } from './combat.js';
 import { createRelativeMouse } from './mouse-swing.js';
+import { createTouchControls } from './touch-controls.js';
+import { FlowTuning, actorTimeScale, validCombatFlow } from './combat-flow.js';
+import './combat-flow.css';
 import { createSwingAudio } from './swing-audio.js';
 import { createSettingsStore, keyLabel } from './settings.js';
 import { cleanSeed, createInterface, newSeed, showLoading, writeLedger } from './interface.js';
@@ -39,7 +42,7 @@ const comboArrow = element('reticle-combo');
 const keys = new Set();
 const mouse = createRelativeMouse(canvas);
 const swingAudio = createSwingAudio();
-const store = createSettingsStore();
+const store = createSettingsStore(undefined, { touch: matchMedia('(pointer: coarse)').matches });
 const { state: settings } = store;
 const view = { yaw: 0, pitch: -0.16, firstPerson: true, actorId: undefined };
 const cameraAim = { yaw: view.yaw, pitch: view.pitch };
@@ -51,7 +54,7 @@ const localActor = () => networkRole === 'guest' ? match?.rival : match?.player;
 const remoteActor = () => networkRole === 'guest' ? match?.player : match?.rival;
 const isOnline = () => match?.versus === 'online';
 const canPlay = () => match?.status === 'playing' && !pauseDialog.open && !controlsDialog.open && !settingsDialog.open && !scoreDialog.open && !mapDialog.open;
-const isCapturing = mouse.isCaptured;
+const isCapturing = () => mouse.isCaptured() || touch.enabled || touch.mouseDragEnabled;
 const modal = (dialog) => { if (!dialog.open) dialog.showModal(); };
 const close = (dialog) => { if (dialog.open) dialog.close(); };
 
@@ -74,6 +77,7 @@ const remoteMovement = { moveX: 0, moveZ: 0 };
 let remoteInput = {};
 let remoteInputAt = 0;
 let guestGesture;
+let pendingFocus = false, guestFocus = false;
 let snapshotAt = 0;
 let networkStepAt = 0;
 let lastFrame = 0;
@@ -100,6 +104,23 @@ let peerName = 'Friend';
 let peerHeraldry;
 let arenaStarting = false;
 
+const touch = createTouchControls(canvas, {
+  canPlay,
+  onAttack() {
+    const player = localActor();
+    const now = performance.now(), progress = getComboProgress(player, now);
+    if (canAttack(player, progress))
+      queueAttack(player, makeFlick(aimX, aimY, CombatTuning.MinFlickVelocity), progress, now);
+  },
+  onPickup() { interact = true; },
+  onWeapon() {
+    const player = localActor();
+    if (player?.inventory.length > 1)
+      equipWeapon(match, (player.inventory.indexOf(player.weaponId) + 1) % player.inventory.length);
+  },
+  onView() { if (match?.world.mode !== 'arena') setPerspective(!view.firstPerson); },
+});
+
 for (const weapon of WEAPONS) {
   const option = document.createElement('option');
   option.value = weapon.id;
@@ -111,6 +132,8 @@ weaponSelect.value = 'steel-longsword';
 function releaseInput() {
   keys.clear();
   mouse.reset();
+  touch.reset();
+  pendingFocus = false;
   pendingGesture = undefined;
   if (match && networkRole !== 'guest') localActor().combat.buffered = null;
   Object.assign(cameraAim, { yaw: view.yaw, pitch: view.pitch });
@@ -125,17 +148,18 @@ function setPerspective(firstPerson) {
 }
 
 function unlockPointer() {
-  if (!isCapturing()) return;
+  if (!mouse.isCaptured()) return;
   blockUnlock = true;
-  document.exitPointerLock();
+  document.exitPointerLock?.();
 }
 
 function capturePointer() {
   swingAudio.unlock();
+  if (touch.enabled) return;
+  if (!canvas.requestPointerLock) { touch.allowMouseDrag(); return; }
   mouse.capture().catch((error) => {
-    if (error?.name === 'SecurityError' && !isCapturing() && canPlay()) {
-      flash('Open the game in its own browser tab to capture the mouse.');
-    }
+    touch.allowMouseDrag();
+    if (!mouse.isCaptured() && canPlay()) flash('Hold and drag the game to look around.');
   });
 }
 
@@ -174,8 +198,12 @@ async function startMatch(mode, { worldSeed = newSeed(), arenaWeapon = weaponSel
       console.warn('Map kit unavailable', error);
       return null;
     });
+    const preparation = Promise.all([prepared, graphics]);
+    // The loading animation delays the await; catch early network rejections now
+    // and let the normal startup error handler present them after the animation.
+    preparation.catch(() => {});
     loading = await showLoading({ countdown });
-    const [world, { createRenderer }] = await Promise.all([prepared, graphics]);
+    const [world, { createRenderer }] = await preparation;
     loading.prepare();
     renderer ??= createRenderer(canvas);
     renderer.setQuality(settings.quality, settings.resolution);
@@ -229,7 +257,9 @@ async function startMatch(mode, { worldSeed = newSeed(), arenaWeapon = weaponSel
     const webgl = /webgl/i.test(error?.message ?? '');
     openError(webgl
       ? 'This game needs WebGL 2. Check hardware acceleration or try a current desktop browser.'
-      : 'The world could not load. Try starting the match again.', webgl);
+      : /dynamically imported|module script|Loading chunk|load.*module/i.test(error?.message ?? '')
+        ? 'The game files changed or could not download. Reload to get the latest version.'
+        : 'The world could not load. Reload the game and try again.', webgl);
     return false;
   } finally {
     loading?.done();
@@ -246,6 +276,7 @@ function disconnect() {
   remoteMovement.moveX = remoteMovement.moveZ = 0;
   remoteInputAt = 0;
   guestGesture = undefined;
+  guestFocus = false;
   selfReady = peerReady = arenaStarting = false;
   peerName = 'Friend';
   peerHeraldry = undefined;
@@ -319,7 +350,7 @@ function showScore() {
 
 function getComboProgress(player, now) {
   // Between snapshots, estimate the local guest's progress so the short window stays usable.
-  const lead = networkRole === 'guest' ? clamp((now - snapshotAt) / 1000, 0, 0.075) : 0;
+  const lead = networkRole === 'guest' ? clamp((now - snapshotAt) / 1000, 0, 0.075) * actorTimeScale(match, player) : 0;
   return comboProgress(player.combat, getWeapon(player.weaponId), lead);
 }
 
@@ -341,7 +372,9 @@ function sampleMouse(now, dt) {
   const player = localActor();
   const { phase } = player.combat;
   const progress = getComboProgress(player, now);
-  const canFlick = settings.attackInput === 'swipe' && canAttack(player, progress);
+  const canFlick = !touch.enabled && settings.attackInput === 'swipe' && canAttack(player, progress);
+  const dragged = touch.state.consumeLook();
+  mouse.addDelta(dragged.dx, dragged.dy);
   const { dx, dy, gesture } = mouse.sample(dt, canFlick, settings.swingDistance, settings.swipeSpeed);
   const magnitude = Math.hypot(dx, dy);
   if (magnitude) {
@@ -363,17 +396,17 @@ function sampleMouse(now, dt) {
 function makeInput() {
   if (!canPlay()) return { facing: view.yaw, aimX, aimY, cancelCombo: true };
   const bound = settings.keys;
-  const forward = Number(keys.has(bound.forward) || keys.has('ArrowUp')) - Number(keys.has(bound.back) || keys.has('ArrowDown'));
-  const side = Number(keys.has(bound.right) || keys.has('ArrowRight')) - Number(keys.has(bound.left) || keys.has('ArrowLeft'));
+  const forward = clamp(Number(keys.has(bound.forward) || keys.has('ArrowUp')) - Number(keys.has(bound.back) || keys.has('ArrowDown')) + touch.state.forward, -1, 1);
+  const side = clamp(Number(keys.has(bound.right) || keys.has('ArrowRight')) - Number(keys.has(bound.left) || keys.has('ArrowLeft')) + touch.state.x, -1, 1);
   const sin = Math.sin(view.yaw);
   const cos = Math.cos(view.yaw);
   return {
     moveX: forward * sin - side * cos,
     moveZ: forward * cos + side * sin,
     facing: view.yaw,
-    aimX, aimY, interact, bufferWindow: settings.bufferWindow, guard: guarding,
-    sprint: keys.has(bound.sprint) || (bound.sprint === 'ShiftLeft' && keys.has('ShiftRight')),
-    gesture: pendingGesture?.value,
+    aimX, aimY, interact, bufferWindow: settings.bufferWindow, guard: guarding || touch.state.guard,
+    sprint: touch.state.sprint || keys.has(bound.sprint) || (bound.sprint === 'ShiftLeft' && keys.has('ShiftRight')),
+    gesture: pendingGesture?.value, focus: pendingFocus,
     cancelCombo: !isCapturing(),
   };
 }
@@ -406,6 +439,7 @@ canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 window.addEventListener('blur', releaseInput);
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseInput(); });
 document.addEventListener('pointerlockchange', () => {
+  if (mouse.isCaptured()) touch.useLockedMouse();
   mouse.reset();
   pendingGesture = undefined;
   hudAt = 0;
@@ -431,6 +465,7 @@ document.addEventListener('keydown', (event) => {
   }
   if (code === 'Tab') showScore();
   if (code === settings.keys.pickup) interact = true;
+  if (code === settings.keys.focus) pendingFocus = true;
   if (code === 'KeyV' && match.world.mode !== 'arena') setPerspective(!view.firstPerson);
   if (/^Digit[1-9]$/.test(code)) equipWeapon(match, Number(code.at(-1)) - 1);
 });
@@ -451,6 +486,8 @@ element('arena-roll').addEventListener('click', () => { pitSeed = newSeed(); are
 element('arena-era').addEventListener('change', arenaConfigChanged);
 weaponSelect.addEventListener('change', arenaConfigChanged);
 element('pause').addEventListener('click', showPause);
+element('focus-button').addEventListener('click', () => { if (canPlay()) { pendingFocus = true; canvas.focus({preventScroll: true}); } });
+element('error-reload').addEventListener('click', () => location.reload());
 element('resume').addEventListener('click', resume);
 element('quit').addEventListener('click', returnToMenu);
 element('leave-end').addEventListener('click', returnToMenu);
@@ -509,9 +546,9 @@ function frame(now) {
   if (match.status === 'playing') {
     sampleMouse(now, frameTime);
     if (isOnline() && networkRole === 'guest') {
-      if (now >= networkStepAt || pendingGesture) {
+      if (now >= networkStepAt || pendingGesture || pendingFocus) {
         const sent = network?.send({ type: 'input', input: makeInput() });
-        if (sent) pendingGesture = undefined;
+        if (sent) { pendingGesture = undefined; pendingFocus = false; }
         networkStepAt = now + 33;
       }
     } else if (canPlay() || isOnline()) {
@@ -520,12 +557,13 @@ function frame(now) {
         const input = makeInput();
         const packetAge = now - remoteInputAt;
         const movement = smoothRemoteMovement(remoteMovement, remoteInput, packetAge, 1 / 60);
-        const peer = packetAge < 500 ? { ...remoteInput, ...movement, gesture: guestGesture } : { ...movement, cancelCombo: true };
+        const peer = packetAge < 500 ? { ...remoteInput, ...movement, gesture: guestGesture, focus: guestFocus } : { ...movement, cancelCombo: true };
         const frozen = match.hitStop > 1e-7;
         stepGame(match, 1 / 60, input, peer);
         processEvents(match.events, now);
         if (!frozen) {
           guestGesture = undefined;
+          guestFocus = pendingFocus = false;
           pendingGesture = undefined;
           interact = false;
         }
@@ -653,10 +691,22 @@ function updateHud(now) {
     });
     lastInventory = inventory;
   }
+  const flow = player.flow;
+  element('focus-threat').hidden = actorTimeScale(match, player) === 1;
+  setText('combo-count', `${flow.count} HIT COMBO`);
+  setText('combo-best', `BEST ${flow.best}`);
+  element('combo-timer').value = flow.window;
+  element('focus-meter').value = flow.remaining > 0 ? flow.remaining / FlowTuning.FocusDuration * 100 : flow.charge;
+  element('focus-button').disabled = flow.charge < 100 || flow.remaining > 0 || !canPlay();
+  element('focus-button').setAttribute('aria-pressed', String(flow.remaining > 0));
+  element('focus-button').classList.toggle('ready', flow.charge === 100);
+  setText('focus-value', flow.remaining > 0 ? `${flow.remaining.toFixed(1)}s` : flow.charge === 100 ? 'READY' : `${Math.round(flow.charge)}%`);
+  setText('focus-key', touch.enabled ? 'TAP' : keyLabel(settings.keys.focus));
+  gameScreen.classList.toggle('focus-active', flow.remaining > 0 && !settings.reducedMotion);
   const pickup = arena ? null : nearbyPickup(match);
   let message = now < noticeUntil ? notice : '';
   if (!player.alive && !arena && match.status === 'playing') message = `The watch found you. Back in ${Math.ceil(player.respawnAt - match.time)}s.`;
-  else if (!message && !isCapturing() && canPlay()) message = 'Click the game to capture the mouse';
+  else if (!message && !isCapturing() && canPlay()) message = 'Click the game to capture the mouse, or hold and drag to look';
   else if (!message && pickup) {
     const item = pickup.weaponId ? getWeapon(pickup.weaponId).name : pickup.item === 'medkit' ? 'Medkit' : 'Stamina Tonic';
     message = `[E] Pick up ${item}`;
@@ -670,6 +720,7 @@ function updateHud(now) {
   setText('hud-controls', arena
     ? `${movement} Move · ${attack} · RMB Guard · Tab Status`
     : `${movement} Move · ${attack} · RMB Guard · ${keyLabel(bound.pickup)} Pick up · V Camera · Tab Status`);
+  if (touch.enabled) setText('hud-controls', 'Left stick to move · Drag the field to look · Tap Attack to swing');
   element('hud-map').hidden = !settings.minimap;
   element('hud-dev').hidden = !settings.counters;
   if (settings.counters) {
@@ -726,7 +777,7 @@ function finish() {
   const stats = localActor().stats;
   if (stats) writeLedger(element('end-ledger'), [
     ['Damage', stats.damage], ['Accuracy', `${stats.swings ? Math.round(stats.hits / stats.swings * 100) : 0}%`],
-    ['Blocks', stats.blocks], ['Parries', stats.parries], ['Time', `${Math.floor(match.time)}s`],
+    ['Best hit combo', stats.longestHitCombo || 0], ['Blocks', stats.blocks], ['Parries', stats.parries], ['Time', `${Math.floor(match.time)}s`],
   ]);
   unlockPointer();
   releaseInput();
@@ -748,7 +799,7 @@ function finish() {
 
 function sendSnapshot() {
   network?.send({
-    type: 'snapshot', time: match.time, status: match.status, actors: match.actors, impacts: recentImpacts,
+    type: 'snapshot', time: match.time, sceneTime: match.sceneTime, status: match.status, actors: match.actors, impacts: recentImpacts,
   });
 }
 
@@ -856,6 +907,7 @@ function applyOnlineMessage(message) {
     };
     if (remoteInput.guard || remoteInput.cancelCombo) guestGesture = undefined;
     else guestGesture ??= readRemoteGesture(from.gesture);
+    if (from.focus === true) guestFocus = true;
     remoteInputAt = performance.now();
   } else if (networkRole === 'guest') {
     if ((message.type === 'arena-config' || message.type === 'start') && !match) {
@@ -874,16 +926,18 @@ function applyOnlineMessage(message) {
         refreshArenaLobby();
       }
     } else if (message.type === 'snapshot' && match && match.status === 'playing') {
-      const { actors, time, status } = message;
+      const { actors, time, sceneTime, status } = message;
       if (!Array.isArray(actors) || actors.length !== 2 || !Number.isFinite(time) || time < match.time
+          || !Number.isFinite(sceneTime) || sceneTime < 0 || sceneTime > time + .001
           || !['playing', 'won', 'lost', 'draw'].includes(status)
           || actors.some((actor, index) => !actor || actor.id !== match.actors[index].id
-            || !validCombatSnapshot(actor.combat)
+            || !validCombatSnapshot(actor.combat) || !validCombatFlow(actor.flow)
             || !['x', 'z', 'facing', 'health', 'stamina', 'maxHealth', 'maxStamina'].every((key) => Number.isFinite(actor[key])))) return;
       match.actors = actors;
       match.player = actors[0];
       match.rival = actors[1];
       match.time = time;
+      match.sceneTime = sceneTime;
       match.status = status;
       snapshotAt = performance.now();
       if (Array.isArray(message.impacts)) for (const event of message.impacts.slice(-12)) {
@@ -1081,3 +1135,29 @@ document.addEventListener('click', (event) => {
   swingAudio.landscape(settings.theme, settings.master * settings.music, 0, false);
   swingAudio.paper();
 });
+
+// Read-only client state supports regression tests and bug diagnosis. It includes
+// no invite codes, account credentials, peer details or server administration.
+Object.defineProperty(window, 'randomEras', { value: Object.freeze({
+  version: '0.4.0',
+  getState() {
+    const player = match ? localActor() : null;
+    return {
+      active: Boolean(match && !gameScreen.hidden), mode: match?.world.mode ?? null,
+      time: match?.time ?? 0, sceneTime: match?.sceneTime ?? 0, paused: match ? !canPlay() : false,
+      camera: { yaw: view.yaw, pitch: view.pitch, firstPerson: view.firstPerson },
+      input: {captured: mouse.isCaptured(), dragLook: touch.mouseDragEnabled},
+      touch: { enabled: touch.enabled, x: touch.state.x, forward: touch.state.forward, guard: touch.state.guard },
+      player: player ? { x: player.x, y: player.y, z: player.z, health: player.health, stamina: player.stamina,
+        guarding: player.guarding, weapon: player.weaponId, swings: player.stats.swings,
+        hits: player.stats.hits, alive: player.alive, phase: player.combat.phase,
+        comboProgress: getComboProgress(player, performance.now()), flow: {...player.flow}, timeScale: actorTimeScale(match, player) } : null,
+      training: match?.training ? { ...match.training } : null,
+      network: { role: networkRole ?? 'solo', status: network?.status ?? 'disconnected' },
+    };
+  },
+}) });
+
+// The independent bootstrap can now release the loading gate.
+document.documentElement.dataset.gameReady = 'true';
+window.dispatchEvent(new Event('random-eras:ready'));

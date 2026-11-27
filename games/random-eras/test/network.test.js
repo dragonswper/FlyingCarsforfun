@@ -11,8 +11,8 @@ test('direct codes compress and round trip the exact description', async () => {
   assert.ok(code.length < sdp.length);
   assert.deepEqual(await decodeDescription(code, 'offer'), { description: { type: 'offer', sdp }, sessionId: id });
   await assert.rejects(decodeDescription(code, 'answer'), /complete Arena response/);
-  await assert.rejects(decodeDescription(code.replace('RE3', 'RE2'), 'offer'), /another build/);
-  await assert.rejects(decodeDescription(`RE3.offer.${id}.gc29tZSBub25zZW5zZQ`, 'offer'), /complete Arena invite/);
+  await assert.rejects(decodeDescription(code.replace('RE4', 'RE2'), 'offer'), /another build/);
+  await assert.rejects(decodeDescription(`RE4.offer.${id}.gc29tZSBub25zZW5zZQ`, 'offer'), /complete Arena invite/);
   const large = await encodeDescription({ type: 'offer', sdp: sdp.repeat(40) }, id);
   await assert.rejects(decodeDescription(large, 'offer'), /complete Arena invite/);
 });

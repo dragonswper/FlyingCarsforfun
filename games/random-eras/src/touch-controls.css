@@ -1,0 +1,218 @@
+#game-canvas {
+  touch-action: none;
+}
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  z-index: 7;
+}
+.touch-controls button {
+  pointer-events: auto;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  color: #f8ead0;
+  border: 1px solid #dbc2979c;
+  background: #211b16bf;
+  font:
+    600 14px/1.15 "DM Sans",
+    sans-serif;
+  box-shadow: 0 2px 12px #0003;
+}
+.touch-controls button.held {
+  background: #b78840e6;
+  border-color: #ffe3a6;
+}
+.touch-move {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+}
+.touch-stick {
+  width: 106px;
+  height: 106px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: #251d1780 !important;
+}
+.touch-stick-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid #ffe7b7a6;
+  background: #e3c99173;
+  pointer-events: none;
+}
+.touch-move-label {
+  color: #ead9b8;
+  font:
+    12px/1.2 "DM Sans",
+    sans-serif;
+  text-shadow: 0 1px 3px #000;
+}
+.touch-actions {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom));
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+.touch-tools {
+  display: flex;
+  gap: 6px;
+}
+.touch-tools button {
+  min-height: 44px;
+  min-width: 48px;
+  padding: 8px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+.touch-combat {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+[data-touch="attack"] {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: #7c5029df !important;
+}
+[data-touch="guard"] {
+  width: 59px;
+  height: 59px;
+  border-radius: 50%;
+}
+.touch-game .hud-controls {
+  display: none;
+}
+.touch-game .hud-bottom {
+  position: absolute;
+  grid-row: auto;
+  grid-column: auto;
+  inset: 128px 12px auto;
+  align-items: start;
+  pointer-events: none;
+}
+.touch-game .hud-bars progress {
+  width: 78px;
+}
+.touch-game .hud-bars .hud-panel {
+  padding: 7px;
+}
+.touch-game .hud-loadout {
+  max-width: 32%;
+  padding: 5px 7px;
+}
+.touch-game #hud-weapon {
+  font-size: 15px;
+  line-height: 1.2;
+}
+.touch-game #hud-weapon-detail,
+.touch-game .hud-inventory,
+.touch-game #hud-seed {
+  display: none;
+}
+.touch-game .hud-map {
+  width: 70px;
+  padding: 4px;
+}
+.touch-game .hud-objective {
+  max-width: 42%;
+  padding: 7px;
+}
+.touch-game #hud-objective,
+.touch-game #hud-cores {
+  font-size: 11px;
+  line-height: 1.2;
+}
+.touch-game .hud-top > .hud-panel:first-child {
+  max-width: 36%;
+  min-width: 0;
+}
+.touch-game #hud-region {
+  font-size: 22px;
+}
+.touch-game .game-hud {
+  padding: 10px;
+}
+.touch-game .hud-top .hud-panel {
+  padding: 8px;
+}
+.touch-game .yard-tip {
+  bottom: 182px;
+  max-width: 90%;
+  font-size: 15px;
+}
+.touch-game .hud-message {
+  max-width: 80%;
+  font-size: 13px;
+}
+@media (max-height: 500px) {
+  .touch-move,
+  .touch-actions {
+    bottom: max(15px, env(safe-area-inset-bottom));
+  }
+  .touch-move {
+    left: max(16px, env(safe-area-inset-left));
+  }
+  .touch-stick {
+    width: 94px;
+    height: 94px;
+  }
+  .touch-game .hud-bottom {
+    inset: 100px 10px auto;
+  }
+  .touch-game .hud-map {
+    width: 54px;
+  }
+  .touch-game .yard-tip {
+    display: none;
+  }
+  .touch-game .hud-caption {
+    top: 43%;
+  }
+  .touch-game .hud-loadout {
+    bottom: 10px;
+  }
+  .touch-game .hud-bars .hud-panel {
+    padding: 5px;
+  }
+  .touch-game .hud-bars {
+    gap: 3px;
+  }
+  .touch-game .hud-bars progress {
+    width: 62px;
+  }
+}
+
+.touch-look-hint {
+  position: absolute;
+  bottom: max(26px, env(safe-area-inset-bottom));
+  left: 43%;
+  transform: translateX(-50%);
+  color: #ead9b8;
+  font:
+    12px/1.2 "DM Sans",
+    sans-serif;
+  text-shadow: 0 1px 3px #000;
+  white-space: nowrap;
+}
+
+/* Keep the utility buttons above the stick on especially narrow phones. */
+@media (max-width: 380px) {
+  .touch-tools {
+    position: absolute;
+    right: 0;
+    bottom: 150px;
+  }
+}

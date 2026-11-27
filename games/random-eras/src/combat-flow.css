@@ -1,0 +1,139 @@
+.hud-flow {
+  position: absolute;
+  left: 24px;
+  bottom: 160px;
+  width: 178px;
+  padding: 10px;
+}
+.combo-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+.combo-line strong {
+  font:
+    600 12px/1.4 "DM Sans",
+    sans-serif;
+  color: #ffe1a5;
+}
+.combo-line small {
+  font-size: 9px;
+  color: #dfcfac;
+  white-space: nowrap;
+}
+#combo-timer {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin: 5px 0 9px;
+  accent-color: #dcb56b;
+}
+#focus-button {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 46px;
+  padding: 7px;
+  pointer-events: auto;
+  touch-action: manipulation;
+  border: 1px solid #8b9e9273;
+  border-radius: 4px;
+  background: #1c322ccf;
+  color: #eee5d0;
+  font:
+    600 12px/1.2 "DM Sans",
+    sans-serif;
+}
+#focus-button:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+#focus-button kbd {
+  font-size: 9px;
+  padding: 1px 3px;
+  color: #c5d6c7;
+}
+#focus-button.ready,
+#focus-button[aria-pressed="true"] {
+  border-color: #b4edcf;
+  color: #d4ffe6;
+  background: #305b4fe8;
+}
+#focus-button:focus-visible {
+  outline: 2px solid #fff3cd;
+  outline-offset: 3px;
+}
+#focus-meter {
+  display: block;
+  flex-basis: 100%;
+  width: 100%;
+  height: 5px;
+  accent-color: #8bcbb0;
+}
+.focus-active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: inset 0 0 80px #4eafab66;
+}
+.touch-game .hud-flow {
+  inset: 212px auto auto 12px;
+  width: 155px;
+  padding: 7px;
+}
+.touch-game .hud-flow progress {
+  max-width: 100%;
+}
+@media (max-height: 500px) {
+  .touch-game .hud-flow {
+    inset: 156px auto auto 10px;
+    width: 148px;
+    padding: 6px;
+  }
+  .touch-game #combo-timer {
+    margin: 2px 0 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-active::after {
+    display: none;
+  }
+}
+
+.hud-flow .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.hud-flow .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-height: 500px) {
+  .touch-game .hud-flow {
+    inset: 100px auto auto 112px;
+    width: 155px;
+    padding: 6px;
+  }
+}
+
+#focus-threat { display: block; margin: 0 0 6px; font-size: 10px; color: #ffcc96; }

@@ -1,5 +1,5 @@
 export const DEFAULT_KEYS = Object.freeze({
-  forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD', sprint: 'ShiftLeft', pickup: 'KeyE',
+  forward: 'KeyW', back: 'KeyS', left: 'KeyA', right: 'KeyD', sprint: 'ShiftLeft', pickup: 'KeyE', focus: 'KeyF',
 });
 
 export const DEFAULT_SETTINGS = Object.freeze({
@@ -25,9 +25,10 @@ const RANGES = {
   sensitivity: [0.35, 2.5], swingDistance: [0.75, 2], swipeSpeed: [0.75, 1.75], swingResponse: [0.5, 1.5], bufferWindow: [0.15, 0.45], uiScale: [0.9, 1.3],
 };
 
-export function createSettingsStore(storage) {
+export function createSettingsStore(storage, { touch = false } = {}) {
   const saveKey = 'random-eras.settings.v2';
   const state = { ...DEFAULT_SETTINGS, keys: { ...DEFAULT_KEYS } };
+  if (touch) Object.assign(state, { quality: 'low', resolution: 0.75, fps: '30' });
   const listeners = new Set();
 
   function assign(key, value) {

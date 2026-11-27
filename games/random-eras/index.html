@@ -3,12 +3,14 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="%BASE_URL%startup.js" defer></script>
     <meta name="theme-color" content="#f3eee4">
     <meta name="description" content="Explore a changing world of rival strongholds, or face off in a mouse-driven melee duel.">
     <title>Random Eras — Browser Game</title>
     <link rel="icon" href="data:,">
   </head>
   <body>
+    <div id="startup-status" class="startup-status" role="status"><span id="startup-message">Loading game…</span><button id="startup-reload" type="button" hidden>Reload game</button></div>
     <div id="menu" class="campaign" data-era="ironwood">
       <section id="home-screen" class="campaign-screen campaign-home" aria-labelledby="game-title">
         <header class="campaign-profile">
@@ -42,7 +44,7 @@
             <aside class="parchment field-note">
               <strong>New to the sword?</strong>
               <p>Practice on stationary and moving targets in the Training Yard.</p>
-              <small>Browser build 0.2</small>
+              <small>Browser build 0.4.0</small>
             </aside>
           </div>
         </main>
@@ -142,6 +144,13 @@
           <span class="reticle-arrow" id="reticle-swipe" hidden></span>
           <span class="reticle-arrow reticle-arrow--combo" id="reticle-combo" hidden></span>
         </div>
+        <section class="hud-panel hud-flow" aria-label="Combo and Focus">
+          <div class="combo-line"><strong id="combo-count">0 HIT COMBO</strong><small id="combo-best">BEST 0</small></div>
+          <progress id="combo-timer" max="3" value="0" aria-label="Time to continue hit combo"></progress>
+          <span id="focus-threat" hidden role="status">OPPONENT FOCUS · SLOWED</span>
+          <button id="focus-button" type="button" disabled aria-pressed="false" aria-describedby="focus-help"><span>FOCUS <kbd id="focus-key">F</kbd></span><strong id="focus-value">0%</strong><progress id="focus-meter" max="100" value="0" aria-label="Focus charge or remaining duration"></progress></button>
+          <span id="focus-help" class="sr-only">Land five clean hits to charge Focus. Slows opponents for four seconds while you move normally.</span>
+        </section>
         <div class="hud-bottom">
           <div class="hud-panel hud-bars">
             <div class="hud-stat"><span>Health</span><span id="health-value"></span></div>
@@ -180,6 +189,7 @@
           <div><dt>Guard</dt><dd>Hold right click</dd></div>
           <div><dt>Sprint</dt><dd><kbd>Shift</kbd></dd></div>
           <div><dt>Pick up nearby gear</dt><dd><kbd>E</kbd></dd></div>
+          <div><dt>Activate charged Focus</dt><dd><kbd>F</kbd> or tap the Focus bar</dd></div>
           <div><dt>Equip a carried weapon</dt><dd><kbd>1</kbd>–<kbd>9</kbd></dd></div>
           <div><dt>Switch camera in Frontier or Training</dt><dd><kbd>V</kbd></dd></div>
           <div><dt>Open the map</dt><dd><kbd>M</kbd></dd></div>
@@ -188,7 +198,7 @@
         </dl>
         <div class="modal-actions"><button id="swipe-test" type="button" class="button button-secondary">Test a swipe</button><button type="button" class="button button-secondary" data-open-settings>Rebind keys</button></div>
         <p class="modal-note" id="swipe-result" role="status">Press Escape to release the mouse after a test.</p>
-        <p class="modal-note">Click the game to capture the mouse. Choose your attack input in Settings. Attack again when a second ring appears on the reticle to queue a follow-up.</p>
+        <p class="modal-note">Click the game to capture the mouse. Choose your attack input in Settings. Attack again when a second ring appears on the reticle to queue a follow-up. Land consecutive hits within three seconds to build a hit combo. Five clean hits charge Focus: press F or tap its bar to slow opponents for four seconds. Misses, blocks and taking damage break the hit combo.</p>
       </div>
     </dialog>
 
@@ -318,6 +328,7 @@
       <div class="modal-card">
         <header class="modal-header"><h2 id="error-title">Couldn’t start the game</h2><button class="icon-button" type="button" data-close aria-label="Close error">×</button></header>
         <p class="modal-note" id="error-message"></p>
+        <button class="button button-primary" id="error-reload" type="button">Reload game</button>
         <p id="webgl-help" hidden><a href="https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext#browser_compatibility">Browsers with WebGL 2 support</a></p>
       </div>
     </dialog>

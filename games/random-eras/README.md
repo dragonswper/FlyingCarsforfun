@@ -8,7 +8,7 @@ A first-person browser melee game with seeded terrain, a playable armored knight
 
 ## Run locally
 
-Use Node.js 22.12 or later and a desktop browser with WebGL 2.
+Use Node.js 22.12 or later and a current browser with WebGL 2.
 
 ```sh
 npm ci
@@ -30,6 +30,7 @@ Vite prints the local URL. The production build is in `dist/`.
 | Hold right click | Guard with the shield |
 | Shift | Sprint |
 | E | Pick up nearby gear |
+| F / tap Focus bar | Activate a fully charged Focus |
 | 1–9 | Equip a carried weapon |
 | V | Switch between first and third person in Frontier or Training |
 | Tab | Match status |
@@ -39,6 +40,35 @@ Vite prints the local URL. The production build is in `dist/`.
 Click the game if it needs to capture the mouse. The cursor is hidden while captured, with unadjusted relative movement when supported. Choose **Mouse swipe** or **Left click** under **Settings → Controls → Attack input**. **Settings → Gameplay** exposes swipe thresholds and the solo combo window. Hold the shield just before impact to parry. `CombatTuning` in `src/combat.js` defines the minimum swipe speed and distance, the swipe window, and combo timing. Per-weapon timing lives in `src/simulation.js`.
 
 Career records sessions, hits, knockdowns and longest chains in this browser. The optional Yard guide is under Gameplay Settings.
+
+On touch devices, use the left joystick to move (push fully to sprint), drag the
+field to look, tap Attack, or hold Guard. Pick up, Weapon and View buttons sit
+beside the combat controls. Opening the menu, changing orientation or cancelling
+a touch clears held controls. Touch devices start at low quality, 75% resolution
+and 30 FPS unless saved settings override those defaults.
+
+Build 0.4.0 adds an independent loading/reload screen so a failed entry download
+does not leave a dead menu. A failed renderer download offers Reload too. When
+browser storage is blocked, matches and career recaps still work for the visit.
+If mouse capture is unavailable, hold and drag the field to look.
+
+## Hit combos and Focus
+
+Land clean hits within three seconds of one another to grow the hit-combo
+counter. A missed or blocked swing, taking damage, dying or letting the
+window expire breaks the streak; its best value remains in the match and local
+career. Buffered follow-up swings still use the reticle's existing combo window.
+
+Each clean swing earns 20% Focus, once per swing even if it hits several enemies.
+At 100%, press **F** (rebindable in Settings) or tap the **Focus** bar. For four
+seconds, opponents move, react and swing at 35% speed while you remain responsive.
+Scenery and impact particles slow as well. Charge is spent on activation and hits
+cannot refill it while active. Dying clears charge. Simultaneous opposing Focus
+activations counter each other's slowdown.
+
+The same simulation owns both players' timers and charge in online Arena. Both
+players must reload this build and create fresh RE4 invites; RE3 invites are
+rejected rather than combining incompatible combat rules.
 
 ## Play with a friend
 

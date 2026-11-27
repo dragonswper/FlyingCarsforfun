@@ -69,9 +69,15 @@ server secrets and admin data remain protected. Random Eras' route permits
 WebAssembly compilation for its Meshopt model decoder, with JavaScript eval still
 blocked. The admin route retains its stricter policy and authentication.
 
-The imported games target desktop keyboard/mouse. Boost Circuit retains its
-existing controller/touch support; a responsive hub does not add touch controls
-to the other games.
+Random Eras now supports a touch joystick, drag-look and explicit combat buttons,
+with lighter first-visit graphics defaults on touch devices. Boost Circuit keeps
+its controller/touch support. Riftfall, Skybreak Island and Skybreak Classic
+still target desktop keyboard/mouse; the catalogue identifies their controls.
+Random Eras and Classic also allow mouse drag-look when pointer lock is denied.
+
+The browser regression suite exercises actual Chromium gameplay, menus, saves,
+touch input, download recovery and local multiplayer flows. See
+[browser QA](../docs/browser-qa.md) for coverage, commands and device limits.
 
 Imported engines, fonts and game artwork retain their original terms, including
 Random Eras’ reserved artwork rights. See each game’s bundled notices and

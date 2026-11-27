@@ -10,4 +10,8 @@ are covered by the importing project's licence. Play on desktop with keyboard
 and mouse: WASD movement, Space jump, Shift sprint, 1–3 equip, click shoot/build,
 R rotate and Escape pause.
 
+If the browser denies pointer lock, hold and drag the scene to look. Escape also
+pauses this fallback mode; Drop In / Resume returns to play. No external font
+request is required by the preserved game.
+
 The root build publishes this game at `/games/skybreak-classic/`.

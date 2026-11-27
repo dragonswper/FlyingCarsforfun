@@ -172,18 +172,18 @@
       "files": [
         {
           "path": "game.js",
-          "bytes": 11122,
-          "sha256": "423b72129543667579cbc681db4d79c6e274835474a9730077871db3e301db32"
+          "bytes": 12465,
+          "sha256": "4274b6b775975d57a4358000bb159cdfe098d8aa1d7582b2fd10ef82419aeed6"
         },
         {
           "path": "index.html",
-          "bytes": 2167,
-          "sha256": "7f064140627546fdac9f95fa94ce59a12f6030a3cce08ddf6c178f0be3922db2"
+          "bytes": 2198,
+          "sha256": "df9d5198abdacfe608789f6dad91656cd04c838f61424fda2c9491290742e130"
         },
         {
           "path": "style.css",
-          "bytes": 3871,
-          "sha256": "915fe3fda82ab51b565c0ac6caa909f3f63389b0fa264bee6e36a584b2dbf85b"
+          "bytes": 3729,
+          "sha256": "fba107e1a1d8492e625695c8c3378f530cf4fa45409f24cc8453e9a996093c0d"
         },
         {
           "path": "vendor/THREE-LICENSE.txt",
@@ -218,14 +218,14 @@
           "sha256": "e0d13f7a410aa5a869f13cadfd54f71b129f5a895b4a4663ffffbef8df44b432"
         },
         {
-          "path": "assets/index-FWwjuxMh.js",
-          "bytes": 53757,
-          "sha256": "ed010a54fc8dee3e11bf578deac39cc25aa9684c51e879f2d1ea927e795d43c4"
+          "path": "assets/index-BN5VwhSj.js",
+          "bytes": 60771,
+          "sha256": "552f8c1c3bbd23b3752a9106c1dc935bc79aaf66077913cb341b7b98d28f7e9f"
         },
         {
-          "path": "assets/index-HH-Dt-17.css",
-          "bytes": 28462,
-          "sha256": "e0baf2e5fcec88e673fddd4a629d0962d1016f2450e54b9f9ccc9ec30f9bf79d"
+          "path": "assets/index-XYMFZxz9.css",
+          "bytes": 33826,
+          "sha256": "e0122a112cec6a2cb36bdc6845341cb535d6f954c9835518266bb61caa2940cd"
         },
         {
           "path": "assets/knight-DQWhkHP3.js",
@@ -243,14 +243,14 @@
           "sha256": "12fa1f2cc57b57a4006bbeaf79831041da6673f70aecfd005a0252fdf282b884"
         },
         {
-          "path": "assets/render-cH-upM-H.js",
-          "bytes": 35901,
-          "sha256": "38bf49194acf998ef670b6c2eedaa17ee8a2f977f07be1c389544db448332b3d"
+          "path": "assets/render-CsWcYu-o.js",
+          "bytes": 36005,
+          "sha256": "5000e8a4f0ed689994d6cfc47bc2b85edd5083ab9c3fef9369ca782a04d93915"
         },
         {
-          "path": "assets/simulation-BecK-T9Y.js",
-          "bytes": 34422,
-          "sha256": "939c7f916171fd6e2ebab63b2fe5d6f06fea815123d9b980a6beecd55fcdb351"
+          "path": "assets/simulation-BaUcnRGN.js",
+          "bytes": 36270,
+          "sha256": "602413206e12658cfcbe767ccd31086a9f09692b9ac847683376e49124f3c046"
         },
         {
           "path": "assets/weapon-art-5DUhwrre.js",
@@ -314,8 +314,8 @@
         },
         {
           "path": "index.html",
-          "bytes": 26171,
-          "sha256": "67167ec7792348d3430335a8154d4f58851a65c3e4965e3b9b2017cc06daaf0f"
+          "bytes": 27682,
+          "sha256": "665e51fba55ae4f7b4a81cb69a9ca30f5389ad6d6a1169215e1354fad6c047c3"
         },
         {
           "path": "knight-portrait.webp",
@@ -341,6 +341,11 @@
           "path": "seal-icons.webp",
           "bytes": 9178,
           "sha256": "b694a353f5d3d17749f11505f7be24e6f09280910f9a79c08334b08612c7133b"
+        },
+        {
+          "path": "startup.js",
+          "bytes": 1515,
+          "sha256": "ea8703c1e895f7e6bc632827c76fd0c1fc3dc60d20a1bfd12947e527c0ce75c9"
         },
         {
           "path": "weapons.glb",

@@ -7,6 +7,7 @@ import { EraWeather, eraDressing } from './era-dressing.js';
 import { foliageWind } from './map-kit.js';
 import { loadWeaponArt } from './weapon-art.js';
 import { getWeapon } from './simulation.js';
+import { actorTimeScale, FlowTuning } from './combat-flow.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const WHITE = new THREE.Color(0xffffff);
@@ -1284,14 +1285,15 @@ export function createRenderer(canvas) {
     if (!resize() || !game?.world) return;
     if (game.world !== world) setWorld(game.world);
     const dt = clamp(delta, 0.001, 0.053);
-    elapsed += dt;
+    const sceneScale = game.actors.some(actor => actor.alive && actor.flow.remaining > 0) ? FlowTuning.SlowScale : 1;
+    elapsed += dt * sceneScale;
     const { actors: members = [], cores: objectives = [], pickups: loot = [] } = game;
     const player = members.find((actor) => actor.id === view.actorId) || game.player;
     if (!player) return;
     const ownWeapon = getWeapon(player.weaponId);
     detailedChunks = terrainView.update(player, quality);
-    sceneryView.update(player, quality, game.time, view.reducedMotion);
-    atmosphere(player, game.time, view.reducedMotion);
+    sceneryView.update(player, quality, game.sceneTime, view.reducedMotion);
+    atmosphere(player, game.sceneTime, view.reducedMotion);
     positionCamera(player, view, dt, ownWeapon);
 
     for (const member of members) {
@@ -1332,7 +1334,7 @@ export function createRenderer(canvas) {
         rig.weaponId = weapon.id;
       }
       const firstPerson = own && view.firstPerson;
-      const bob = poseActor(rig, member, world, weapon, dt, firstPerson);
+      const bob = poseActor(rig, member, world, weapon, dt * actorTimeScale(game, member), firstPerson);
       if (own) {
         setViewModel(firstPerson && member.alive ? rig : null);
         if (viewModelRig) {
@@ -1397,7 +1399,7 @@ export function createRenderer(canvas) {
         : { metal: '#fff2c8', armor: '#ffd387', wood: '#d99f58', stone: '#d8ccad' }[event.surface];
       particles.impact(event.x, world.height(event.x, event.z) + 1.42, event.z, color(spark), event.type === 'parry' ? 15 : 9);
     }
-    particles.update(dt);
+    particles.update(dt * sceneScale);
     graphics.render(scene, camera);
     if (viewModelRig) {
       graphics.autoClear = false;

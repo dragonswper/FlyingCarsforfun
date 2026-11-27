@@ -313,3 +313,6 @@ dialog .modal-card { width: min(520px, calc(100vw - 32px)); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+.startup-status { position:fixed; inset:0; z-index:100; display:flex; flex-direction:column; gap:18px; align-items:center; justify-content:center; padding:24px; text-align:center; background:#21170ff5; color:#f1e3c4; font:16px/1.5 "DM Sans",sans-serif; }
+.startup-status button { min-height:46px; padding:10px 20px; border:1px solid #e0bf88; background:#d4a54a; color:#21170f; font-weight:700; border-radius:4px; }

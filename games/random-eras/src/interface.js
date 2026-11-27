@@ -165,7 +165,7 @@ export function createInterface(store, { onStart, onSettings, onExport, onCopySe
       const favorite = Object.entries(career.visits).sort((a, b) => b[1] - a[1])[0];
       writeLedger(element('career-ledger'), [
         ['Sessions', career.matches], ['Hits landed', career.hits], ['Fighters downed', career.kills],
-        ['Longest chain', career.longestCombo], ['Most played age', favorite[1] ? eraName(favorite[0]) : '—'],
+        ['Longest chain', career.longestCombo], ['Best hit combo', career.longestHitCombo], ['Most played age', favorite[1] ? eraName(favorite[0]) : '—'],
       ]);
     }
     scrollTo({ top: 0, behavior: 'instant' });

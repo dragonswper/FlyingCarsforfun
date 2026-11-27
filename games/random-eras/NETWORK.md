@@ -5,9 +5,9 @@ The Pit uses direct WebRTC data channels. Practice across two tabs uses Broadcas
 ```text
 Host                             Guest
 Create offer and gather ICE
-Copy RE3 offer ----------------> Paste offer
+Copy RE4 offer ----------------> Paste offer
                                  Gather ICE and create response
-Paste response <---------------- Copy RE3 response
+Paste response <---------------- Copy RE4 response
 Data channel opens <-----------> Both see Connected
 Send Ready <-------------------> Send Ready
 Send Start --------------------> Both count down
@@ -20,3 +20,5 @@ Direct descriptions use gzip when it reduces the code. The receiver checks the p
 The host keeps the only authoritative health, guard, hit-stop and match state. Guest movement is eased over a few simulation ticks and fades if packets stop. Combat, facing and guard inputs are applied immediately. Matching swing IDs allow a late combo during recovery. The guest renderer eases positions toward the latest snapshot and deduplicates impact feedback by event number.
 
 A temporary ICE interruption can recover on the same channel. If the channel closes, return to Arena and exchange a fresh invite. There is no saved match to resume after a browser reload. Two networks that cannot connect directly need a relay, which this build does not provide.
+
+Focus and hit-combo state are included in authoritative actor snapshots. Guests send only an activation request; the host checks earned charge and controls the four-second duration and per-fighter time scale. Both fighters can counter with Focus. RE4 invites separate these rules from older builds.

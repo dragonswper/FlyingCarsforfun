@@ -54,10 +54,12 @@ Opening a game uses its own top-level tab/page rather than an embedded frame.
 
 The library tests exercise link validation, bounded local data, storage recovery,
 composed search/style/favourite/history filters and packaged file references.
-JavaScript syntax and HTML/SVG structure are checked too. The Cloud environment
-does not expose the Sites browser-control tool, so interactive browser and visual
-layout QA for this hub remain unverified; a deployment success alone is not a
-claim that every device has been tested.
+JavaScript syntax and HTML/SVG structure are checked too. Chromium browser tests
+now exercise favourites and reload persistence, search, adding/removing a
+personal game, new-tab launching, recent history and responsive widths. The
+suite also plays each of the five games. See [browser QA](browser-qa.md) for
+coverage and limitations; software-rendered checks do not establish phone FPS
+or cross-country multiplayer latency.
 
 ## Shared hosting and saves
 
