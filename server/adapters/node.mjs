@@ -1,7 +1,7 @@
 import {AdminAuth, MemoryAdminStore} from '../admin/auth.mjs';
 import {adminMailer} from '../admin/mail.mjs';
 import {handleAdmin} from '../admin/http.mjs';
-import {SECURITY_HEADERS, privatePath} from '../http/security.mjs';
+import {securityHeadersForPath, privatePath} from '../http/security.mjs';
 import {CAPABILITIES} from '../runtime/capabilities.mjs';
 import {COMPATIBLE_BUILDS} from '../../dist/build-compatibility.js';
 import {handleAPI, jsonHeaders} from '../http/api.mjs';
@@ -95,9 +95,6 @@ export function createGameServer({
   };
   const httpHandler = async (request, response) => {
     const origin = request.headers.origin;
-    if (secure(request))
-      for (const [key, value] of Object.entries(SECURITY_HEADERS))
-        response.setHeader(key, value);
     // The provider's health probe may be local HTTP. It carries no game data.
     let url;
     try {
@@ -106,6 +103,11 @@ export function createGameServer({
       json(response, 400, {error: 'Invalid URL.'});
       return;
     }
+    if (secure(request))
+      for (const [key, value] of Object.entries(
+        securityHeadersForPath(url.pathname),
+      ))
+        response.setHeader(key, value);
     if (url.pathname === '/health' && request.method === 'GET') {
       json(response, 200, {
         ok: true,
@@ -195,7 +197,9 @@ export function createGameServer({
               ? '/index.html'
               : url.pathname === '/admin'
                 ? '/admin.html'
-                : url.pathname,
+                : url.pathname.endsWith('/')
+                  ? url.pathname + 'index.html'
+                  : url.pathname,
           ),
       );
     } catch {
@@ -210,6 +214,11 @@ export function createGameServer({
     }
     try {
       const info = await stat(path);
+      if (info.isDirectory()) {
+        response.writeHead(308, {Location: url.pathname + '/' + url.search});
+        response.end();
+        return;
+      }
       if (!info.isFile()) throw Error();
       response.writeHead(200, {
         'Content-Type': MIME[extname(path)] || 'application/octet-stream',

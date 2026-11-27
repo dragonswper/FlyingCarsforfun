@@ -18,11 +18,23 @@ export function privatePath(path) {
     return true;
   }
 }
-export function secureResponse(response) {
+export function securityHeadersForPath(path = '') {
+  // Meshopt decodes Random Eras' original Blender models with WebAssembly.
+  // This permits WebAssembly compilation only; JavaScript eval stays blocked.
+  if (/^\/games\/random-eras(?:\/|$)/.test(path))
+    return {
+      ...SECURITY_HEADERS,
+      'Content-Security-Policy': SECURITY_HEADERS[
+        'Content-Security-Policy'
+      ].replace("script-src 'self';", "script-src 'self' 'wasm-unsafe-eval';"),
+    };
+  return SECURITY_HEADERS;
+}
+export function secureResponse(response, path = '') {
   // A WebSocket upgrade must retain its platform-specific webSocket handle.
   if (response.status === 101) return response;
   const result = new Response(response.body, response);
-  for (const [key, value] of Object.entries(SECURITY_HEADERS))
+  for (const [key, value] of Object.entries(securityHeadersForPath(path)))
     result.headers.set(key, value);
   return result;
 }

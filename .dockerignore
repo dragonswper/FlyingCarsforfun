@@ -15,6 +15,7 @@ certs
 secrets
 tests
 docs
+games
 *.log
 
 # Private admin setup and persisted authentication state.

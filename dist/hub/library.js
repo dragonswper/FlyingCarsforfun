@@ -1,5 +1,5 @@
 export const STORAGE_KEY = 'playdock.library.v1';
-export const GAME_URL = 'https://flyingcarsforfun.connstors.workers.dev/';
+export const GAME_URL = '/';
 export const GAMES = Object.freeze([
   {
     id: 'boost-circuit',
@@ -15,13 +15,13 @@ export const GAMES = Object.freeze([
   },
   {
     id: 'skybreak',
-    title: 'Skybreak',
+    title: 'Skybreak Island',
     genre: 'Action',
     description:
-      'Build your way through a browser arena. Experiment with structures and sharpen your aim in this early prototype.',
-    url: 'https://skybreak-build-arena.bobistheman2049.chatgpt.site/',
+      'Explore the island, build cover and play solo skirmishes, free practice or the Skybreak target challenge.',
+    url: '/games/skybreak/',
     image: 'assets/skybreak.svg',
-    access: 'Private prototype',
+    access: 'Public',
     tags: ['Building', 'Arena'],
     controls: 'Keyboard and mouse',
   },
@@ -31,9 +31,9 @@ export const GAMES = Object.freeze([
     genre: 'Action',
     description:
       'Drop onto a 3D island for solo bot skirmishes and building practice. An early browser recreation to explore.',
-    url: 'https://riftfall-magnesium-web.bobistheman2049.chatgpt.site/',
+    url: '/games/riftfall/',
     image: 'assets/riftfall.svg',
-    access: 'Private prototype',
+    access: 'Public',
     tags: ['Island', 'Solo bots'],
     controls: 'Keyboard and mouse',
   },
@@ -42,11 +42,23 @@ export const GAMES = Object.freeze([
     title: 'Random Era’s',
     genre: 'Adventure',
     description:
-      'Explore procedural strongholds and try third-person melee duels in this browser prototype.',
-    url: 'https://random-eras-frontier.bobistheman2049.chatgpt.site/',
+      'Explore strongholds in Frontier, duel a bot or a friend in The Pit, and practise melee in the Training Yard.',
+    url: '/games/random-eras/',
     image: 'assets/random-eras.svg',
-    access: 'Private prototype',
+    access: 'Public',
     tags: ['Exploration', 'Melee'],
+    controls: 'Keyboard and mouse',
+  },
+  {
+    id: 'skybreak-classic',
+    title: 'Skybreak Classic',
+    genre: 'Action',
+    description:
+      'The original Skybreak arena: build walls and ramps, move across the island and shoot eight targets.',
+    url: '/games/skybreak-classic/',
+    image: 'assets/skybreak.svg',
+    access: 'Public',
+    tags: ['Building', 'Solo targets'],
     controls: 'Keyboard and mouse',
   },
 ]);
@@ -139,7 +151,7 @@ export function normalizeState(input) {
     })
     .sort((a, b) => b.at - a.at)
     .slice(0, 30)
-    .map((r) => ({ id: r.id, at: r.at }));
+    .map((r) => ({id: r.id, at: r.at}));
   return state;
 }
 export function loadState(storage) {
@@ -160,14 +172,14 @@ export function saveState(storage, state) {
 export function recordLaunch(state, id, at = Date.now()) {
   const games = [...GAMES, ...state.custom];
   if (!games.some((g) => g.id === id)) return;
-  state.recent = [{ id, at }, ...state.recent.filter((r) => r.id !== id)].slice(
+  state.recent = [{id, at}, ...state.recent.filter((r) => r.id !== id)].slice(
     0,
     30,
   );
 }
 export function selectGames(
   state,
-  { view = 'library', genre = 'All', query = '' } = {},
+  {view = 'library', genre = 'All', query = ''} = {},
 ) {
   let games = [...GAMES, ...state.custom];
   if (view === 'favourites')

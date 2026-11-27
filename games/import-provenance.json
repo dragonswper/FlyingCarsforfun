@@ -1,0 +1,44 @@
+{
+  "imported": "2026-11-27",
+  "projects": [
+    {
+      "id": "random-eras",
+      "sourceCommit": "7f86ac11a515f3af238e2dd5bbc6f7c88839f44c",
+      "copiedFiles": 71,
+      "omitted": [
+        ".openai/hosting.json"
+      ]
+    },
+    {
+      "id": "riftfall",
+      "sourceCommit": "9eb091611e5f36e58e23151df3ed7949ad78ecf6",
+      "copiedFiles": 24,
+      "omitted": [
+        ".openai/hosting.json"
+      ]
+    },
+    {
+      "id": "skybreak",
+      "sourceCommit": "8cc8ad39e5becaa38a8137bd22e0f6094ab69027",
+      "copiedFiles": 49,
+      "omitted": [
+        ".github/workflows/pages.yml",
+        ".github/workflows/verify.yml",
+        ".openai/hosting.json",
+        "reference/Riftfall-Web-Prototype.zip",
+        "reference/github-initial-README.md",
+        "reference/skybreak-v1/game.js",
+        "reference/skybreak-v1/index.html",
+        "reference/skybreak-v1/style.css",
+        "reference/skybreak-v1/vendor/THREE-LICENSE.txt",
+        "reference/skybreak-v1/vendor/three.module.js"
+      ]
+    },
+    {
+      "id": "skybreak-classic",
+      "sourceCommit": "8cc8ad39e5becaa38a8137bd22e0f6094ab69027",
+      "sourceSubdirectory": "reference/skybreak-v1",
+      "copiedFiles": 6
+    }
+  ]
+}

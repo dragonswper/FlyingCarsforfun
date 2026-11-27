@@ -1,0 +1,18 @@
+{
+  "name": "riftfall-magnesium-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A self-contained browser island skirmish prototype for launcher embedding.",
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "vendor": "node scripts/vendor.mjs",
+    "test": "node --test tests/server.test.mjs",
+    "test:browser": "node tests/browser-smoke.mjs",
+    "test:integration": "node tests/integration-smoke.mjs",
+    "test:world": "node tests/world-smoke.mjs"
+  },
+  "dependencies": { "babylonjs": "8.0.0" },
+  "devDependencies": { "playwright": "1.56.1" },
+  "engines": { "node": ">=22" }
+}

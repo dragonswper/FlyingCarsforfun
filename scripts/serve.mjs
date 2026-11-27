@@ -24,12 +24,16 @@ export function createGameServer(root = defaultRoot) {
     if (pathname.includes('\0') || pathname.includes('\\')) {
       res.writeHead(400); res.end('Invalid path'); return;
     }
-    const filename = path.resolve(resolvedRoot, '.' + (pathname === '/' ? '/index.html' : pathname));
+    const filename = path.resolve(resolvedRoot, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
     if (!filename.startsWith(resolvedRoot + path.sep)) {
       res.writeHead(403); res.end('Forbidden'); return;
     }
     try {
       const info = await stat(filename);
+      if (info.isDirectory()) {
+        res.writeHead(308, {Location: pathname + '/' + new URL(req.url, 'http://localhost').search});
+        res.end(); return;
+      }
       if (!info.isFile()) throw new Error('Not a file');
       res.writeHead(200, { 'Content-Type': mime[path.extname(filename)] || 'application/octet-stream', 'Content-Length': info.size });
       if (req.method === 'HEAD') { res.end(); return; }

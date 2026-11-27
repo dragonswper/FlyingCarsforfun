@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f3eee4">
+    <meta name="description" content="Explore a changing world of rival strongholds, or face off in a mouse-driven melee duel.">
+    <title>Random Eras — Browser Game</title>
+    <link rel="icon" href="data:,">
+    <script type="module" crossorigin src="./assets/index-FWwjuxMh.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/simulation-BecK-T9Y.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-HH-Dt-17.css">
+  </head>
+  <body>
+    <div id="menu" class="campaign" data-era="ironwood">
+      <section id="home-screen" class="campaign-screen campaign-home" aria-labelledby="game-title">
+        <header class="campaign-profile">
+          <span><strong data-profile-name>Wanderer</strong><small id="profile-title">Wanderer</small></span>
+          <button type="button" class="profile-seal" data-go="loadout" aria-label="Open your loadout" data-profile-letter>W</button>
+        </header>
+        <main class="home-layout">
+          <div class="home-left">
+            <h1 id="game-title" class="campaign-title">Random<br><span>Eras</span></h1>
+            <p class="home-tagline">A different age every time you drop in.</p>
+            <nav class="campaign-nav" aria-label="Game menu">
+              <button id="home-play" class="campaign-play" type="button" data-go="modes">Play</button>
+              <button type="button" data-open-arena>Arena <small>1 vs 1</small></button>
+              <button type="button" data-go="lobby">Join a lobby</button>
+              <button type="button" data-play-training>Training</button>
+              <button type="button" data-go="loadout">Loadout</button>
+              <button type="button" data-go="career">Career</button>
+              <button type="button" data-controls>Controls</button>
+              <button type="button" data-open-settings>Settings</button>
+              <button type="button" data-go="credits">Credits</button>
+            </nav>
+          </div>
+          <div class="home-right">
+            <article class="parchment daily-card">
+              <header><h2>Today’s world</h2><small>Daily seed</small></header>
+              <canvas id="daily-map" width="392" height="184" role="img" aria-label="Map of today's generated world"></canvas>
+              <h3>Medieval Highlands</h3>
+              <p>Four strongholds share a river valley. Everyone gets the same seed today.</p>
+              <div class="daily-actions"><button class="paper-button" type="button" id="play-daily">Play this seed</button><code id="daily-seed"></code></div>
+            </article>
+            <aside class="parchment field-note">
+              <strong>New to the sword?</strong>
+              <p>Practice on stationary and moving targets in the Training Yard.</p>
+              <small>Browser build 0.2</small>
+            </aside>
+          </div>
+        </main>
+        <footer class="era-footer">
+          <span>Explore the ages</span>
+          <div id="era-tabs" class="era-tabs" role="group" aria-label="Preview an era theme"></div>
+        </footer>
+      </section>
+
+      <section id="modes-screen" class="campaign-screen campaign-subpage" aria-labelledby="modes-title" hidden>
+        <header class="screen-heading"><button class="back-link" type="button" data-go="home">← Home</button><div><p class="handwritten">choose where you land</p><h2 id="modes-title">Play</h2></div></header>
+        <div class="mode-choices">
+          <button class="choice-card chosen" type="button" data-mode="frontier"><strong>Frontier</strong><span>Defend your core across four regions.</span><small>Solo · 4 strongholds</small></button>
+          <button class="choice-card" type="button" data-open-arena><strong>Arena</strong><span>Fight a friend or a bot in a closed ring.</span><small>1 vs 1 · Melee</small></button>
+          <button class="choice-card" type="button" data-play-training><strong>Training</strong><span>Learn flicks, combos, movement, and guard.</span><small>Solo · No incoming damage</small></button>
+        </div>
+        <div class="parchment world-options">
+          <div><p class="handwritten">custom world</p><h3>Set up your Frontier</h3></div>
+          <div class="option-grid">
+            <label>World seed <input id="world-seed" maxlength="24" autocomplete="off" spellcheck="false"></label>
+            <label>World size <select id="world-size"><option value="small">Small</option><option value="medium" selected>Medium</option><option value="large">Large</option></select></label>
+            <label>Starting era <select id="world-era"></select></label>
+          </div>
+          <div class="screen-actions"><button type="button" id="roll-world" class="paper-button">Re-roll seed</button><button type="button" id="copy-world" class="paper-button">Copy seed</button><button id="play-frontier" type="button" class="gold-button">Enter Frontier</button></div>
+        </div>
+      </section>
+
+      <section id="lobby-screen" class="campaign-screen campaign-subpage" aria-labelledby="lobby-title" hidden>
+        <header class="screen-heading"><button class="back-link" type="button" data-go="home">← Home</button><div><p class="handwritten">standard world · core rules</p><h2 id="lobby-title">Wanderer’s Camp</h2></div><button type="button" class="back-link heading-action" data-open-arena>Invite a friend to Arena</button></header>
+        <div class="camp-layout">
+          <section class="camp-roster" aria-labelledby="camp-roster-title"><h3 id="camp-roster-title" class="handwritten">Who’s here</h3><ul id="camp-players"></ul><button id="camp-ready" type="button" class="ink-button">Ready</button></section>
+          <section class="camp-preview" aria-label="Terrain preview">
+            <div class="camp-map"><canvas id="camp-map" width="440" height="320" role="img" aria-label="Map of selected terrain"></canvas><div><span class="handwritten">this world is</span><strong id="camp-era"></strong></div></div>
+            <dl class="camp-facts"><div><dt>Seed</dt><dd id="camp-seed"></dd></div><div><dt>World size</dt><dd id="camp-size"></dd></div><div><dt>How you win</dt><dd>Destroy rival cores</dd></div><div><dt>Seats</dt><dd>1 player and 3 bot rivals</dd></div></dl>
+          </section>
+          <section class="camp-chat" aria-labelledby="camp-chat-title"><h3 id="camp-chat-title" class="handwritten">Camp chat</h3><div id="camp-chat-log" role="log" aria-live="polite"></div><form id="camp-chat-form"><input id="camp-chat-input" maxlength="160" placeholder="Say something…" aria-label="Camp message"><button type="submit" class="ink-button">Send</button></form></section>
+        </div>
+        <footer class="camp-footer"><p id="camp-status" role="status"></p><button class="back-link" type="button" data-go="modes">Game settings</button><button class="gold-button" id="camp-start" type="button">Start</button></footer>
+      </section>
+
+      <section id="loadout-screen" class="campaign-screen campaign-subpage" aria-labelledby="loadout-title" hidden>
+        <header class="screen-heading"><button class="back-link" type="button" data-go="home">← Home</button><div><p class="handwritten">the wanderer</p><h2 id="loadout-title">Loadout</h2></div></header>
+        <div class="parchment loadout-card">
+          <h3>Armored knight</h3>
+          <p>Your kite shield travels with you. The longsword and dagger can be equipped in Frontier and Training.</p>
+          <div class="option-grid"><label>Player name <input id="profile-name" maxlength="20" autocomplete="nickname"></label><label>Starting weapon <select id="loadout-weapon"></select></label></div>
+          <div class="option-grid">
+            <label>Armor cloth <select data-setting="heraldry"><option value="blue">Night blue</option><option value="amber">Amber</option><option value="umber">Umber</option></select></label>
+            <label>Title <select data-setting="title"><option>Wanderer</option><option>Road Warden</option><option>Pit Regular</option></select></label>
+          </div>
+          <canvas class="loadout-preview" id="loadout-preview" width="280" height="224" role="img" aria-label="Selected weapon in 3D"></canvas>
+          <p id="loadout-detail"></p>
+          <button type="button" class="paper-button" data-play-training>Try it in Training</button>
+        </div>
+      </section>
+
+      <section id="career-screen" class="campaign-screen campaign-subpage" aria-labelledby="career-title" hidden>
+        <header class="screen-heading"><button type="button" class="back-link" data-go="home">← Home</button><div><h2 id="career-title">Career</h2></div></header>
+        <div class="parchment"><p class="handwritten">Entries from this browser.</p><dl id="career-ledger" class="controls-list"></dl></div>
+      </section>
+
+      <section id="credits-screen" class="campaign-screen campaign-subpage" aria-labelledby="credits-title" hidden>
+        <header class="screen-heading"><button class="back-link" type="button" data-go="home">← Home</button><div><h2 id="credits-title">Credits</h2></div></header>
+        <div class="parchment credits-card">
+          <p>Knight, weapons, scenery and interface art made for Random Eras in Blender. See the asset license in the source repository.</p>
+          <p>Terrain references. <a href="https://github.com/redblobgames/mapgen4">Mapgen4</a> · <a href="https://github.com/m-w-marker/heightmap-level-generator">Heightmap Level Generator</a></p>
+          <p>Typefaces under the SIL Open Font License. <a href="./fonts/cinzel-license.txt">Cinzel</a> · <a href="./fonts/caveat-license.txt">Caveat</a> · <a href="./fonts/dm-sans-license.txt">DM Sans</a></p>
+          <p>Training terminology informed by the community glossary. <a href="https://github.com/aiming-taxonomy/glossary">Aiming Taxonomy</a></p>
+          <a href="https://github.com/dragonswper/FlyingCarsforfun/tree/main/games/random-eras">Source on GitHub ↗</a>
+        </div>
+      </section>
+    </div>
+
+    <div id="game-loading" class="campaign-loading" hidden>
+      <h2>Random Eras</h2><p id="loading-step" role="status">Generating terrain…</p><progress id="loading-progress" max="3" value="0" aria-label="Loading world"></progress><small id="loading-tip">Each world can be shared by its seed.</small>
+    </div>
+
+    <section id="game" class="game-screen" aria-label="Random Eras game" hidden>
+      <canvas id="game-canvas" tabindex="0" aria-label="3D game view"></canvas>
+      <div class="game-hud" aria-label="Game status">
+        <div class="hud-top">
+          <div class="hud-panel hud-location">
+            <p class="hud-mode" id="hud-mode"></p>
+            <h2 id="hud-region"></h2>
+            <p id="hud-faction"></p>
+          </div>
+          <div class="hud-panel hud-objective">
+            <p id="hud-objective"></p>
+            <p id="hud-cores"></p>
+          </div>
+          <button class="button hud-button" id="pause" type="button">Menu <kbd>Esc</kbd></button>
+        </div>
+        <div class="hud-message" id="hud-message" role="status" aria-live="polite"></div>
+        <div class="hud-reticle" id="hud-reticle" aria-hidden="true">
+          <span class="reticle-dot"></span>
+          <span class="reticle-meter reticle-meter--health"></span><span class="reticle-meter reticle-meter--stamina"></span>
+          <span class="reticle-arrow" id="reticle-swipe" hidden></span>
+          <span class="reticle-arrow reticle-arrow--combo" id="reticle-combo" hidden></span>
+        </div>
+        <div class="hud-bottom">
+          <div class="hud-panel hud-bars">
+            <div class="hud-stat"><span>Health</span><span id="health-value"></span></div>
+            <progress id="health" class="hud-health" max="100" value="100" aria-label="Health"></progress>
+            <div class="hud-stat"><span>Stamina</span><span id="stamina-value"></span></div>
+            <progress id="stamina" class="hud-stamina" max="100" value="100" aria-label="Stamina"></progress>
+            <div id="rival-vitals" hidden>
+              <div class="hud-stat"><span>Rival</span><span id="rival-health-value"></span></div>
+              <progress id="rival-health" class="hud-rival" max="100" value="100" aria-label="Rival health"></progress>
+            </div>
+          </div>
+          <div class="hud-panel hud-loadout">
+            <strong id="hud-weapon"></strong>
+            <span id="hud-weapon-detail"></span>
+            <div id="hud-inventory" class="hud-inventory"></div>
+          </div>
+          <div class="hud-panel hud-map" id="hud-map" aria-label="Minimap">
+            <canvas id="minimap" width="176" height="176" aria-label="Stronghold locations and player position"></canvas>
+            <span id="hud-seed"></span>
+          </div>
+        </div>
+        <div class="hud-caption" id="hud-caption" role="status"></div>
+        <div class="hud-dev" id="hud-dev" hidden></div>
+        <p id="yard-tip" class="yard-tip" hidden></p>
+        <div class="hud-controls" id="hud-controls">WASD Move · Long Swipe to Swing · RMB Guard</div>
+      </div>
+    </section>
+
+    <dialog class="game-modal" id="controls-dialog" aria-labelledby="controls-title">
+      <div class="modal-card">
+        <header class="modal-header"><h2 id="controls-title">Controls</h2><button class="icon-button" type="button" data-close aria-label="Close controls">×</button></header>
+        <dl class="controls-list">
+          <div><dt>Move</dt><dd><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></dd></div>
+          <div><dt>Look and position your weapon</dt><dd>Move the mouse</dd></div>
+          <div><dt>Swing</dt><dd id="controls-attack">Make a long, quick swipe</dd></div>
+          <div><dt>Guard</dt><dd>Hold right click</dd></div>
+          <div><dt>Sprint</dt><dd><kbd>Shift</kbd></dd></div>
+          <div><dt>Pick up nearby gear</dt><dd><kbd>E</kbd></dd></div>
+          <div><dt>Equip a carried weapon</dt><dd><kbd>1</kbd>–<kbd>9</kbd></dd></div>
+          <div><dt>Switch camera in Frontier or Training</dt><dd><kbd>V</kbd></dd></div>
+          <div><dt>Open the map</dt><dd><kbd>M</kbd></dd></div>
+          <div><dt>Match status</dt><dd><kbd>Tab</kbd></dd></div>
+          <div><dt>Return to the menu</dt><dd><kbd>Esc</kbd></dd></div>
+        </dl>
+        <div class="modal-actions"><button id="swipe-test" type="button" class="button button-secondary">Test a swipe</button><button type="button" class="button button-secondary" data-open-settings>Rebind keys</button></div>
+        <p class="modal-note" id="swipe-result" role="status">Press Escape to release the mouse after a test.</p>
+        <p class="modal-note">Click the game to capture the mouse. Choose your attack input in Settings. Attack again when a second ring appears on the reticle to queue a follow-up.</p>
+      </div>
+    </dialog>
+
+    <dialog class="arena-dialog" id="arena-dialog" aria-labelledby="arena-title">
+      <div class="arena-chamber">
+        <header class="screen-heading"><button class="back-link" type="button" data-close>← Back</button><div><p class="handwritten">melee only · 1 vs 1</p><h2 id="arena-title">The Pit</h2></div><code id="arena-seed-label" class="seal-code"></code></header>
+        <div class="arena-matchup">
+          <section class="arena-fighter" aria-label="Your fighter"><span class="handwritten">you</span><div class="fighter-portrait warm" aria-hidden="true"></div><h3 data-profile-name>Wanderer</h3><p id="arena-self-status">Setting up</p></section>
+          <div class="arena-middle">
+            <strong class="versus">VS</strong>
+            <article class="parchment arena-rules"><h3 class="handwritten">House rules</h3><p>Melee weapons only. Hold right click to raise your shield. Choose your attack input in Settings.</p><p>One round. The walls stay shut.</p></article>
+            <dl class="camp-facts"><div><dt>Age</dt><dd id="arena-era-label"></dd></div><div><dt>Arena size</dt><dd>Small</dd></div></dl>
+          </div>
+          <section class="arena-fighter challenger" aria-label="Challenger"><span class="handwritten">challenger</span><div class="fighter-portrait cool" aria-hidden="true"></div><h3 id="arena-opponent">Pit sparring bot</h3><p id="arena-peer-status">Ready</p></section>
+        </div>
+        <div class="arena-controls">
+          <label class="field-label" for="arena-weapon">Duel weapon <select id="arena-weapon"></select></label>
+          <label class="field-label" for="arena-era">Arena age <select id="arena-era"></select></label>
+          <button class="back-link" id="arena-roll" type="button">Re-roll</button>
+          <div class="arena-invite">
+            <button class="ink-button" id="host-match" type="button">Invite a friend</button>
+            <button class="ink-button" id="join-match" type="button">Join a friend</button>
+            <button class="back-link local-play" id="local-match" type="button">Play across two tabs</button>
+          </div>
+          <button class="gold-button" id="practice" type="button">Ready</button>
+        </div>
+        <div id="network-panel" class="network-panel arena-network" hidden>
+          <p id="network-status" class="modal-note" role="status"></p>
+          <div id="network-output-field" hidden>
+            <label class="field-label" id="network-output-label" for="network-output"></label>
+            <textarea id="network-output" rows="2" readonly spellcheck="false"></textarea>
+            <button class="button button-secondary" id="network-copy" type="button">Copy code</button>
+          </div>
+          <div id="network-input-field" hidden>
+            <label class="field-label" id="network-input-label" for="network-input"></label>
+            <textarea id="network-input" rows="2" spellcheck="false" autocomplete="off"></textarea>
+            <button class="button button-primary" id="network-connect" type="button">Connect</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="game-modal settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <div class="modal-card">
+        <header class="modal-header"><h2 id="settings-title">Settings</h2><button type="button" class="icon-button" data-close aria-label="Close settings">×</button></header>
+        <div class="settings-tabs" role="group" aria-label="Settings categories">
+          <button type="button" data-settings-tab="video">Video</button><button type="button" data-settings-tab="audio">Audio</button><button type="button" data-settings-tab="controls">Controls</button><button type="button" data-settings-tab="gameplay">Gameplay</button><button type="button" data-settings-tab="access">Accessibility</button>
+        </div>
+        <div class="settings-panel" data-setting-panel="video">
+          <label>Quality <select data-setting="quality"><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="ultra">Ultra</option></select></label>
+          <label>Resolution <input type="range" data-setting="resolution" min="0.5" max="1" step="0.05"><output data-value="resolution"></output></label>
+          <label>Frame cap <select data-setting="fps"><option value="30">30 FPS</option><option value="60">60 FPS</option><option value="120">120 FPS</option><option value="0">Display refresh rate</option></select></label>
+          <button type="button" class="ink-button" id="fullscreen-setting">Toggle fullscreen</button>
+        </div>
+        <div class="settings-panel" data-setting-panel="audio" hidden>
+          <label>Master volume <input type="range" data-setting="master" min="0" max="1" step="0.05"><output data-value="master"></output></label>
+          <label>Music <input type="range" data-setting="music" min="0" max="1" step="0.05"><output data-value="music"></output></label>
+          <label>Ambience <input type="range" data-setting="ambience" min="0" max="1" step="0.05"><output data-value="ambience"></output></label>
+          <label>Combat effects <input type="range" data-setting="effects" min="0" max="1" step="0.05"><output data-value="effects"></output></label>
+        </div>
+        <div class="settings-panel" data-setting-panel="controls" hidden>
+          <label>Attack input <select data-setting="attackInput"><option value="swipe">Mouse swipe</option><option value="click">Left click</option></select></label>
+          <label>Look sensitivity <input type="range" data-setting="sensitivity" min="0.35" max="2.5" step="0.05"><output data-value="sensitivity"></output></label>
+          <label>Invert look Y <input type="checkbox" data-setting="invert"></label>
+          <div class="rebind-grid" id="rebind-controls"></div>
+          <button type="button" class="ink-button" data-controls>View all controls</button>
+        </div>
+        <div class="settings-panel" data-setting-panel="gameplay" hidden>
+          <label>Swing distance <input type="range" data-setting="swingDistance" min="0.75" max="2" step="0.05"><output data-value="swingDistance"></output></label>
+          <label>Swipe speed <input type="range" data-setting="swipeSpeed" min="0.75" max="1.75" step="0.05"><output data-value="swipeSpeed"></output></label>
+          <label>Swing sensitivity <input type="range" data-setting="swingResponse" min="0.5" max="1.5" step="0.05"><output data-value="swingResponse"></output></label>
+          <label>Combo window in solo play <input type="range" data-setting="bufferWindow" min="0.15" max="0.45" step="0.01"><output data-value="bufferWindow"></output></label>
+          <button type="button" class="ink-button" id="reset-combat">Reset combat tuning</button>
+          <label>Training guide <input type="checkbox" data-setting="yardGuide"></label>
+          <label>Frontier camera <select data-setting="frontierView"><option value="first-person">First person</option><option value="third-person">Third person</option></select></label>
+          <label>Minimap <input type="checkbox" data-setting="minimap"></label>
+          <label>Terrain map overlay <select data-setting="terrainOverlay"><option value="biome">Biomes</option><option value="height">Elevation</option><option value="slope">Slope</option><option value="scatter">Scatter density</option><option value="cores">Core sites</option><option value="paths">Paths</option></select></label>
+          <label>Terrain counters <input type="checkbox" data-setting="counters"></label>
+          <button type="button" class="ink-button" id="export-terrain">Export current terrain</button>
+          <button type="button" class="ink-button" id="copy-match-seed">Copy current Frontier link</button>
+        </div>
+        <div class="settings-panel" data-setting-panel="access" hidden>
+          <label>Interface scale <input type="range" data-setting="uiScale" min="0.9" max="1.3" step="0.05"><output data-value="uiScale"></output></label>
+          <label>High contrast <input type="checkbox" data-setting="contrast"></label>
+          <label>Cut direction accents <select data-setting="reticleTheme"><option value="default">Gold and teal</option><option value="blue">White and blue</option></select></label>
+          <label>Reduced motion <input type="checkbox" data-setting="reducedMotion"></label>
+          <label>Text cues for swings <input type="checkbox" data-setting="captions"></label>
+        </div>
+        <p class="modal-note" id="settings-status" role="status"></p>
+      </div>
+    </dialog>
+
+    <dialog class="game-modal" id="map-dialog" aria-labelledby="map-title">
+      <div class="modal-card"><header class="modal-header"><h2 id="map-title">Field map</h2><button type="button" class="icon-button" data-close aria-label="Close field map">×</button></header>
+      <canvas id="field-map" width="510" height="510" role="img" aria-label="Map with roads, contours and strongholds"></canvas></div>
+    </dialog>
+    <dialog class="game-modal" id="score-dialog" aria-labelledby="score-title">
+      <div class="modal-card"><header class="modal-header"><h2 id="score-title">Match status</h2><button type="button" class="icon-button" data-close aria-label="Close match status">×</button></header><ul id="score-list" class="score-list"></ul></div>
+    </dialog>
+
+    <dialog class="game-modal" id="pause-dialog" aria-labelledby="pause-title">
+      <div class="modal-card">
+        <header class="modal-header"><h2 id="pause-title">Game menu</h2></header>
+        <p class="modal-note" id="pause-note"></p>
+        <div class="modal-actions">
+          <button class="button button-primary" id="resume" type="button">Resume</button>
+          <button class="button button-secondary" type="button" data-controls>Controls</button>
+          <button class="button button-secondary" type="button" data-open-settings>Settings</button>
+          <button class="button button-secondary" id="quit" type="button">Main menu</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="game-modal" id="end-dialog" aria-labelledby="end-title">
+      <div class="modal-card">
+        <header class="modal-header"><h2 id="end-title"></h2></header>
+        <p class="modal-note" id="end-note"></p>
+        <dl id="end-ledger" class="controls-list"></dl>
+        <div class="modal-actions">
+          <button class="button button-primary" id="replay" type="button">Play again</button>
+          <button class="button button-secondary" id="leave-end" type="button">Main menu</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="game-modal" id="error-dialog" aria-labelledby="error-title">
+      <div class="modal-card">
+        <header class="modal-header"><h2 id="error-title">Couldn’t start the game</h2><button class="icon-button" type="button" data-close aria-label="Close error">×</button></header>
+        <p class="modal-note" id="error-message"></p>
+        <p id="webgl-help" hidden><a href="https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext#browser_compatibility">Browsers with WebGL 2 support</a></p>
+      </div>
+    </dialog>
+  </body>
+</html>

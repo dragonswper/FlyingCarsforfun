@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "games": [
+    {"id": "riftfall", "title": "Riftfall", "kind": "static", "source": "games/riftfall/dist"},
+    {"id": "skybreak", "title": "Skybreak Island", "kind": "static", "source": "games/skybreak/dist"},
+    {"id": "skybreak-classic", "title": "Skybreak Classic", "kind": "static", "source": "games/skybreak-classic/dist"},
+    {"id": "random-eras", "title": "Random Eras", "kind": "vite", "source": "games/random-eras/dist"}
+  ]
+}

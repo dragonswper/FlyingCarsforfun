@@ -4,10 +4,13 @@ Playdock is a separate browser-game launcher at:
 
 https://flyingcarsforfun.connstors.workers.dev/hub/
 
-It features Boost Circuit and links to the existing Skybreak, Riftfall and Random
-Era’s prototypes. The prototypes retain their existing invited-account gates.
-The launcher does not change sharing, player accounts, matchmaking, game physics
-or the persistent server identity. Direct game links continue to work.
+It launches Boost Circuit, Riftfall, Skybreak Island, Skybreak Classic and Random
+Eras from the same server. All five clients, their source and the hub are saved
+in FlyingCarsforfun. [Repository layout and build commands](../games/README.md).
+
+Boost Circuit retains its original root URL and multiplayer authority. The other
+games mount below `/games/`. The merged copies use the existing public game host;
+the older private Sites copies retain their access settings and remain available.
 
 ## Library features
 
@@ -28,8 +31,8 @@ Blocked/corrupt browser storage falls back to a library for the current visit.
 
 The public runtime files live in `dist/hub/`. Add shared catalogue entries to
 `dist/hub/library.js`; the Add game form adds personal links on one browser only.
-The same runtime files are also published as an owner-private Sites copy. That
-copy is independent of the public `/hub/` route and retains its own sharing gate.
+An older owner-private Sites copy remains independent. The GitHub repository and
+public `/hub/` route are now the canonical collection and deployment.
 
 The blue car/football arena illustration is original Blender work:
 `art/playdock-hero.blend`, generated with `scripts/create-playdock-hero.py`.
@@ -55,3 +58,15 @@ JavaScript syntax and HTML/SVG structure are checked too. The Cloud environment
 does not expose the Sites browser-control tool, so interactive browser and visual
 layout QA for this hub remain unverified; a deployment success alone is not a
 claim that every device has been tested.
+
+## Shared hosting and saves
+
+`npm run build:games` builds and packages every imported game; the standard CI
+workflow checks the builds and all game tests. The shared Node and Cloudflare
+servers serve nested game directories with the correct static content types.
+Random Eras permits its local WebAssembly model decoder only on its own routes;
+JavaScript eval remains blocked, and admin/server data stay protected.
+
+Hub favourites and recent game IDs continue to work. Games keep separate progress
+keys so one cannot overwrite another's settings. Browser saves on the older Sites
+domains stay there; the merged host cannot read another origin's local storage.

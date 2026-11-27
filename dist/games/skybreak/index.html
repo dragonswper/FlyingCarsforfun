@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111a37">
+  <meta name="description" content="Drop into Riftfall: a playable browser island skirmish with building, target practice and local bots.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23101932'/%3E%3Cpath d='M35 5 13 35h17l-3 24 25-34H35Z' fill='%23ffe34b'/%3E%3C/svg%3E">
+  <title>Riftfall — Skybreak Island</title>
+  <meta property="og:title" content="Riftfall — Skybreak Island">
+  <meta property="og:description" content="Your island. Your rules. Drop into a free browser-native build-and-battle playground.">
+  <meta property="og:image" content="https://flyingcarsforfun.connstors.workers.dev/games/skybreak/assets/island-cover.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="skybreak.css">
+  <script src="../shared/babylon8/babylon.js" defer></script>
+  <script src="vendor/babylonjs.loaders.min.js" defer></script>
+  <script src="assets.js" defer></script>
+  <script src="world.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7l1-7Z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="m10 3-1 3-3-1-2 4 2 2v2l-2 2 2 4 3-1 1 3h4l1-3 3 1 2-4-2-2v-2l2-2-2-4-3 1-1-3h-4Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="m3 6 4 4 5-7 5 7 4-4-2 13H5L3 6Zm2 10h14"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5 9 10 9 10s9-5 9-10V6l-9-4Z"/></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 22v-4a8 8 0 0 1 16 0v4"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5V4Zm4 4a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-build" viewBox="0 0 24 24"><path d="M3 4h18v16H3V4Zm0 6h18M9 4v6m6 0v5M3 15h18m-12 0v5"/></symbol>
+  </svg>
+
+  <main id="game-shell">
+    <canvas id="game-canvas" tabindex="0" aria-label="Riftfall 3D island. Use keyboard and mouse to play."></canvas>
+    <div class="scene-vignette" aria-hidden="true"></div>
+
+    <section id="lobby" aria-label="Game lobby">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Riftfall home"><svg class="brand-mark"><use href="#i-bolt"/></svg><span>RIFTFALL<small>SKYBREAK ISLAND · WEB EDITION</small></span></a>
+        <nav class="main-nav" aria-label="Lobby navigation">
+          <span class="nav-current" aria-current="page">PLAY</span>
+          <button id="locker-button" class="nav-button" type="button">LOCKER</button>
+          <button id="career-button" class="nav-button" type="button">CAREER</button>
+          <button id="howto-button" class="nav-button" type="button">HOW TO PLAY</button>
+        </nav>
+        <div class="top-actions">
+          <span class="local-badge"><i></i> YOUR GPU · LOCAL PLAY</span>
+          <button id="fullscreen-button" class="icon-button" type="button" title="Toggle fullscreen" aria-label="Toggle fullscreen"><svg><use href="#i-expand"/></svg></button>
+          <button id="settings-button" class="icon-button" type="button" title="Settings" aria-label="Settings"><svg><use href="#i-settings"/></svg></button>
+        </div>
+      </header>
+
+      <div class="lobby-body">
+        <aside class="left-rail">
+          <div class="island-intro"><span class="eyebrow">WELCOME TO SKYBREAK ISLAND</span><h1>YOUR ISLAND.<br><em>YOUR RULES.</em></h1><p>Build the high ground.<br>Make the next drop yours.</p></div>
+          <div class="season-label"><span class="tiny-rule"></span>THE SKYBREAK UPDATE<span class="season-number">01</span></div>
+          <section class="profile-panel glass-panel" aria-label="Player profile">
+            <div class="profile-top"><div class="profile-emblem"><svg><use href="#i-bolt"/></svg></div><div><span class="eyebrow">READY FOR THE RIFT</span><h1 id="player-name">RIFT EXPLORER</h1><span class="profile-status"><i></i> Island explorer</span></div></div>
+            <div class="level-row"><span>LEVEL <strong id="profile-level">01</strong></span><span id="profile-xp">0 XP</span></div>
+            <div class="level-track" aria-hidden="true"><span id="xp-fill" style="width:0%"></span></div>
+            <div class="personal-best"><svg><use href="#i-crown"/></svg><span>PERSONAL BEST</span><strong id="best-score">0</strong></div>
+          </section>
+
+          <section class="challenge-panel glass-panel" aria-labelledby="challenge-title">
+            <div class="panel-heading"><svg><use href="#i-target"/></svg><h2 id="challenge-title">YOUR NEXT DROP</h2></div>
+            <div class="challenge"><span class="challenge-number">01</span><div><strong>Find your footing</strong><span><span id="quest-explore">Complete your first drop.</span></span></div></div>
+            <div class="challenge"><span class="challenge-number">02</span><div><strong>Build your advantage</strong><span><span id="quest-build">Build five structures in one match.</span></span></div></div>
+            <div class="challenge"><span class="challenge-number">03</span><div><strong>Be the last one standing</strong><span><span id="quest-win">Win a solo skirmish.</span></span></div></div>
+            <div class="challenge-note">Your progress stays in this browser.</div>
+          </section>
+        </aside>
+
+        <div class="character-stage" aria-label="Selected character">
+          <div class="player-tag"><svg><use href="#i-person"/></svg><span>YOU</span><i></i></div>
+          <div class="stage-caption"><span class="eyebrow">SELECTED OUTFIT</span><strong id="selected-outfit-name">VIOLET VANGUARD</strong><span class="stage-rule"></span></div>
+        </div>
+
+        <aside class="right-rail">
+          <section class="dispatch-card glass-panel" aria-label="Island briefing">
+            <div class="dispatch-art island-art" aria-hidden="true"></div>
+            <div class="dispatch-copy"><span class="eyebrow">NEW · SKYBREAK CHALLENGE</span><h2>EIGHT TARGETS.<br>ONE CLEAN RUN.</h2><p>Three minutes on the clock.<br>Find your line. Hit every mark.</p><button id="challenge-button" type="button" class="dispatch-link">TRY THE CHALLENGE <span>↗</span></button></div>
+          </section>
+
+          <section class="play-panel" aria-label="Match setup">
+            <div class="mode-heading"><span class="eyebrow">CHOOSE YOUR DROP</span><span class="mode-status">SOLO · LOCAL BOTS</span></div>
+            <label class="sr-only" for="mode-select">Game mode</label>
+            <div class="mode-select-wrap"><svg><use href="#i-person"/></svg><select id="mode-select"><option value="skirmish">SOLO SKIRMISH</option><option value="practice">FREE PRACTICE</option><option value="skybreak">SKYBREAK CHALLENGE</option></select></div>
+            <p class="mode-description" id="mode-description">Seven bots. One survivor. Build, move, and beat the storm.</p>
+            <button id="ready-button" class="ready-button" type="button"><span>DROP IN</span><svg><use href="#i-arrow"/></svg></button>
+            <span class="play-caption"><i></i> No download. No queue. Just play.</span>
+          </section>
+        </aside>
+      </div>
+
+      <div class="mode-deck" aria-label="Choose game mode">
+        <button class="mode-tile selected" data-mode="skirmish" type="button" aria-pressed="true"><span class="tile-art skirmish-art"></span><span class="tile-copy"><small>BUILD · BATTLE · SURVIVE</small><strong>SOLO SKIRMISH</strong><span>YOU + 7 BOTS</span></span><span class="tile-arrow">↗</span></button>
+        <button class="mode-tile" data-mode="practice" type="button" aria-pressed="false"><span class="tile-art practice-art"></span><span class="tile-copy"><small>EXPLORE · LEARN · BUILD</small><strong>FREE PRACTICE</strong><span>NO STORM · NO PRESSURE</span></span><span class="tile-arrow">↗</span></button>
+        <button class="mode-tile" data-mode="skybreak" type="button" aria-pressed="false"><span class="tile-art challenge-art"></span><span class="tile-copy"><small>NEW CHALLENGE</small><strong>SKYBREAK RUN</strong><span>8 TARGETS · 3 MINUTES</span></span><span class="tile-arrow">↗</span></button>
+      </div>
+      <footer class="lobby-footer">
+        <div class="footer-hint"><span class="key key-wide">W A S D</span><span>MOVE</span><span class="footer-separator"></span><span class="key">Q</span><span>BUILD</span><span class="footer-separator"></span><span class="key">ESC</span><span>PAUSE</span></div>
+        <span class="prototype-note">RIFTFALL × SKYBREAK · INDEPENDENT BROWSER GAME</span>
+        <button id="credits-button" type="button" class="credits-link">CREDITS & SOURCE ↗</button><span class="keyboard-note">Keyboard & mouse required</span>
+      </footer>
+    </section>
+
+    <section id="match-hud" aria-label="Match information" hidden>
+      <div id="compass" class="compass" aria-label="Compass">N · 000</div><div id="match-objective" class="match-objective"></div>
+      <div class="hud-top-left"><div class="match-brand">RIFTFALL <span id="mode-label">SOLO SKIRMISH</span></div><button id="pause-button" class="icon-button" type="button" aria-label="Pause game" title="Pause (Escape)"><svg><use href="#i-pause"/></svg></button><button id="finish-practice" type="button" class="finish-practice" hidden>FINISH PRACTICE</button></div>
+      <div class="hud-top-right"><div class="minimap-shell"><canvas id="minimap" width="160" height="160" aria-label="Island minimap"></canvas><span class="minimap-label">SKYBREAK ISLAND · M</span></div><div class="match-stats"><span title="Storm timer"><svg><use href="#i-bolt"/></svg><b id="storm-time">3:00</b></span><span title="Players remaining"><svg><use href="#i-person"/></svg><b id="remaining-value">8</b></span><span title="Eliminations"><svg><use href="#i-target"/></svg><b id="kills-value">0</b></span></div></div>
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <div id="crosshair" class="crosshair" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+      <div id="hit-marker" class="hit-marker" aria-hidden="true" hidden></div>
+      <div id="reload-indicator" class="reload-indicator" hidden>RELOADING<span></span></div>
+      <div id="build-indicator" class="build-indicator" hidden><svg><use href="#i-build"/></svg><span>BUILD MODE</span><span class="key">E</span><small>SWITCH PIECE</small><span class="key">F</span><small>ROTATE</small></div>
+      <div class="hud-bottom-left"><div class="vitals"><div class="vital-row shield-row"><svg><use href="#i-shield"/></svg><div class="vital-track"><div id="shield-fill" class="vital-fill" style="width:100%"></div></div><strong id="shield-value">100</strong></div><div class="vital-row health-row"><span class="health-plus">+</span><div class="vital-track"><div id="health-fill" class="vital-fill" style="width:100%"></div></div><strong id="health-value">100</strong></div></div><div class="hud-controls"><span><b>WASD</b> Move</span><span><b>SPACE</b> Jump</span><span><b>SHIFT</b> Sprint</span></div></div>
+      <div class="hud-bottom-right"><div class="material-count"><svg><use href="#i-build"/></svg><strong id="wood-value">180</strong><span>WOOD</span></div><div class="weapon-card"><span id="weapon-label" class="weapon-label">RIFT RIFLE</span><div class="ammo"><strong id="ammo-value">24</strong><span>/</span><span id="reserve-value">120</span></div><div class="weapon-controls"><span><b>R</b> Reload</span><span><b>Q</b> Build</span><span><b>1–3</b> Equip</span></div></div></div>
+      <div id="quickbar" class="quickbar" aria-label="Equipped weapon and build pieces">
+        <div class="quick-slot tool-slot" data-slot="pickaxe"><kbd>3</kbd><svg viewBox="0 0 48 48"><path d="M10 8c10-6 23-3 29 8l-9-3-7 5L11 42l-5-3 14-24Z"/></svg><span>PICKAXE</span></div>
+        <div class="quick-slot selected rifle-slot" data-slot="rifle"><kbd>1</kbd><svg viewBox="0 0 48 48"><path d="m5 17 8 2 4-5h18v5h9v4H29l-4 5-5-2-3 12h-5l2-14H5Z"/></svg><span>RIFLE</span></div>
+        <div class="quick-slot shotgun-slot" data-slot="shotgun"><kbd>2</kbd><svg viewBox="0 0 48 48"><path d="M4 18h39v5H24l-6 7-4-2-6 8-5-3 9-12H4Z"/></svg><span>SHOTGUN</span></div>
+        <div class="quick-slot build-slot" data-piece="wall"><kbd>4</kbd><svg><use href="#i-build"/></svg><span>WALL</span></div>
+        <div class="quick-slot build-slot" data-piece="ramp"><kbd>5</kbd><svg viewBox="0 0 48 48"><path d="M4 38h40L36 7Z M12 30h25 M20 22h17 M28 14h9"/></svg><span>RAMP</span></div>
+        <div class="quick-slot build-slot" data-piece="floor"><kbd>6</kbd><svg viewBox="0 0 48 48"><path d="m4 29 19-13 21 10-21 14Z M11 24l21 11 M17 20l21 11"/></svg><span>FLOOR</span></div>
+      </div><div id="fps" class="fps" hidden></div>
+    </section>
+
+    <div id="click-to-play" class="capture-prompt" hidden><svg><use href="#i-target"/></svg><strong>CLICK THE ISLAND TO PLAY</strong><span>Capture your mouse · Escape pauses</span></div>
+
+    <div id="loading-screen" class="loading-screen" role="status"><div class="loading-emblem"><svg><use href="#i-bolt"/></svg></div><strong>FINDING YOUR ISLAND</strong><span id="loading-status">Preparing the browser engine…</span><div class="loading-track"><i></i></div><small>RIFTFALL · SKYBREAK ISLAND</small></div>
+    <section id="error-panel" class="error-panel" role="alert" hidden><svg><use href="#i-bolt"/></svg><h1>THE RIFT COULDN’T OPEN</h1><p id="error-detail">The 3D engine couldn’t start. Check that your browser supports WebGL and hardware acceleration.</p><a class="primary-button" href="./">TRY AGAIN</a></section>
+
+    <dialog id="locker-dialog" class="game-dialog locker-dialog" aria-labelledby="locker-title"><button class="dialog-close icon-button" type="button" data-close="locker-dialog" aria-label="Close locker"><svg><use href="#i-close"/></svg></button><span class="eyebrow">MAKE IT YOURS</span><h2 id="locker-title">YOUR LOCKER</h2><p class="dialog-description">Pick your colors. Bring your own style to the island.</p><div class="outfit-options"><button type="button" class="outfit-card outfit-violet selected" data-outfit="violet" aria-pressed="true"><span class="outfit-preview"><span class="outfit-head"></span><span class="outfit-body"></span><span class="outfit-legs"></span></span><span class="outfit-rarity">RIFT OUTFIT</span><strong>VIOLET VANGUARD</strong><span class="outfit-select-label">SELECTED</span></button><button type="button" class="outfit-card outfit-mint" data-outfit="mint" aria-pressed="false"><span class="outfit-preview"><span class="outfit-head"></span><span class="outfit-body"></span><span class="outfit-legs"></span></span><span class="outfit-rarity">RIFT OUTFIT</span><strong>MINT MARAUDER</strong><span class="outfit-select-label">SELECT OUTFIT</span></button><button type="button" class="outfit-card outfit-ember" data-outfit="ember" aria-pressed="false"><span class="outfit-preview"><span class="outfit-head"></span><span class="outfit-body"></span><span class="outfit-legs"></span></span><span class="outfit-rarity">RIFT OUTFIT</span><strong>EMBER RUNNER</strong><span class="outfit-select-label">SELECT OUTFIT</span></button></div><p class="dialog-footnote">All outfits are included. Colors change appearance only.</p></dialog>
+
+    <dialog id="settings-dialog" class="game-dialog settings-dialog" aria-labelledby="settings-title"><button class="dialog-close icon-button" type="button" data-close="settings-dialog" aria-label="Close settings"><svg><use href="#i-close"/></svg></button><span class="eyebrow">YOUR GAME, YOUR WAY</span><h2 id="settings-title">SETTINGS</h2><div class="setting-row"><label for="sensitivity"><strong>Mouse sensitivity</strong><span>Adjust how quickly your view turns.</span></label><input id="sensitivity" type="range" min="0.25" max="2" value="1" step="0.05"></div><div class="setting-row"><label for="quality"><strong>Graphics quality</strong><span>Choose low for smoother play on older devices.</span></label><select id="quality"><option value="high">High</option><option value="low">Low</option></select></div><div class="setting-row"><label for="fps-toggle"><strong>Performance counter</strong><span>Show frames per second during play.</span></label><input id="fps-toggle" class="toggle-input" type="checkbox"></div><div class="setting-row"><label for="audio-toggle"><strong>Sound effects</strong><span>Rifle, building, and island feedback.</span></label><input id="audio-toggle" class="toggle-input" type="checkbox" checked></div><div class="dialog-actions"><button class="primary-button" type="button" data-close="settings-dialog">DONE<svg><use href="#i-arrow"/></svg></button></div><p class="dialog-footnote">Preferences are saved in this browser.</p></dialog>
+
+    <dialog id="controls-dialog" class="game-dialog controls-dialog" aria-labelledby="controls-title"><button class="dialog-close icon-button" type="button" data-close="controls-dialog" aria-label="Close controls"><svg><use href="#i-close"/></svg></button><span class="eyebrow">A QUICK FIELD GUIDE</span><h2 id="controls-title">OWN YOUR DROP</h2><p class="dialog-description">Stay inside the storm circle, collect supplies, and outlast the bots. Target practice gives you room to learn.</p><div class="controls-grid"><div><span class="key key-wide">W A S D</span><span>Move</span></div><div><span class="key key-wide">MOUSE</span><span>Look / aim</span></div><div><span class="key key-wide">SPACE</span><span>Jump</span></div><div><span class="key key-wide">SHIFT</span><span>Sprint</span></div><div><span class="key key-wide">LMB</span><span>Fire / place build</span></div><div><span class="key key-wide">RMB</span><span>Aim down sights</span></div><div><span class="key">R</span><span>Reload</span></div><div><span class="key">Q</span><span>Toggle building</span></div><div><span class="key">E</span><span>Cycle wall / ramp / floor</span></div><div><span class="key">F</span><span>Rotate build</span></div><div><span class="key">1</span><span>Equip rifle</span></div><div><span class="key">2</span><span>Equip shotgun</span></div><div><span class="key">3</span><span>Pickaxe / gather wood</span></div><div><span class="key key-wide">4 / 5 / 6</span><span>Wall / ramp / floor</span></div><div><span class="key">M</span><span>Island map</span></div><div><span class="key key-wide">ESC</span><span>Pause</span></div></div><p class="controls-tip"><svg><use href="#i-bolt"/></svg>Click the island to capture your mouse. If pointer lock is unavailable, drag on the canvas to look around.</p><div class="dialog-actions"><button class="primary-button" type="button" data-close="controls-dialog">GOT IT<svg><use href="#i-arrow"/></svg></button></div></dialog>
+
+    <dialog id="pause-dialog" class="game-dialog pause-dialog" aria-labelledby="pause-title"><span class="eyebrow">TAKE A BREATHER</span><h2 id="pause-title">GAME PAUSED</h2><p class="dialog-description">Your local match is waiting right here.</p><div class="pause-actions"><button id="resume-button" class="primary-button" type="button">BACK TO THE ISLAND<svg><use href="#i-arrow"/></svg></button><button id="pause-settings-button" class="secondary-button" type="button">SETTINGS</button><button id="leave-button" class="text-button" type="button">LEAVE MATCH</button></div></dialog>
+
+    <dialog id="result-dialog" class="game-dialog result-dialog" aria-labelledby="result-title"><div class="result-emblem"><svg><use href="#i-crown"/></svg></div><span class="eyebrow">YOUR DROP, COMPLETE</span><h2 id="result-title">VICTORY!</h2><p id="result-detail" class="dialog-description">The island is yours.</p><div class="result-stats"><div><strong id="result-kills">0</strong><span>ELIMINATIONS</span></div><div><strong id="result-score">0</strong><span>MATCH SCORE</span></div><div><strong id="result-time">0:00</strong><span>TIME SURVIVED</span></div></div><div class="pause-actions"><button id="replay-button" class="primary-button" type="button">DROP AGAIN<svg><use href="#i-arrow"/></svg></button><button id="return-button" class="secondary-button" type="button">RETURN TO LOBBY</button></div></dialog>
+    <dialog id="career-dialog" class="game-dialog career-dialog" aria-labelledby="career-title"><button class="dialog-close icon-button" type="button" data-close="career-dialog" aria-label="Close career"><svg><use href="#i-close"/></svg></button><span class="eyebrow">EVERY DROP COUNTS</span><h2 id="career-title">YOUR ISLAND STORY</h2><p class="dialog-description">Your record on this device. No account needed.</p><div class="career-stats"><div><strong id="career-matches">0</strong><span>DROPS</span></div><div><strong id="career-wins">0</strong><span>VICTORIES</span></div><div><strong id="career-kills">0</strong><span>ELIMINATIONS</span></div></div><h3 class="history-heading">RECENT DROPS</h3><div id="match-history" class="match-history">Your first chapter starts with a drop.</div><div class="dialog-actions"><button class="primary-button" type="button" data-close="career-dialog">KEEP EXPLORING<svg><use href="#i-arrow"/></svg></button></div></dialog>
+    <dialog id="map-dialog" class="game-dialog map-dialog" aria-labelledby="map-title"><button class="dialog-close icon-button" type="button" data-close="map-dialog" aria-label="Close map"><svg><use href="#i-close"/></svg></button><span class="eyebrow">KNOW YOUR GROUND</span><h2 id="map-title">SKYBREAK ISLAND</h2><canvas id="large-map" width="480" height="480" aria-label="Full island map"></canvas><p class="dialog-footnote">White: you · Coral: opponents / targets · Violet: safe zone<br>The match pauses while the map is open.</p></dialog>
+    <dialog id="credits-dialog" class="game-dialog" aria-labelledby="credits-title"><button class="dialog-close icon-button" type="button" data-close="credits-dialog" aria-label="Close credits"><svg><use href="#i-close"/></svg></button><span class="eyebrow">BUILT FOR THE BROWSER</span><h2 id="credits-title">MADE TO EXPLORE</h2><p class="dialog-description">Riftfall gameplay meets the Skybreak arena. An independent game with original characters and scenery by Kenney, used under CC0. Powered by Babylon.js, Apache 2.0.</p><p class="dialog-description">Fortnite visual design was researched as a reference. This game is not affiliated with Epic Games and does not contain Fortnite game files.</p><p class="dialog-description"><a href="assets/models/manifest.json" target="_blank" rel="noopener">3D asset sources</a> · <a href="vendor/BABYLON-LICENSE.txt" target="_blank" rel="noopener">Engine license</a> · <a href="https://github.com/dragonswper/FlyingCarsforfun" target="_blank" rel="noopener" id="source-link">Source code</a></p></dialog>
+  </main>
+  <noscript><div class="noscript-message">Riftfall needs JavaScript enabled to render the island.</div></noscript>
+</body>
+</html>

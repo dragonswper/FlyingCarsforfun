@@ -1,0 +1,10 @@
+# Preserve imported engine, font licence and generated report bytes verbatim.
+# Whitespace inside bundled shader strings is generated upstream content.
+/dist/games/random-eras/assets/*.js -whitespace linguist-generated
+/dist/games/skybreak-classic/vendor/* -whitespace linguist-vendored
+/games/skybreak-classic/dist/vendor/* -whitespace linguist-vendored
+/dist/games/skybreak/assets/fonts/* -whitespace linguist-vendored
+/games/skybreak/dist/assets/fonts/* -whitespace linguist-vendored
+/dist/games/skybreak/vendor/* -whitespace linguist-vendored
+/games/skybreak/dist/vendor/* -whitespace linguist-vendored
+/games/skybreak/docs/rea-* -whitespace linguist-generated

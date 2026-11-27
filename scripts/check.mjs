@@ -12,4 +12,4 @@ function check(directory){
   }
  }
 }
-for(const directory of ['dist','scripts','server'])check(new URL('../'+directory+'/',import.meta.url));
+for(const directory of ['dist','scripts','server','games'])check(new URL('../'+directory+'/',import.meta.url));

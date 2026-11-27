@@ -1,0 +1,55 @@
+[
+  {
+    "file": "tree-pinetalla-detailed.glb",
+    "creator": "Kenney",
+    "pack": "Nature Kit",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "download": "https://raw.githubusercontent.com/Hidencod/tge-assets/3ddcc695adbba9fb918cf31b7c139b3f95b76910/packs/nature-kit/tree-pinetalla-detailed.glb",
+    "sha256": "9ba6337460e718b8baf165b23c02f39455e3d5757b1911505410c46bc88a86b5"
+  },
+  {
+    "file": "tree-oak.glb",
+    "creator": "Kenney",
+    "pack": "Nature Kit",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "download": "https://raw.githubusercontent.com/Hidencod/tge-assets/3ddcc695adbba9fb918cf31b7c139b3f95b76910/packs/nature-kit/tree-oak.glb",
+    "sha256": "d7fd8773674928c50c11b66d12c636d49bdcc15a8b1c7fbb98e6f63a3439a3f3"
+  },
+  {
+    "file": "rock-largea.glb",
+    "creator": "Kenney",
+    "pack": "Nature Kit",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "download": "https://raw.githubusercontent.com/Hidencod/tge-assets/3ddcc695adbba9fb918cf31b7c139b3f95b76910/packs/nature-kit/rock-largea.glb",
+    "sha256": "6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25"
+  },
+  {
+    "file": "grass-large.glb",
+    "creator": "Kenney",
+    "pack": "Nature Kit",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "download": "https://raw.githubusercontent.com/Hidencod/tge-assets/3ddcc695adbba9fb918cf31b7c139b3f95b76910/packs/nature-kit/grass-large.glb",
+    "sha256": "af49a595624abca7249824eeefb944d4baf974abeeb5b16110d175da3563d6cd"
+  },
+  {
+    "file": "log-stack.glb",
+    "creator": "Kenney",
+    "pack": "Nature Kit",
+    "license": "CC0-1.0",
+    "source": "https://kenney.nl/assets/nature-kit",
+    "download": "https://raw.githubusercontent.com/Hidencod/tge-assets/3ddcc695adbba9fb918cf31b7c139b3f95b76910/packs/nature-kit/log-stack.glb",
+    "sha256": "90eaae4a01ba1f25c2f0c6d83087e4a7a8fac684f2452615245333968d118d68"
+  },
+  {
+    "file": "cloud.glb",
+    "creator": "Kenney",
+    "license": "CC0-1.0",
+    "source": "https://github.com/KenneyNL/Starter-Kit-3D-Platformer",
+    "sha256": "a6126fdda6d8fcbd65c03bcda975726cb7cda085f207ac9277fce704589162bd",
+    "modifications": "Replaced external palette texture with a flat cloud-white material; geometry unchanged."
+  }
+]

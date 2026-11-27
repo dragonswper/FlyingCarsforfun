@@ -27,7 +27,7 @@ const esc = (text) =>
   String(text).replace(
     /[&<>"']/g,
     (c) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[
+      ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[
         c
       ],
   );
@@ -49,8 +49,7 @@ function playButton(game, label = 'Play') {
 }
 function card(game) {
   const favourite = state.favourites.includes(game.id),
-    badge =
-      game.id === 'boost-circuit' ? 'public' : game.custom ? 'custom' : '';
+    badge = game.access === 'Public' ? 'public' : game.custom ? 'custom' : '';
   return `<article class="game-card"><button class="game-art" data-details="${esc(game.id)}" aria-label="About ${esc(game.title)}"><img src="${esc(game.image)}" alt="" loading="lazy" width="480" height="300"><span class="card-style">${esc(game.genre)}</span></button><button class="favourite" data-favourite="${esc(game.id)}" aria-pressed="${favourite}" aria-label="${favourite ? 'Remove' : 'Add'} ${esc(game.title)} ${favourite ? 'from' : 'to'} favourites">${svg('heart')}</button><div class="card-content"><button class="card-title" data-details="${esc(game.id)}">${esc(game.title)}</button><div class="card-tags">${game.tags.map((t) => `<span>${esc(t)}</span>`).join('')}</div><div class="card-bottom"><span class="access-badge ${badge}">${esc(game.access)}</span>${playButton(game)}</div></div></article>`;
 }
 function timeAgo(at) {
@@ -61,10 +60,10 @@ function timeAgo(at) {
       ? `Opened ${min} min ago`
       : min < 1440
         ? 'Opened today'
-        : `Opened ${new Date(at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`;
+        : `Opened ${new Date(at).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}`;
 }
 function render() {
-  const results = selectGames(state, { view, genre, query });
+  const results = selectGames(state, {view, genre, query});
   $('.featured').hidden = view !== 'library' || !!query || genre !== 'All';
   $('.welcome').hidden = view !== 'library' || !!query || genre !== 'All';
   $('#library-title').innerHTML =
@@ -91,9 +90,7 @@ function render() {
         ? 'Games you open from Playdock will appear here.'
         : 'Try another title or game style, or add a game to your collection.';
   $('#reset-filters').hidden = noFilters;
-  $('#access-note').hidden = !results.some(
-    (g) => g.access === 'Private prototype',
-  );
+  $('#access-note').hidden = !results.length;
   $('#collection-count').textContent =
     `${allGames().length} games in your collection`;
   $('#breadcrumb-view').textContent =
@@ -117,7 +114,7 @@ function render() {
   }
   for (const b of document.querySelectorAll('[data-genre]'))
     b.classList.toggle('active', b.dataset.genre === genre);
-  const recent = selectGames(state, { view: 'recent' }).slice(0, 3);
+  const recent = selectGames(state, {view: 'recent'}).slice(0, 3);
   $('#continue-section').hidden =
     view !== 'library' || !noFilters || !recent.length;
   $('#continue-list').innerHTML = recent
@@ -209,7 +206,7 @@ document.addEventListener('click', (e) => {
     render();
     document
       .querySelector(`[data-favourite="${CSS.escape(id)}"]`)
-      ?.focus({ preventScroll: true });
+      ?.focus({preventScroll: true});
     toast(active ? 'Removed from favourites' : 'Added to favourites');
   }
   if (b.classList.contains('launch-link')) {
@@ -228,7 +225,7 @@ document.addEventListener('click', (e) => {
   if (b.id === 'empty-action') setView('library');
   if (b.id === 'show-recent') {
     setView('recent');
-    $('#main').scrollIntoView({ block: 'start' });
+    $('#main').scrollIntoView({block: 'start'});
   }
   if (b.id === 'remove-game') {
     state.custom = state.custom.filter((g) => g.id !== detailId);
@@ -280,7 +277,7 @@ $('#add-form').addEventListener('submit', (e) => {
       'Your library has 40 custom links. Remove a link before adding another.';
     return;
   }
-  if (allGames().some((g) => g.url === url)) {
+  if (allGames().some((g) => new URL(g.url, location.href).href === url)) {
     $('#add-error').textContent = 'That link is already in your library.';
     return;
   }

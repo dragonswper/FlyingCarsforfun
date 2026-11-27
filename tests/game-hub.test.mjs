@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import {readFileSync, existsSync} from 'node:fs';
 import {
   GAMES,
   STORAGE_KEY,
@@ -14,16 +14,16 @@ import {
   selectGames,
 } from '../dist/hub/library.js';
 
-test('the featured game opens the current public game, while prototype URLs retain their own access', () => {
-  assert.equal(GAMES[0].url, 'https://flyingcarsforfun.connstors.workers.dev/');
+test('the featured game and every bundled game use the current server origin', () => {
+  assert.equal(GAMES[0].url, '/');
   assert.equal(GAME_URL, GAMES[0].url);
   assert.equal(new Set(GAMES.map((g) => g.id)).size, GAMES.length);
-  assert.ok(
-    GAMES.filter((g) => g.id !== 'boost-circuit').every(
-      (g) => g.access === 'Private prototype',
-    ),
-  );
-  for (const game of GAMES) assert.equal(safeGameUrl(game.url), game.url);
+  assert.ok(GAMES.every((g) => g.access === 'Public'));
+  for (const game of GAMES) {
+    const local = new URL(game.url, 'https://game.example');
+    assert.equal(local.origin, 'https://game.example');
+    assert.equal(safeGameUrl(local.href), local.href);
+  }
 });
 test('user-added links require HTTPS and cannot contain credentials or script URLs', () => {
   for (const url of [
@@ -85,18 +85,18 @@ test('normalization rejects unsafe custom games and removes orphaned history and
     name: '  Driver  ',
     newTab: false,
     custom: [
-      { id: 'custom-valid', title: 'My game', url: 'https://example.com/' },
-      { id: 'custom-bad', title: 'Bad', url: 'javascript:alert(1)' },
-      { id: 'custom-valid', title: 'Duplicate', url: 'https://other.example/' },
-      { id: 'boost-circuit', title: 'Spoof', url: 'https://other.example/' },
+      {id: 'custom-valid', title: 'My game', url: 'https://example.com/'},
+      {id: 'custom-bad', title: 'Bad', url: 'javascript:alert(1)'},
+      {id: 'custom-valid', title: 'Duplicate', url: 'https://other.example/'},
+      {id: 'boost-circuit', title: 'Spoof', url: 'https://other.example/'},
     ],
     favourites: ['custom-valid', 'ghost', 'boost-circuit', 'boost-circuit'],
     recent: [
-      { id: 'ghost', at: 300 },
-      { id: 'boost-circuit', at: 20 },
-      { id: 'custom-valid', at: 30 },
-      { id: 'boost-circuit', at: 10 },
-      { id: 'skybreak', at: NaN },
+      {id: 'ghost', at: 300},
+      {id: 'boost-circuit', at: 20},
+      {id: 'custom-valid', at: 30},
+      {id: 'boost-circuit', at: 10},
+      {id: 'skybreak', at: NaN},
     ],
   });
   assert.equal(s.name, 'Driver');
@@ -104,8 +104,8 @@ test('normalization rejects unsafe custom games and removes orphaned history and
   assert.equal(s.custom.length, 1);
   assert.deepEqual(s.favourites, ['custom-valid', 'boost-circuit']);
   assert.deepEqual(s.recent, [
-    { id: 'custom-valid', at: 30 },
-    { id: 'boost-circuit', at: 20 },
+    {id: 'custom-valid', at: 30},
+    {id: 'boost-circuit', at: 20},
   ]);
 });
 test('launch history, favourites, game style and search compose without changing the catalogue', () => {
@@ -116,29 +116,29 @@ test('launch history, favourites, game style and search compose without changing
   recordLaunch(s, 'boost-circuit', 300);
   recordLaunch(s, 'invalid', 400);
   assert.deepEqual(
-    selectGames(s, { view: 'recent' }).map((g) => g.id),
+    selectGames(s, {view: 'recent'}).map((g) => g.id),
     ['boost-circuit', 'skybreak'],
   );
   assert.deepEqual(
-    selectGames(s, { view: 'favourites', genre: 'Sports', query: 'CAR' }).map(
+    selectGames(s, {view: 'favourites', genre: 'Sports', query: 'CAR'}).map(
       (g) => g.id,
     ),
     ['boost-circuit'],
   );
-  assert.equal(selectGames(s, { genre: 'Puzzle' }).length, 0);
-  assert.equal(selectGames(s, { query: 'building' }).length, 2);
-  assert.equal(GAMES.length, 4);
+  assert.equal(selectGames(s, {genre: 'Puzzle'}).length, 0);
+  assert.equal(selectGames(s, {query: 'building'}).length, 3);
+  assert.equal(GAMES.length, 5);
   assert.equal(s.recent.length, 2);
 });
 test('stored personal collections stay bounded and cannot override trusted artwork or launch targets', () => {
-  const custom = Array.from({ length: 80 }, (_, i) => ({
+  const custom = Array.from({length: 80}, (_, i) => ({
     id: 'custom-' + i,
     title: 'Game ' + i,
     url: 'https://example.com/' + i,
     image: 'javascript:bad',
     access: 'Public',
   }));
-  const s = normalizeState({ custom });
+  const s = normalizeState({custom});
   assert.equal(s.custom.length, 40);
   assert.ok(
     s.custom.every(
@@ -151,7 +151,10 @@ test('the static page has unique IDs, all direct JS targets and a working no-Jav
     new URL('../dist/hub/index.html', import.meta.url),
     'utf8',
   );
-  const js = readFileSync(new URL('../dist/hub/app.js', import.meta.url), 'utf8');
+  const js = readFileSync(
+    new URL('../dist/hub/app.js', import.meta.url),
+    'utf8',
+  );
   const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
   assert.equal(new Set(ids).size, ids.length);
   for (const m of js.matchAll(/\$\('#([\w-]+)'\)/g))
@@ -159,10 +162,7 @@ test('the static page has unique IDs, all direct JS targets and a working no-Jav
       ids.includes(m[1]) || ['remove-game'].includes(m[1]),
       m[1] + ' missing from static HTML',
     );
-  assert.match(
-    html,
-    /<noscript\b[\s\S]*https:\/\/flyingcarsforfun\.connstors\.workers\.dev\//,
-  );
+  assert.match(html, /<noscript\b[\s\S]*href="\/"/);
   assert.ok(!html.includes('<iframe'));
   assert.equal((html.match(/class="featured"/g) || []).length, 1);
 });

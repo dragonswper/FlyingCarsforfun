@@ -27,7 +27,10 @@ function json(status, value, origin) {
 // edge; all players reach this named object so they can find each other.
 export default {
   async fetch(request, env) {
-    return secureResponse(await route(request, env));
+    return secureResponse(
+      await route(request, env),
+      new URL(request.url).pathname,
+    );
   },
 };
 async function route(request, env) {

@@ -1,0 +1,358 @@
+{
+  "schema": 1,
+  "games": [
+    {
+      "id": "riftfall",
+      "title": "Riftfall",
+      "route": "/games/riftfall/",
+      "files": [
+        {
+          "path": "app.js",
+          "bytes": 14265,
+          "sha256": "04e8d50253cde578f8ffa27ede05e87aa1d527b001cf748034a2942b2edfc3b3"
+        },
+        {
+          "path": "index.html",
+          "bytes": 17186,
+          "sha256": "39e7b95dd19d430796ef3a76365296aca0386e4027ff95d96a9745f3dde84d0d"
+        },
+        {
+          "path": "styles.css",
+          "bytes": 40493,
+          "sha256": "b8d572adbbcf23f5a9a1b7dd7b25b5cd5a5f303e8d3638b6dd7236940395713f"
+        },
+        {
+          "path": "vendor/BABYLON-LICENSE.txt",
+          "bytes": 9155,
+          "sha256": "3a1160f88f3ffdafee129832f8bf5806073f77a43962f15a13ab63f1a5047372"
+        },
+        {
+          "path": "vendor/BABYLON-NOTICE.txt",
+          "bytes": 46,
+          "sha256": "225463efd81558f120a6e0cdd7f4c1007ed486006d1228c4849fee0c49715823"
+        },
+        {
+          "path": "world.js",
+          "bytes": 36456,
+          "sha256": "4ada496262d414994b6901c28b5769430526f203981b1e4b315665affb23eee0"
+        }
+      ]
+    },
+    {
+      "id": "skybreak",
+      "title": "Skybreak Island",
+      "route": "/games/skybreak/",
+      "files": [
+        {
+          "path": "app.js",
+          "bytes": 20219,
+          "sha256": "6ceb684134324e28423bbe545a12a3809eaff94c78168989f0d32d61b66a19d0"
+        },
+        {
+          "path": "assets/challenge-art.svg",
+          "bytes": 4559,
+          "sha256": "d8793ae4c0c66522040c4e41a4cb7d9f0cc023807252a54f46c56ad1aeb72536"
+        },
+        {
+          "path": "assets/fonts/OFL.txt",
+          "bytes": 4377,
+          "sha256": "186d750eb496a4c17a76385f82be6aea2ac1cf2de074a811d63786cf374ea73f"
+        },
+        {
+          "path": "assets/fonts/barlow-condensed-800.ttf",
+          "bytes": 87556,
+          "sha256": "73bc9e17231e9073780d3c81574c7253cecd5645c93544df1a935054b39a364f"
+        },
+        {
+          "path": "assets/island-art.svg",
+          "bytes": 3922,
+          "sha256": "c91c31177057a3eb46ec6219543c22188074964a38978e725455390bc505669f"
+        },
+        {
+          "path": "assets/island-cover.png",
+          "bytes": 212394,
+          "sha256": "38627d1a50aa227ee76e3705cd231697f222b1fdd35db7b3e46b750078af6775"
+        },
+        {
+          "path": "assets/island-cover.svg",
+          "bytes": 5160,
+          "sha256": "c2aef81c5e01a1faca0d25e53b623d1349eaf7e5b8d4af4459aabca39ccbd2f4"
+        },
+        {
+          "path": "assets/models/CC0-1.0.txt",
+          "bytes": 7048,
+          "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+        },
+        {
+          "path": "assets/models/cloud.glb",
+          "bytes": 23572,
+          "sha256": "a6126fdda6d8fcbd65c03bcda975726cb7cda085f207ac9277fce704589162bd"
+        },
+        {
+          "path": "assets/models/grass-large.glb",
+          "bytes": 18504,
+          "sha256": "af49a595624abca7249824eeefb944d4baf974abeeb5b16110d175da3563d6cd"
+        },
+        {
+          "path": "assets/models/log-stack.glb",
+          "bytes": 10896,
+          "sha256": "90eaae4a01ba1f25c2f0c6d83087e4a7a8fac684f2452615245333968d118d68"
+        },
+        {
+          "path": "assets/models/manifest.json",
+          "bytes": 2356,
+          "sha256": "f1f6855af4b32fa09f384def7d43f532ec3a21b05430eedff1daab94e0fc093c"
+        },
+        {
+          "path": "assets/models/rock-largea.glb",
+          "bytes": 7552,
+          "sha256": "6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25"
+        },
+        {
+          "path": "assets/models/tree-oak.glb",
+          "bytes": 14644,
+          "sha256": "d7fd8773674928c50c11b66d12c636d49bdcc15a8b1c7fbb98e6f63a3439a3f3"
+        },
+        {
+          "path": "assets/models/tree-pinetalla-detailed.glb",
+          "bytes": 10708,
+          "sha256": "9ba6337460e718b8baf165b23c02f39455e3d5757b1911505410c46bc88a86b5"
+        },
+        {
+          "path": "assets/practice-art.svg",
+          "bytes": 4559,
+          "sha256": "97283ab953a8322dafc8e6bcc55f7b98b4ff99f6855c48bcb67df4f130b70fd9"
+        },
+        {
+          "path": "assets.js",
+          "bytes": 2229,
+          "sha256": "60721493e75b762b68ea056fcef5738c0c87b19bc2a8c1a259733180cd0dfa56"
+        },
+        {
+          "path": "index.html",
+          "bytes": 23645,
+          "sha256": "b1d275ff46db0bd50c062209701e71c5135b33f0bb71556655e6bcf87de3c982"
+        },
+        {
+          "path": "skybreak.css",
+          "bytes": 16146,
+          "sha256": "47a67f01a826679dd58f2b0eb8db7a47b0034cb26a706befa0e8200fbecc840f"
+        },
+        {
+          "path": "styles.css",
+          "bytes": 40493,
+          "sha256": "b8d572adbbcf23f5a9a1b7dd7b25b5cd5a5f303e8d3638b6dd7236940395713f"
+        },
+        {
+          "path": "vendor/BABYLON-LICENSE.txt",
+          "bytes": 9226,
+          "sha256": "9362ea9ea17cb221a20cbbd63f404710834cc273d2a9a7b60314fd68ab702cd6"
+        },
+        {
+          "path": "vendor/BABYLON-NOTICE.txt",
+          "bytes": 46,
+          "sha256": "225463efd81558f120a6e0cdd7f4c1007ed486006d1228c4849fee0c49715823"
+        },
+        {
+          "path": "vendor/babylonjs.loaders.min.js",
+          "bytes": 288275,
+          "sha256": "02a6782cf71693218165ae87b114697a74b9cb081c8123e3fcc310e159598d6c"
+        },
+        {
+          "path": "world.js",
+          "bytes": 45189,
+          "sha256": "bb52aefdac38aba928d6ef3aa3c62d5432246ad28b4789d028ef5dbd5c37979d"
+        }
+      ]
+    },
+    {
+      "id": "skybreak-classic",
+      "title": "Skybreak Classic",
+      "route": "/games/skybreak-classic/",
+      "files": [
+        {
+          "path": "game.js",
+          "bytes": 11122,
+          "sha256": "423b72129543667579cbc681db4d79c6e274835474a9730077871db3e301db32"
+        },
+        {
+          "path": "index.html",
+          "bytes": 2167,
+          "sha256": "7f064140627546fdac9f95fa94ce59a12f6030a3cce08ddf6c178f0be3922db2"
+        },
+        {
+          "path": "style.css",
+          "bytes": 3871,
+          "sha256": "915fe3fda82ab51b565c0ac6caa909f3f63389b0fa264bee6e36a584b2dbf85b"
+        },
+        {
+          "path": "vendor/THREE-LICENSE.txt",
+          "bytes": 1081,
+          "sha256": "4c40a1ef62450b857c3b2aaf294936304cd552d965fbcd9d32d4c5bcf4ba4454"
+        },
+        {
+          "path": "vendor/three.module.js",
+          "bytes": 1314681,
+          "sha256": "ce1fa418de16a19495a9f72495580e3015d7745c296d3ce0485897f902ddedfb"
+        }
+      ]
+    },
+    {
+      "id": "random-eras",
+      "title": "Random Eras",
+      "route": "/games/random-eras/",
+      "files": [
+        {
+          "path": "ASSET-RIGHTS.txt",
+          "bytes": 395,
+          "sha256": "78ed37f13777c08f2f55ad7b0d68841554ae49c95c8c2e9c928fbe5bc14663e1"
+        },
+        {
+          "path": "THREE-LICENSE.txt",
+          "bytes": 1081,
+          "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+        },
+        {
+          "path": "assets/assets-mT7LatdE.js",
+          "bytes": 621418,
+          "sha256": "e0d13f7a410aa5a869f13cadfd54f71b129f5a895b4a4663ffffbef8df44b432"
+        },
+        {
+          "path": "assets/index-FWwjuxMh.js",
+          "bytes": 53757,
+          "sha256": "ed010a54fc8dee3e11bf578deac39cc25aa9684c51e879f2d1ea927e795d43c4"
+        },
+        {
+          "path": "assets/index-HH-Dt-17.css",
+          "bytes": 28462,
+          "sha256": "e0baf2e5fcec88e673fddd4a629d0962d1016f2450e54b9f9ccc9ec30f9bf79d"
+        },
+        {
+          "path": "assets/knight-DQWhkHP3.js",
+          "bytes": 2168,
+          "sha256": "acb1b02594c675aed13d4ee2d5f08a23cfdeb2307d45cc1b84a410b19513510f"
+        },
+        {
+          "path": "assets/loadout-view-Bf1z4aMD.js",
+          "bytes": 791,
+          "sha256": "c0ffcaf5fed7360aa60ae2e4a5409aecfc221d7dcee9435ca258ad7224b38b5e"
+        },
+        {
+          "path": "assets/map-kit-CNhzHFMl.js",
+          "bytes": 1082,
+          "sha256": "12fa1f2cc57b57a4006bbeaf79831041da6673f70aecfd005a0252fdf282b884"
+        },
+        {
+          "path": "assets/render-cH-upM-H.js",
+          "bytes": 35901,
+          "sha256": "38bf49194acf998ef670b6c2eedaa17ee8a2f977f07be1c389544db448332b3d"
+        },
+        {
+          "path": "assets/simulation-BecK-T9Y.js",
+          "bytes": 34422,
+          "sha256": "939c7f916171fd6e2ebab63b2fe5d6f06fea815123d9b980a6beecd55fcdb351"
+        },
+        {
+          "path": "assets/weapon-art-5DUhwrre.js",
+          "bytes": 275,
+          "sha256": "35eba98212b967ec599408d9b4056a6f6e32a797ed3268b86731b09ebc2a2c06"
+        },
+        {
+          "path": "assets/world-worker-DsdDLDSI.js",
+          "bytes": 16458,
+          "sha256": "1c9ab6aaeb293323f2d3281416133411f6e8a027e11ff3950ae3179e438a2e64"
+        },
+        {
+          "path": "cover.webp",
+          "bytes": 8046,
+          "sha256": "42391b200ea1837af6ab3738005c3ab2d66e37dc068331e1cff5d1d1752589d3"
+        },
+        {
+          "path": "dusk.webp",
+          "bytes": 7648,
+          "sha256": "c858f3745144ce5924b83681a670c6d9c5d6987774f048a035b5acbe96632f85"
+        },
+        {
+          "path": "era-props-colliders.json",
+          "bytes": 905,
+          "sha256": "4b9cb0da5618cfb60f77e798cfb26032696d3c44a7f9b40fc2e10ae369cae198"
+        },
+        {
+          "path": "era-props.glb",
+          "bytes": 86452,
+          "sha256": "3064076f4bb4d8384a53f91118293a29b3c7db119b1fad3f92f81d708c263f67"
+        },
+        {
+          "path": "fonts/caveat-license.txt",
+          "bytes": 4384,
+          "sha256": "163a2b400e16916ad3196296c946c526d0efce6baf22a2164269ffc62fb9f671"
+        },
+        {
+          "path": "fonts/caveat.woff2",
+          "bytes": 74932,
+          "sha256": "891951df5e8b5b0f0bc760d31375405e795c666b5add70437de12d4a6482b33f"
+        },
+        {
+          "path": "fonts/cinzel-license.txt",
+          "bytes": 4382,
+          "sha256": "f5a242cf68ad6ebd0603b3359a74c593ca080318a681035be5296ba2c6b04ae6"
+        },
+        {
+          "path": "fonts/cinzel.woff2",
+          "bytes": 25904,
+          "sha256": "09941fb1c169c38fd414536b37690057fc01b3117a5c63dd6571186540c8f370"
+        },
+        {
+          "path": "fonts/dm-sans-license.txt",
+          "bytes": 4502,
+          "sha256": "6fbd040a29c2037a765dfb9f2561e9965b5c95c6dcb5dce516089d63d5f17af7"
+        },
+        {
+          "path": "fonts/dm-sans.woff2",
+          "bytes": 36932,
+          "sha256": "9fea608a947e67020c33cad9a6fe3d60c54119dfb8cff87768a8117a15ed7543"
+        },
+        {
+          "path": "index.html",
+          "bytes": 26171,
+          "sha256": "67167ec7792348d3430335a8154d4f58851a65c3e4965e3b9b2017cc06daaf0f"
+        },
+        {
+          "path": "knight-portrait.webp",
+          "bytes": 29390,
+          "sha256": "a9ded3e8d7dd2e1f51de978b6f3d24f6e5a187caafdeea87dce0662d02191b39"
+        },
+        {
+          "path": "knight.glb",
+          "bytes": 78348,
+          "sha256": "8d3b80ec1697d22f762df0fbc1643532dbacdd68d4359599dc79c50abf770e85"
+        },
+        {
+          "path": "map-kit.glb",
+          "bytes": 85216,
+          "sha256": "28368775ccadd3c33ac777a59f5f3c0986f692b56205d9349789f295f43414f6"
+        },
+        {
+          "path": "parchment.webp",
+          "bytes": 8340,
+          "sha256": "f0acf75f6f53c5e1bfabda8c47930c28ccb538228f90bb30f770ae28d8e87bc4"
+        },
+        {
+          "path": "seal-icons.webp",
+          "bytes": 9178,
+          "sha256": "b694a353f5d3d17749f11505f7be24e6f09280910f9a79c08334b08612c7133b"
+        },
+        {
+          "path": "weapons.glb",
+          "bytes": 33484,
+          "sha256": "f0ed81d417f9ec41fdf38ca09536a35a794a3576787490e977c794783dcbbaaf"
+        }
+      ]
+    }
+  ],
+  "sharedEngine": {
+    "path": "/games/shared/babylon8/babylon.js",
+    "sha256": "1bae68431a43a3cf19ffb331f409c468c6081279b6c56044201b7cfc1caf7b84",
+    "bytes": 6794118
+  }
+}

@@ -110,3 +110,7 @@ preferences, local replays and local cosmetic progress remain ordinary browser
 storage; admin credentials and codes are never stored there. The GitHub source
 remains public and must not contain secrets. Account security still depends on
 keeping the admin inbox and hosting account secure.
+
+The consolidated Random Eras routes use `wasm-unsafe-eval` for the bundled Meshopt
+model decoder. This permits WebAssembly compilation without enabling JavaScript
+`eval`; the hub, Boost Circuit and admin keep their existing script policy.
