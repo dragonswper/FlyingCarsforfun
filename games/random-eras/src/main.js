@@ -147,6 +147,10 @@ function setPerspective(firstPerson) {
   canvas.setAttribute('aria-label', firstPerson ? 'First-person game view' : 'Third-person game view');
 }
 
+function pointerAllowed() {
+  return !gameScreen.hidden && !element('error-dialog').open && (matchStarting || canPlay());
+}
+
 function unlockPointer() {
   if (!mouse.isCaptured()) return;
   blockUnlock = true;
@@ -157,7 +161,11 @@ function capturePointer() {
   swingAudio.unlock();
   if (touch.enabled) return;
   if (!canvas.requestPointerLock) { touch.allowMouseDrag(); return; }
-  mouse.capture().catch((error) => {
+  mouse.capture().then(() => {
+    // Browser capture may finish after loading failed or a menu was opened.
+    if (!pointerAllowed()) unlockPointer();
+  }).catch(() => {
+    if (!pointerAllowed()) return;
     touch.allowMouseDrag();
     if (!mouse.isCaptured() && canPlay()) flash('Hold and drag the game to look around.');
   });
@@ -439,6 +447,7 @@ canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 window.addEventListener('blur', releaseInput);
 document.addEventListener('visibilitychange', () => { if (document.hidden) releaseInput(); });
 document.addEventListener('pointerlockchange', () => {
+  if (mouse.isCaptured() && !pointerAllowed()) { unlockPointer(); return; }
   if (mouse.isCaptured()) touch.useLockedMouse();
   mouse.reset();
   pendingGesture = undefined;

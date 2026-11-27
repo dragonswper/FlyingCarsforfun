@@ -466,6 +466,7 @@ try {
       await p.locator("#error-dialog[open]").waitFor();
       assert.match(await p.locator("#error-message").textContent(), /Reload/i);
       await p.unrouteAll();
+      await p.waitForFunction(()=>!document.pointerLockElement);
       await p.click("#error-reload");
       await p.waitForFunction(() => window.randomEras);
       await p.locator("[data-play-training]").first().click();

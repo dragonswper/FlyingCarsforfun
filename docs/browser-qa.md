@@ -49,7 +49,9 @@ the browser tests.
   operation, including when a match ends.
 - Failed entry downloads could leave menu buttons without their handlers. An
   independent bootstrap gates the menu and offers a reload. Renderer failures
-  have a separate recovery action and early rejection handling.
+  have a separate recovery action and early rejection handling. Late pointer-lock
+  requests are released when a loading error or menu is visible, keeping recovery
+  buttons clickable.
 - Quick-click attacks in Random Eras now survive release when drag-look is the available input method. Classic depended on pointer lock to start and pause. It now supports drag-look
   when capture is unavailable and explicitly handles Escape. Random Eras also
   keeps click attacks active after releasing a drag-look click. Its blocked Google

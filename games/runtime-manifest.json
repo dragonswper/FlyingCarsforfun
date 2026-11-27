@@ -218,14 +218,14 @@
           "sha256": "e0d13f7a410aa5a869f13cadfd54f71b129f5a895b4a4663ffffbef8df44b432"
         },
         {
-          "path": "assets/index-BN5VwhSj.js",
-          "bytes": 60771,
-          "sha256": "552f8c1c3bbd23b3752a9106c1dc935bc79aaf66077913cb341b7b98d28f7e9f"
-        },
-        {
           "path": "assets/index-XYMFZxz9.css",
           "bytes": 33826,
           "sha256": "e0122a112cec6a2cb36bdc6845341cb535d6f954c9835518266bb61caa2940cd"
+        },
+        {
+          "path": "assets/index-tVQMYlr_.js",
+          "bytes": 60908,
+          "sha256": "47bf680d69898073b1e7df3da6d4c1aa9ebb8566b69a02e488597e1ae88bf5b3"
         },
         {
           "path": "assets/knight-DQWhkHP3.js",
@@ -315,7 +315,7 @@
         {
           "path": "index.html",
           "bytes": 27682,
-          "sha256": "665e51fba55ae4f7b4a81cb69a9ca30f5389ad6d6a1169215e1354fad6c047c3"
+          "sha256": "8f6b12ee9413ddbb701e1f9265a1a475d88aaef165d13e69c820ade38a6ea8ee"
         },
         {
           "path": "knight-portrait.webp",
