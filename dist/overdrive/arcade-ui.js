@@ -17,7 +17,7 @@ export class ArcadeUI {
     this.dialog = expansionDialog(
       'arcade-dialog',
       'Change the game',
-      '<p class="expansion-description">Original modes and Blender venues. Hoops is also available in dedicated-server matchmaking and private lobbies. Target shooting and the obstacle course are solo challenges.</p><div class="overdrive-mode-cards"></div><p class="arcade-status" role="status"></p>',
+      '<p class="expansion-description">Choose a competition or a solo challenge. Hoops is also available in dedicated-server matchmaking and private lobbies. Target shooting and the obstacle course are solo challenges.</p><div class="overdrive-mode-cards"></div><p class="arcade-status" role="status"></p>',
       '<button type="button" class="arcade-back">BACK</button>',
     );
     this.dialog.querySelector('.expansion-kicker').textContent =
@@ -32,7 +32,7 @@ export class ArcadeUI {
       [
         'hoops',
         'SKYLINE HOOPS',
-        '2v2 car basketball. Drop the ball through the elevated ring.',
+        '2v2 car basketball on a painted hardwood court. Drop the ball through the elevated ring.',
       ],
       [
         'targets',
@@ -176,8 +176,12 @@ export class ArcadeUI {
     this.hud.hidden = !this.active;
     if (!this.active) return;
     const s = this.director.state();
-    const hint=document.querySelector('#practice-tools > span');if(hint?.lastChild)hint.lastChild.textContent=s.mode==='course'?' TO RETRY COURSE':' TO RESET SHOT';
-    document.getElementById('end-practice-button').textContent='EXIT CHALLENGE';
+    const hint = document.querySelector('#practice-tools > span');
+    if (hint?.lastChild)
+      hint.lastChild.textContent =
+        s.mode === 'course' ? ' TO RETRY COURSE' : ' TO RESET SHOT';
+    document.getElementById('end-practice-button').textContent =
+      'EXIT CHALLENGE';
     this.hud.querySelector('strong').textContent =
       s.mode === 'course' ? 'VELOCITY COURSE' : 'FOUNDRY TARGET RANGE';
     this.hud.querySelector('span').textContent =

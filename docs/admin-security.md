@@ -96,6 +96,9 @@ multiplayer requires WSS; WebRTC transports use the browser's DTLS protection.
 Node TLS requires TLS 1.2 or newer, or an explicitly configured trusted HTTPS
 proxy. Admin requests never use the optional plaintext local health probe.
 
+Embedded model textures may be decoded through local `blob:` URLs. The connection
+policy allows that in-memory path while network requests still require HTTPS/WSS.
+
 The update adds HSTS, a content security policy, frame restrictions, MIME
 sniffing protection, a no-referrer policy and restricted device permissions.
 Server/configuration paths and key/source-map extensions are blocked from the

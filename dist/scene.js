@@ -1,3 +1,4 @@
+import {configureArtDirection, SceneryArt} from './art-direction.js';
 import {SportView} from './overdrive/sport-view.js';
 import {styleVehicle} from './garage-style.js';
 import {AnimationSystem} from './animation/system.js';
@@ -653,7 +654,8 @@ export class GameView {
     this.renderer.setPixelRatio(1);
     this.renderer.shadowMap.enabled = false;
     this.renderer.shadowMap.type = T.PCFSoftShadowMap;
-    this.renderer.toneMapping = T.ACESFilmicToneMapping;
+    configureArtDirection(this.renderer);
+    this.sceneryArt = new SceneryArt();
     this.renderer.toneMappingExposure = 1.18;
     this.scene = new T.Scene();
     this.sports = new SportView(this.scene);
@@ -833,6 +835,7 @@ export class GameView {
     if (!this.arenaCache.has(id)) {
       this.arenaCache.set(id, buildArena(this.scene, {theme}));
       const environment = createArenaEnvironment(id);
+      this.sceneryArt.apply(environment.root);
       this.environments.set(id, environment);
       this.scene.add(environment.root);
     }
@@ -973,12 +976,15 @@ export class GameView {
       });
     }
     this.grass?.configure(
-      ARENAS[this.arenaId].grass ? render.grassCount : 0,
+      ARENAS[this.arenaId].grass && this.sports.mode !== 'hoops'
+        ? render.grassCount
+        : 0,
       this.arena.field,
     );
     configureTurfSurface(
       this.arena.field,
-      !!ARENAS[this.arenaId].grass &&
+      this.sports.mode !== 'hoops' &&
+        !!ARENAS[this.arenaId].grass &&
         profile.tier !== 'low' &&
         render.grassCount > 0,
     );
@@ -1021,8 +1027,10 @@ export class GameView {
       }
       const [stadium, inner] = results.map((result) => result.value);
       this.stadium = stadium;
+      this.sceneryArt.apply(stadium);
       this.stadiumDetail = detail;
       this.innerField = inner;
+      this.sceneryArt.apply(inner);
       stadium.visible = inner.visible = this.arenaId === 'champions';
       this.scene.add(stadium, inner);
       const field = inner.getObjectByName('Champions_Inner_turf'),
@@ -1067,6 +1075,7 @@ export class GameView {
         this.scene.remove(this.stadium);
         disposeStadium(this.stadium);
         this.stadium = next;
+        this.sceneryArt.apply(next);
         this.stadiumDetail = detail;
         next.visible = this.arenaId === 'champions';
         this.scene.add(next);
@@ -1127,12 +1136,18 @@ export class GameView {
       },
     };
   }
-  ensureMode(mode) {
-    return this.sports.prepare(mode);
+  async ensureMode(mode) {
+    await this.sports.prepare(mode);
+    if (this.sports.enclosure) this.sceneryArt.apply(this.sports.enclosure);
   }
   sync(sim, paint = '#299bff', body = 'fennec') {
     this.setArena(sim.options.arena);
     this.sports.setMode(sim.options.arcade || sim.options.mode, this.arena);
+    if (sim.options.mode === 'hoops') {
+      const environment = this.environments.get(this.arenaId);
+      if (environment) environment.root.visible = false;
+    }
+    this.applyGraphics();
     this.chase.reset();
     this.cameraHasAnchor = false;
     this.cameraPhase = null;
@@ -1446,6 +1461,7 @@ export class GameView {
   }
   dispose() {
     this.sports.dispose();
+    this.sceneryArt.dispose();
     this.animations.dispose();
     this.flags.dispose();
     disposeAnimationProps();

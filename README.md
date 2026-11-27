@@ -12,6 +12,8 @@ It includes Champions Field and many more arenas, 16 selectable vehicles, the su
 
 **Latest update — 1.31 Overdrive:** Party matchmaking, adaptive networking, aerial bot tactics, Replay Studio, private mutators, saved garage loadouts, mobile tuning and three new modes with original Blender venues. Refresh all players’ tabs. [v1.31 notes and testing](docs/release-1.31.md). [v1.30 Cup & Clubhouse](docs/release-1.30.md). [Connection route test](https://flyingcarsforfun.connstors.workers.dev/connection-test).
  
+**Colour Court update:** Brighter illustrated fields and a Hoops arena with painted hardwood, team-coloured baskets, woven nets and original Blender scenery. [Visual changes and checks](docs/color-court-update.md).
+
 The live Cloudflare game includes the dedicated server. Choose **Online Match → Dedicated Server**, then pick the same mode and **Oceania** on both PCs.
  
 **Source:** https://github.com/dragonswper/FlyingCarsforfun

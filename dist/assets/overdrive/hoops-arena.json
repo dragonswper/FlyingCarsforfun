@@ -1,0 +1,19 @@
+{
+  "id": "skyline-hoops",
+  "playingBounds": [
+    40.96,
+    51.2,
+    20.48
+  ],
+  "batches": 9,
+  "originalArtwork": true,
+  "license": "MIT",
+  "generator": "scripts/create-hoops-court.py",
+  "sourceBlend": "art/skyline-hoops.blend",
+  "blenderVersion": "4.3.2",
+  "bytes": 1294768,
+  "sha256": "aa95dc50d05c58033245e801134dac1adad3944d221237468aa31b411b066bce",
+  "triangles": 23660,
+  "meshBatches": 9,
+  "textures": 0
+}

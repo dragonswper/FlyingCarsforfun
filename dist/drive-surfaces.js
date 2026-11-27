@@ -5,7 +5,7 @@ import {freezeStaticTransforms} from './rendering.js';
 
 export function buildDriveSurfaces(parent){
  const root=new T.Group();root.name='Driveable_Roof_And_Goal_Transitions';parent.add(root);
- const pieces=[],points=[],outline=arenaOutline(),material=new T.MeshStandardMaterial({color:'#a1bfd0',roughness:.65,metalness:.12,transparent:true,opacity:.13,side:T.DoubleSide,depthWrite:false});
+ const pieces=[],points=[],outline=arenaOutline(),material=new T.MeshStandardMaterial({color:'#a1bfd0',roughness:.65,metalness:.12,transparent:true,opacity:.045,side:T.DoubleSide,depthWrite:false});
  function ramp(a,b,radius,ceiling,upper){
   const tangent=new T.Vector3(b[0]-a[0],0,b[1]-a[1]).normalize(),normal=new T.Vector3(-tangent.z,0,tangent.x);
   if(normal.dot(new T.Vector3(-a[0],0,-a[1]))<0)normal.negate();const vertices=[],indices=[];
@@ -28,6 +28,6 @@ export function buildDriveSurfaces(parent){
  const mesh=new T.Mesh(geometry,material);mesh.name='Visible_Ceiling_And_Goal_Ramps';mesh.receiveShadow=true;root.add(mesh);
  for(let x=-C.halfWidth+C.ceilingRamp;x<=C.halfWidth-C.ceilingRamp;x+=6)points.push(x,C.height,-C.cornerZ,x,C.height,C.cornerZ);
  for(let z=-C.halfLength+C.ceilingRamp;z<=C.halfLength-C.ceilingRamp;z+=6)points.push(-C.cornerX,C.height,z,C.cornerX,C.height,z);
- root.add(new T.LineSegments(new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute(points,3)),new T.LineBasicMaterial({color:'#b7d5e6',transparent:true,opacity:.16,depthWrite:false})));
+ root.add(new T.LineSegments(new T.BufferGeometry().setAttribute('position',new T.Float32BufferAttribute(points,3)),new T.LineBasicMaterial({color:'#b7d5e6',transparent:true,opacity:.085,depthWrite:false})));
  root.userData.dimensions={ceiling:C.height,ceilingRamp:C.ceilingRamp,goalCeiling:C.goalHeight,goalRamp:C.goalRamp};freezeStaticTransforms(root);return root;
 }

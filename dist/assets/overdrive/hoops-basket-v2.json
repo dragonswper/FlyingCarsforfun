@@ -1,0 +1,25 @@
+{
+  "id": "hoops-basket-v2",
+  "rim": {
+    "radius": 4.6,
+    "height": 5.8,
+    "tube": 0.16
+  },
+  "backboard": {
+    "z": 6,
+    "width": 14,
+    "bottom": 6,
+    "top": 13
+  },
+  "netBottom": 0.35,
+  "originalArtwork": true,
+  "license": "MIT",
+  "generator": "scripts/create-hoops-court.py",
+  "sourceBlend": "art/hoops-basket-v2.blend",
+  "blenderVersion": "4.3.2",
+  "bytes": 139448,
+  "sha256": "5e2f2ab04d43c75a282f04bafd6d5e29fd1e765befecaef6f4990595b7defd64",
+  "triangles": 2168,
+  "meshBatches": 6,
+  "textures": 0
+}

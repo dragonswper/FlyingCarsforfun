@@ -2,6 +2,7 @@ import * as T from '../vendor/three.module.js';
 import {GLTFLoader} from '../vendor/GLTFLoader.js';
 import {C} from '../constants.js';
 import {HOOPS} from '../hoops-physics.js';
+import {createCourtTexture} from './court-texture.js';
 import {COURSE, TARGETS} from './arcade.js';
 const COURSE_POINTS = COURSE.map((g) => g.p);
 export class SportView {
@@ -15,14 +16,29 @@ export class SportView {
     this.seals = [];
     this.guides = [];
     this.hurdles = [];
-    this.floorMaps = new Map();
+    this.floorMaterials = new Map();
+    this.teamMaterials = [];
+    this.enclosure = null;
   }
   async prepare(mode) {
-    if (mode === 'hoops' && !this.hoops.length) {
+    if (mode === 'hoops') {
       if (!this.hoopsPromise)
-        this.hoopsPromise = new GLTFLoader()
-          .loadAsync('./assets/overdrive/hoops-basket.glb')
-          .then(({scene}) => {
+        this.hoopsPromise = Promise.all([
+          new GLTFLoader().loadAsync('./assets/overdrive/hoops-basket-v2.glb'),
+          new GLTFLoader().loadAsync('./assets/overdrive/hoops-arena.glb'),
+        ])
+          .then(([basket, venue]) => {
+            const scene = basket.scene;
+            this.enclosure = venue.scene;
+            this.enclosure.name = 'Skyline_Hoops_Bowl';
+            this.sources.push(this.enclosure);
+            this.enclosure.traverse((o) => {
+              if (o.isMesh) {
+                o.castShadow = false;
+                o.receiveShadow = true;
+              }
+            });
+            this.root.add(this.enclosure);
             this.sources.push(scene);
             const geometry = scene.getObjectByName('Hoops_Backboard').geometry;
             this.sealMaterial = new T.MeshBasicMaterial({
@@ -45,6 +61,24 @@ export class SportView {
               if (sign < 0) copy.rotation.y = Math.PI;
               copy.traverse((o) => {
                 if (o.isMesh) {
+                  if (
+                    o.userData.teamAccent ||
+                    o.material.name === 'Hoops_Team_Accent'
+                  ) {
+                    o.material = new T.MeshBasicMaterial({
+                      color: sign < 0 ? '#278dff' : '#ff8d2c',
+                      toneMapped: false,
+                    });
+                    this.teamMaterials.push(o.material);
+                  }
+                  if (o.name === 'Hoops_Net') o.material.side = T.DoubleSide;
+                  if (o.name === 'Hoops_Backboard') {
+                    o.material = o.material.clone();
+                    o.material.transparent = true;
+                    o.material.opacity = 0.16;
+                    o.material.depthWrite = false;
+                    this.teamMaterials.push(o.material);
+                  }
                   o.castShadow = false;
                   o.receiveShadow = true;
                 }
@@ -107,16 +141,27 @@ export class SportView {
     for (const h of this.hurdles) h.visible = mode === 'course';
     const football = arena.root.getObjectByName('Regulation_Football_Goals');
     if (football) football.visible = mode !== 'hoops';
+    if (this.enclosure) this.enclosure.visible = mode === 'hoops';
+    const roof = arena.root.getObjectByName('Visible_Ceiling_And_Goal_Ramps');
+    if (roof) roof.material.opacity = mode === 'hoops' ? 0.025 : 0.045;
     if (arena.field) {
-      if (!this.floorMaps.has(arena))
-        this.floorMaps.set(arena, arena.field.material.map);
+      if (!this.floorMaterials.has(arena))
+        this.floorMaterials.set(arena, arena.field.material);
       if (mode === 'hoops') {
-        if (!this.court) this.court = this.courtTexture();
-        arena.field.material.map = this.court;
-      } else arena.field.material.map = this.floorMaps.get(arena);
-      arena.field.material.needsUpdate = true;
+        if (!this.court) this.court = createCourtTexture();
+        if (!this.woodMaterial)
+          this.woodMaterial = new T.MeshStandardMaterial({
+            color: '#ffffff',
+            map: this.court,
+            roughness: 0.44,
+            metalness: 0.03,
+            envMapIntensity: 0.35,
+          });
+        arena.field.material = this.woodMaterial;
+      } else arena.field.material = this.floorMaterials.get(arena);
     }
   }
+
   update(director) {
     if (!director || !['targets', 'course'].includes(this.mode)) return;
     const list = this.mode === 'course' ? COURSE_POINTS : TARGETS;
@@ -133,51 +178,11 @@ export class SportView {
       ring.scale.setScalar(this.mode === 'targets' ? 0.82 : 1);
     }
   }
-  courtTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1024;
-    canvas.height = 1280;
-    const c = canvas.getContext('2d');
-    c.fillStyle = '#3e6679';
-    c.fillRect(0, 0, 1024, 1280);
-    const x = (v) => ((v + C.halfWidth) / (C.halfWidth * 2)) * 1024,
-      z = (v) => ((C.halfLength - v) / (C.halfLength * 2)) * 1280;
-    c.strokeStyle = '#cce4ed';
-    c.lineWidth = 4;
-    c.strokeRect(x(-37), z(47), x(37) - x(-37), z(-47) - z(47));
-    c.beginPath();
-    c.moveTo(x(-37), z(0));
-    c.lineTo(x(37), z(0));
-    c.stroke();
-    for (const sign of [-1, 1]) {
-      c.beginPath();
-      c.ellipse(
-        x(0),
-        z(sign * HOOPS.z),
-        (HOOPS.radius * 1024) / (C.halfWidth * 2),
-        (HOOPS.radius * 1280) / (C.halfLength * 2),
-        0,
-        0,
-        Math.PI * 2,
-      );
-      c.stroke();
-      c.beginPath();
-      c.ellipse(
-        x(0),
-        z(sign * 31),
-        (10 * 1024) / (C.halfWidth * 2),
-        (10 * 1280) / (C.halfLength * 2),
-        0,
-        0,
-        Math.PI * 2,
-      );
-      c.stroke();
-    }
-    const texture = new T.CanvasTexture(canvas);
-    texture.colorSpace = T.SRGBColorSpace;
-    return texture;
-  }
   dispose() {
+    for (const [arena, material] of this.floorMaterials)
+      if (arena.field) arena.field.material = material;
+    for (const material of this.teamMaterials) material.dispose();
+    this.woodMaterial?.dispose();
     this.root.removeFromParent();
     for (const source of this.sources)
       source.traverse((o) => {

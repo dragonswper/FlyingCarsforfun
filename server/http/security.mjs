@@ -7,7 +7,7 @@ export const SECURITY_HEADERS = Object.freeze({
   'Permissions-Policy':
     'camera=(), microphone=(), geolocation=(), fullscreen=(self), gamepad=(self)',
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' https: wss:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests",
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' blob: https: wss:; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests",
 });
 export const PRIVATE_PATH =
   /(?:^|\/)(?:\.git|\.env(?:\.[^/]*)?|\.dev\.vars(?:\.[^/]*)?|\.admin-(?:data|setup)|\.social-data|secrets|server|node_modules|certs)(?:\/|$)|\.(?:pem|key|p12|pfx|map)$/i;
