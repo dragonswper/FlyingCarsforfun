@@ -1,33 +1,58 @@
-import { DirectionalLight, HemisphereLight, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
-import { loadWeaponArt } from './weapon-art.js';
+import { WEAPON_FINISHES } from "./expedition.js";
+import {
+  DirectionalLight,
+  HemisphereLight,
+  PerspectiveCamera,
+  Scene,
+  WebGLRenderer,
+} from "three";
+import { loadWeaponArt } from "./weapon-art.js";
 
 export async function createLoadoutView(canvas, readSettings) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   const models = await loadWeaponArt();
   const scene = new Scene();
   const camera = new PerspectiveCamera(36, 1.25, 0.05, 16);
-  const key = new DirectionalLight('#fff0cc', 2.1);
+  const key = new DirectionalLight("#fff0cc", 2.1);
   key.position.set(-2, 3, 4);
-  scene.add(key, new HemisphereLight('#f2dab7', '#7b5f50', 1.65));
+  scene.add(key, new HemisphereLight("#f2dab7", "#7b5f50", 1.65));
   let weapon;
   let activeId;
   function draw(now) {
     if (!canvas.offsetWidth || document.hidden) return;
-    const { weapon: id, reducedMotion } = readSettings();
-    if (activeId !== id) {
+    const { weapon: id, reducedMotion, weaponFinish } = readSettings();
+    if (activeId !== id + ":" + weaponFinish) {
+      weapon?.traverse((part) => {
+        if (part.userData.previewMaterial) part.material.dispose();
+      });
       weapon?.removeFromParent();
       const art = models.get(id);
       if (!art) return;
       weapon = art.root.clone(true);
-      activeId = id;
+      activeId = id + ":" + weaponFinish;
+      const finish = WEAPON_FINISHES.find((f) => f.id === weaponFinish)?.color;
+      if (finish)
+        weapon.traverse((part) => {
+          if (part.isMesh) {
+            part.material = part.material.clone();
+            part.material.color.set(finish);
+            part.userData.previewMaterial = true;
+          }
+        });
       const height = art.tip?.y ?? 1;
-      weapon.position.y = -height * .45;
-      camera.position.set(.25, .13, Math.max(1.8, height * 2.2));
+      weapon.position.y = -height * 0.45;
+      camera.position.set(0.25, 0.13, Math.max(1.8, height * 2.2));
       camera.lookAt(0, 0, 0);
       scene.add(weapon);
     }
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-    weapon.rotation.set(.08, reducedMotion || matchMedia('(prefers-reduced-motion: reduce)').matches ? .43 : now * .0007, -.20);
+    weapon.rotation.set(
+      0.08,
+      reducedMotion || matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? 0.43
+        : now * 0.0007,
+      -0.2,
+    );
     renderer.render(scene, camera);
   }
   return draw;

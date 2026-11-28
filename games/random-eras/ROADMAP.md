@@ -10,4 +10,10 @@
 
 Build and test each milestone before committing. Keep the current daily seed format, era IDs and terrain rules so existing links still resolve. New visual dressing can be derived from the current world without changing collision or height data. Swipe stays the default, and the existing click setting remains available.
 
-The original assets need an owner-approved license before release. The playable knight replacement also needs approval. Keep credits for each placeholder until its replacement ships.
+The original assets are released under the project-owner rights documented in LICENSE-ASSETS.md. Keep historical credits for retired placeholders.
+
+## 0.5.0 delivered
+
+The Riftbound release implements era zones, captain strongholds, two-to-four-player co-op, combo finishers, ripostes, specialist squads, three objective types, run relics, milestone cosmetics and photo/combat replay tools. See CHANGELOG.md and NETWORK.md for scope and limits.
+
+Next playtests should focus on solo campaign pacing, four physical players on different networks, router compatibility, touch readability on physical phones and captain/relic balance. Persistent co-op saves, host migration, TURN relays and public matchmaking are future work, not included services.

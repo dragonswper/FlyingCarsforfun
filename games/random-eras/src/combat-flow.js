@@ -14,6 +14,7 @@ export function createCombatFlow() {
     window: 0,
     lastSwing: 0,
     charge: 0,
+    duration: 4,
     remaining: 0,
   };
 }
@@ -37,7 +38,7 @@ export function recordCleanHit(flow, swingId) {
 export function advanceCombatFlow(
   flow,
   dt,
-  { alive = true, request = false } = {},
+  { alive = true, request = false, duration = 4 } = {},
 ) {
   flow.window = Math.max(0, flow.window - dt);
   flow.remaining = Math.max(0, flow.remaining - dt);
@@ -49,7 +50,8 @@ export function advanceCombatFlow(
   }
   if (request === true && flow.charge === 100 && flow.remaining === 0) {
     flow.charge = 0;
-    flow.remaining = FlowTuning.FocusDuration;
+    flow.duration = Math.max(4, Math.min(5.5, duration));
+    flow.remaining = flow.duration;
     return true;
   }
   return false;
@@ -75,10 +77,14 @@ export function validCombatFlow(flow) {
       flow.count <= 999 &&
       flow.best <= 999 &&
       flow.best >= flow.count &&
+      Number.isFinite(flow.duration) &&
+      flow.duration >= 4 &&
+      flow.duration <= 5.5 &&
+      flow.remaining <= flow.duration &&
       [
         ["window", FlowTuning.ComboWindow],
         ["charge", 100],
-        ["remaining", FlowTuning.FocusDuration],
+        ["remaining", 5.5],
       ].every(
         ([key, max]) =>
           Number.isFinite(flow[key]) && flow[key] >= 0 && flow[key] <= max,

@@ -52,8 +52,8 @@ is introduced for each game.
 
 Boost Circuit's physics, room codes and accounts are unchanged. Riftfall and
 Skybreak keep their solo bots/building/target modes; Classic is the original solo
-arena. Random Eras keeps Frontier, Training and its existing direct WebRTC Arena
-friend invites. Its encrypted peer data does not become part of Boost Circuit's
+arena. Random Eras adds Riftbound Expedition for one to four players, keeping Classic Frontier, Training and direct WebRTC Arena
+friend invites. Co-op uses separate fixed-seat invites and a host-owned simulation. Its encrypted peer data does not become part of Boost Circuit's
 matchmaking service. STUN discovery still helps those peer connections.
 
 Each game has its own settings/progress keys. Riftfall and Skybreak now use

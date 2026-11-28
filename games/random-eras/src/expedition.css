@@ -1,0 +1,168 @@
+.expedition-hud {
+  position: absolute;
+  z-index: 8;
+  left: 24px;
+  bottom: 278px;
+  width: 178px;
+  padding: 8px;
+  pointer-events: none;
+}
+#expedition-task,
+#expedition-shift {
+  display: none;
+}
+.expedition-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.expedition-actions button {
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid #ba9d67;
+  background: #382e1fe8;
+  color: #f4e7cc;
+  font:
+    600 12px "DM Sans",
+    sans-serif;
+  pointer-events: auto;
+  border-radius: 4px;
+}
+.expedition-actions button:disabled {
+  opacity: 0.55;
+}
+.expedition-actions button:not(:disabled) {
+  border-color: #ebc777;
+}
+#riposte-status {
+  display: block;
+  color: #b0f0cf;
+  font:
+    bold 11px "DM Sans",
+    sans-serif;
+  margin-top: 7px;
+}
+.relic-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  text-align: left;
+  gap: 5px;
+  width: 100%;
+  min-height: 70px;
+  padding: 14px;
+  margin: 8px 0;
+  border: 1px solid #a88e60;
+  background: #eee1c6;
+  color: #392d1f;
+  border-radius: 6px;
+}
+.relic-choice span {
+  font-size: 13px;
+}
+.chronicle-tools {
+  position: fixed;
+  inset: auto 18px 18px auto;
+  z-index: 50;
+  width: min(340px, calc(100vw - 36px));
+  max-height: 85svh;
+  overflow: auto;
+  padding: 16px;
+  background: #201d17ed;
+  color: #f3e7d1;
+  border: 1px solid #b5a17b;
+  border-radius: 8px;
+  font:
+    14px "DM Sans",
+    sans-serif;
+}
+.chronicle-tools header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chronicle-tools h2 {
+  font-size: 19px;
+  margin: 0;
+}
+.chronicle-tools label {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+.chronicle-tools input[type="range"] {
+  width: 100%;
+  min-height: 35px;
+}
+.chronicle-tools button,
+.chronicle-tools select {
+  min-height: 44px;
+  padding: 8px 12px;
+  background: #dac398;
+  color: #291e16;
+  border: 1px solid #b8a17b;
+  border-radius: 4px;
+}
+.chronicle-tools p {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.chronicle-view .game-hud,
+.chronicle-view .touch-controls,
+.chronicle-view .expedition-hud {
+  display: none !important;
+}
+#coop-dialog .modal-card {
+  max-height: 82svh;
+  overflow: auto;
+}
+#coop-dialog label {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0;
+}
+#coop-dialog textarea {
+  width: 100%;
+  font: 12px monospace;
+  max-height: 100px;
+}
+#coop-dialog button,
+#coop-dialog select {
+  min-height: 44px;
+}
+#coop-roster {
+  padding-left: 20px;
+}
+.touch-game .expedition-hud {
+  left: auto;
+  right: 18px;
+  bottom: 226px;
+  width: 132px;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+.touch-game .touch-look-hint {
+  display: none;
+}
+@media (max-height: 500px) {
+  .touch-game .expedition-hud {
+    left: 50%;
+    right: auto;
+    bottom: 16px;
+    transform: translateX(-50%);
+    width: 280px;
+    max-width: 44vw;
+  }
+  .touch-game .expedition-actions {
+    flex-direction: row;
+  }
+  .touch-game .expedition-actions button {
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+  }
+  .touch-game #riposte-status {
+    text-align: center;
+  }
+}

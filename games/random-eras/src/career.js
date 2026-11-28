@@ -1,14 +1,42 @@
-const KEY = 'random-eras.career.v1';
-const fields = ['matches', 'hits', 'kills', 'longestCombo', 'longestHitCombo'];
-const eras = ['flintwake', 'sunscar', 'ironwood', 'redcanopy', 'frostfall', 'ashline', 'glassreach'];
+const KEY = "random-eras.career.v1";
+const fields = [
+  "matches",
+  "hits",
+  "kills",
+  "longestCombo",
+  "longestHitCombo",
+  "bosses",
+  "parries",
+  "ripostes",
+  "finishers",
+  "objectives",
+  "expeditions",
+  "expeditionWins",
+];
+const eras = [
+  "flintwake",
+  "sunscar",
+  "ironwood",
+  "redcanopy",
+  "frostfall",
+  "ashline",
+  "glassreach",
+];
 
 export function readCareer(storage) {
   let saved;
-  try { saved = JSON.parse((storage ?? globalThis.localStorage).getItem(KEY)); } catch { /* Storage can be disabled. */ }
-  const count = (value) => Number.isSafeInteger(value) && value > 0 ? value : 0;
+  try {
+    saved = JSON.parse((storage ?? globalThis.localStorage).getItem(KEY));
+  } catch {
+    /* Storage can be disabled. */
+  }
+  const count = (value) =>
+    Number.isSafeInteger(value) && value > 0 ? value : 0;
   return {
     ...Object.fromEntries(fields.map((key) => [key, count(saved?.[key])])),
-    visits: Object.fromEntries(eras.map((id) => [id, count(saved?.visits?.[id])])),
+    visits: Object.fromEntries(
+      eras.map((id) => [id, count(saved?.visits?.[id])]),
+    ),
   };
 }
 
@@ -18,8 +46,26 @@ export function recordCareer(stats, era, storage) {
   career.hits += stats.hits;
   career.kills += stats.kills;
   career.longestCombo = Math.max(career.longestCombo, stats.longestCombo);
-  career.longestHitCombo = Math.max(career.longestHitCombo, stats.longestHitCombo || 0);
+  career.longestHitCombo = Math.max(
+    career.longestHitCombo,
+    stats.longestHitCombo || 0,
+  );
+  for (const key of [
+    "bosses",
+    "parries",
+    "ripostes",
+    "finishers",
+    "objectives",
+    "expeditions",
+    "expeditionWins",
+  ])
+    career[key] +=
+      Number.isSafeInteger(stats[key]) && stats[key] > 0 ? stats[key] : 0;
   if (Object.hasOwn(career.visits, era)) career.visits[era]++;
-  try { (storage ?? globalThis.localStorage).setItem(KEY, JSON.stringify(career)); } catch { /* This round still has a recap. */ }
+  try {
+    (storage ?? globalThis.localStorage).setItem(KEY, JSON.stringify(career));
+  } catch {
+    /* This round still has a recap. */
+  }
   return career;
 }

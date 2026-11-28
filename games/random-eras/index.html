@@ -24,7 +24,7 @@
             <nav class="campaign-nav" aria-label="Game menu">
               <button id="home-play" class="campaign-play" type="button" data-go="modes">Play</button>
               <button type="button" data-open-arena>Arena <small>1 vs 1</small></button>
-              <button type="button" data-go="lobby">Join a lobby</button>
+              <button type="button" data-open-coop>Co-op Expedition <small>2–4 players</small></button><button type="button" data-go="lobby">Solo camp</button>
               <button type="button" data-play-training>Training</button>
               <button type="button" data-go="loadout">Loadout</button>
               <button type="button" data-go="career">Career</button>
@@ -42,9 +42,9 @@
               <div class="daily-actions"><button class="paper-button" type="button" id="play-daily">Play this seed</button><code id="daily-seed"></code></div>
             </article>
             <aside class="parchment field-note">
-              <strong>New to the sword?</strong>
-              <p>Practice on stationary and moving targets in the Training Yard.</p>
-              <small>Browser build 0.4.0</small>
+              <strong>The Riftbound Expedition</strong>
+              <p>Captains, squads, relic builds and changing eras. Play solo or invite up to three friends.</p>
+              <small>Browser build 0.5.0 · RIFTBOUND</small>
             </aside>
           </div>
         </main>
@@ -78,7 +78,7 @@
           <section class="camp-roster" aria-labelledby="camp-roster-title"><h3 id="camp-roster-title" class="handwritten">Who’s here</h3><ul id="camp-players"></ul><button id="camp-ready" type="button" class="ink-button">Ready</button></section>
           <section class="camp-preview" aria-label="Terrain preview">
             <div class="camp-map"><canvas id="camp-map" width="440" height="320" role="img" aria-label="Map of selected terrain"></canvas><div><span class="handwritten">this world is</span><strong id="camp-era"></strong></div></div>
-            <dl class="camp-facts"><div><dt>Seed</dt><dd id="camp-seed"></dd></div><div><dt>World size</dt><dd id="camp-size"></dd></div><div><dt>How you win</dt><dd>Destroy rival cores</dd></div><div><dt>Seats</dt><dd>1 player and 3 bot rivals</dd></div></dl>
+            <dl class="camp-facts"><div><dt>Seed</dt><dd id="camp-seed"></dd></div><div><dt>World size</dt><dd id="camp-size"></dd></div><div><dt>How you win</dt><dd>Destroy rival cores</dd></div><div><dt>Seats</dt><dd>Solo · 3 rival factions</dd></div></dl>
           </section>
           <section class="camp-chat" aria-labelledby="camp-chat-title"><h3 id="camp-chat-title" class="handwritten">Camp chat</h3><div id="camp-chat-log" role="log" aria-live="polite"></div><form id="camp-chat-form"><input id="camp-chat-input" maxlength="160" placeholder="Say something…" aria-label="Camp message"><button type="submit" class="ink-button">Send</button></form></section>
         </div>
@@ -189,6 +189,7 @@
           <div><dt>Guard</dt><dd>Hold right click</dd></div>
           <div><dt>Sprint</dt><dd><kbd>Shift</kbd></dd></div>
           <div><dt>Pick up nearby gear</dt><dd><kbd>E</kbd></dd></div>
+          <div><dt>Combo finisher</dt><dd><kbd>G</kbd> after three clean hits</dd></div><div><dt>Relic choices</dt><dd><kbd>R</kbd> after defeating a captain</dd></div><div><dt>Photo mode</dt><dd><kbd>P</kbd></dd></div>
           <div><dt>Activate charged Focus</dt><dd><kbd>F</kbd> or tap the Focus bar</dd></div>
           <div><dt>Equip a carried weapon</dt><dd><kbd>1</kbd>–<kbd>9</kbd></dd></div>
           <div><dt>Switch camera in Frontier or Training</dt><dd><kbd>V</kbd></dd></div>

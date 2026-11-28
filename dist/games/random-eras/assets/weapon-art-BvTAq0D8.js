@@ -1,0 +1,1 @@
+import{t as e}from"./assets-CQ-rqnKf.js";var t;function n(){return t??=e(`weapons`,2).then(({scene:e})=>new Map(e.children.map(e=>[e.name.slice(7).replaceAll(`_`,`-`),{root:e,tip:e.getObjectByName(`${e.name}_tip`)?.position}]))).catch(e=>{throw t=void 0,e}),t}export{n as t};

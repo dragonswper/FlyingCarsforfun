@@ -42,7 +42,7 @@ export const GAMES = Object.freeze([
     title: 'Random Era’s',
     genre: 'Adventure',
     description:
-      'Explore strongholds in Frontier, duel a bot or a friend in The Pit, and practise melee in the Training Yard.',
+      'Face captains, shifting eras and relic challenges solo or with up to four friends. Duel in The Pit or practise in the Training Yard.',
     url: '/games/random-eras/',
     image: 'assets/random-eras.svg',
     access: 'Public',

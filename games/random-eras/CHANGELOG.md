@@ -1,5 +1,16 @@
 # Rebuild changelog
 
+## 0.5.0 — Riftbound Expedition
+
+- Added minute-by-minute era rifts, three captain strongholds and specialist shield/flanker/mender squads.
+- Added two-to-four-player shared Frontier through separate encrypted WebRTC invites, fixed seats, validated inputs and host-owned rewards/objectives.
+- Added three-hit finishers, timed parry ripostes, six run relics and earned armour/weapon finishes.
+- Added ward-seal sieges, escorted caravans, relay channels and stamina-powered home-core repairs.
+- Added a bounded 30-second combat replay and orbiting photo mode with PNG export.
+- Authored nine prop groups in Blender and included the editable scene, generation script and lightweight GLB.
+- Kept Classic Frontier, The Pit, Training, saved settings and terrain links. New RE5 invites separate this combat revision from older builds.
+- Added campaign, four-peer transport, asset-budget and desktop/touch/co-op browser regressions.
+
 ## A. Combat feel
 
 - Cuts now differ in sweep, hit angle, guard cost and stagger.

@@ -29,6 +29,8 @@ errors are permitted only in cases that deliberately abort downloads.
 | Random Eras Focus | Five real training hits charge the bar, keyboard/touch activation, continued attacks, slower scene time, expiry and no recharge while active |
 | Random Eras touch | Real multi-touch events for movement, look, attack, guard/cancel and view; portrait/landscape HUD bounds and pause/resume |
 | Random Eras recovery | Blocked storage, missing pointer-lock API with quick-click attacks, failed entry download and failed renderer download followed by reload/retry |
+| Random Eras Expedition | Captains/objective generation, three-hit touch finisher, HUD bounds at 320/390 portrait and 844 landscape, photo controls/PNG export, replay seek and solo pause |
+| Random Eras Co-op | Two-tab invite/answer exchange over both BroadcastChannel and real WebRTC, distinct names/seats, shared start, guest movement visible to host and host-disconnect prompt; separate four-peer transport tests |
 | Random Eras Arena | Two-tab invite/answer exchange, ready states, host/guest match startup and disconnect |
 | Riftfall / Skybreak Island | Settings and outfit, movement, shooting, reload, building, pause/resume and each listed mode |
 | Skybreak Classic | Movement, wall building, pause/resume and pointer-lock fallback |

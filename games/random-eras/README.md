@@ -1,8 +1,9 @@
 # Random Eras
 
-A first-person browser melee game with seeded terrain, a playable armored knight, and three modes.
+A browser melee game with seeded terrain, an armored knight, and solo or direct online play. Build **0.5.0 — Riftbound Expedition** adds a cooperative campaign while keeping Classic Frontier, The Pit and Training.
 
-- **Frontier** puts four strongholds in one landscape. Explore, collect era weapons, defend your core and destroy the rival cores. Use a daily seed or choose a starting era, size and seed.
+- **Frontier Expedition** sends one to four allies against three captains and their shield, flanker and mender squads. Defeat each captain, complete its siege, caravan or relay objective, then destroy the exposed core. Defend and repair your own core along the way. Stronghold rifts change their era every minute.
+- **Classic Frontier** keeps the original four-faction core battles. Select Classic in the Frontier rules. Both variants accept daily or custom seeds, era and world size.
 - **The Pit** is an enclosed melee duel against a bot or a friend. Both fighters ready up before an online duel.
 - **Training** has stationary and strafing targets that reset after being defeated. Practice movement, flicks, switching targets and chaining attacks without incoming damage.
 
@@ -29,8 +30,11 @@ Vite prints the local URL. The production build is in `dist/`.
 | Attack when the reticle shows an extra ring | Queue a follow-up during the end of the active swing |
 | Hold right click | Guard with the shield |
 | Shift | Sprint |
-| E | Pick up nearby gear |
+| E | Pick up gear, interact with an objective, or repair the home core |
 | F / tap Focus bar | Activate a fully charged Focus |
+| G / tap Finisher | Spend a three-hit streak and 35 stamina on a heavy finisher |
+| R / tap Relics | Choose an earned Expedition relic |
+| P | Open photo mode |
 | 1–9 | Equip a carried weapon |
 | V | Switch between first and third person in Frontier or Training |
 | Tab | Match status |
@@ -67,7 +71,7 @@ cannot refill it while active. Dying clears charge. Simultaneous opposing Focus
 activations counter each other's slowdown.
 
 The same simulation owns both players' timers and charge in online Arena. Both
-players must reload this build and create fresh RE4 invites; RE3 invites are
+players must reload this build and create fresh RE5 invites; older invites are
 rejected rather than combining incompatible combat rules.
 
 ## Play with a friend
@@ -76,7 +80,27 @@ rejected rather than combining incompatible combat rules.
 2. The guest opens **Join a friend**, pastes the invite, and sends back the generated response.
 3. The host pastes the response. Both players select **Ready**.
 
-Both players should load the current build. The connection uses direct WebRTC with compressed invite codes. **Play across two tabs** uses the same code exchange for side-by-side windows in one browser profile. The Frontier camp is a local lobby preview with bot rivals. [How Arena connections work](NETWORK.md)
+Both players should load the current build. The connection uses direct WebRTC with compressed invite codes. **Play across two tabs** uses the same code exchange for side-by-side windows in one browser profile. The Solo Camp previews Classic Frontier. [Connection details and limitations](NETWORK.md)
+
+## Riftbound Expedition
+
+Choose **Play → Expedition**, or **Co-op Expedition** to host or join with two to four people. Every invited friend gets a separate invite and returns a response for that seat. All invited seats must connect before the host starts. The same seed, rules and 60 Hz simulation apply to everyone. There is no paid server or account requirement. A lost host ends the shared run; return to the menu and exchange fresh invites. Internet connections use encrypted WebRTC and depend on both networks allowing a direct connection.
+
+Captains have a visible slam warning and become enraged below half health. Menders heal nearby allies; flankers circle and eventually raid your home. Only two enemies per faction can attack at once. A captain defeat gives each player a choice of three relics: speed, health, healing, reach, cheaper attacks or longer Focus. Relics last for this run and are approved by the host. Press **R** to choose. **E** repairs 50 core health for 30 stamina when near home.
+
+The three tasks are breakable ward seals, an escorted caravan and interruptible relay channels. Your task and the next rift shift appear in the HUD. Relays need 1.5 seconds without leaving or taking damage. The caravan waits until an ally stays within seven metres; use E beside it to start or repair it. Sunscar rifts pulse damage near their centre. Keep out of captain slam circles and watch the current era.
+
+A perfect parry creates a 1.2-second riposte opportunity. Release Guard and attack for 35% bonus damage. A three-hit streak enables a 35-stamina **G** finisher with a wider strike and 65% bonus damage; it spends the streak. These actions work in all combat modes and have touch buttons.
+
+Loadout armour and weapon finishes unlock from local Career milestones. They change appearance only. Saving a run records shared captain rewards, objectives, parries, ripostes, finishers and Expedition victories. Local saves are not an anti-cheat account system.
+
+**Photo mode** offers orbit, height, distance and PNG export. **Combat chronicle** in the pause/results menu replays the most recent 30 seconds with seeking, pause and quarter/half speed. Both tools pause solo play; online matches continue. Replays remain in memory for the current match and are cleared on the next match or reload.
+
+## Verify the release
+
+From the repository root, run `npm run build:games`, `npm run check`, `npm run test:games`, `npm test` and `npm run test:browser`. Browser checks use Playwright Chromium over a real local TLS server and cover desktop, emulated touch, failure recovery, invites and gameplay. Blender budgets and four-peer transport tests run with the game tests. Use `BROWSER_EXECUTABLE=/path/to/chromium` if Playwright's browser is not installed.
+
+For a manual online check, open the deployed game on two separate computers, exchange one Co-op invite/response, start the shared run, and verify movement, attacks, relic choices, matching objectives and host-disconnect handling. Repeat with three and four people and on separate networks. Headless two-tab checks do not prove every router, physical phone or real network latency.
 
 ## Porting and credits
 
